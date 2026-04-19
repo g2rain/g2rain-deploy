@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # g2rain-deploy 一次性初始化：依赖检查 → 克隆后端仓库到 codes/ → 各仓 build.sh → start.sh
 # 成功后写入标记文件，再次执行会直接退出（除非强制）。
+# 重试：未成功时不会写标记文件；再次执行时，codes/<repo> 若已是 git 仓库则 git pull（非重新 clone），
+#       然后从未完成的仓库起继续 build，最后仍会执行 start.sh。
 # SSL 证书由仓库内置（ssl/），本脚本不负责生成。
 #
 # 用法:
@@ -51,8 +53,9 @@ usage() {
 
 说明:
   - 会克隆/更新 GitHub 仓库到 ./codes/ 并依次执行各仓 ./build.sh（Docker 镜像构建）。
-  - 成功后写入 .g2rain-deploy-one-shot-init.done；再次执行本脚本将直接退出。
-  - 日常发布/更新请使用: ./update.sh
+  - 已克隆过的仓库再次执行时会 git pull（不会禁止「再下载」）；仅空目录才会 git clone。
+  - 仅当全流程成功结束后才写入 .g2rain-deploy-one-shot-init.done；失败未写标记，可修正问题后直接重跑。
+  - 成功后再次执行本脚本将直接退出；日常发布/更新请使用: ./update.sh
 
 强制重新初始化:
   删除标记文件: rm -f .g2rain-deploy-one-shot-init.done
@@ -137,7 +140,7 @@ for repo in "${REPOS[@]}"; do
   target="${CODES}/${repo}"
   url="${GIT_BASE}/${repo}.git"
   if [[ -d "${target}/.git" ]]; then
-    log_info "更新仓库: ${repo}"
+    log_info "已存在仓库，拉取最新: ${repo}（git fetch + pull --ff-only）"
     git -C "$target" fetch --tags --prune
     git -C "$target" pull --ff-only
   else
