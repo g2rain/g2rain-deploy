@@ -49,3 +49,11 @@ config/*
 !config/redis/**
 !config/generate_key.sh
 !config/generate-ssl.sh
+!config/g2rain-cms-app/
+!config/g2rain-infra-app/
+!config/g2rain-main-shell/
+!config/g2rain-manager-app/
+!config/g2rain-cms-app/**
+!config/g2rain-infra-app/**
+!config/g2rain-main-shell/**
+!config/g2rain-manager-app/**
