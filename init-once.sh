@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
-# g2rain-deploy 一次性初始化：依赖检查 → 克隆后端仓库到 codes/ → 各仓 build.sh → SSL（按需）→ start.sh
+# g2rain-deploy 一次性初始化：依赖检查 → 克隆后端仓库到 codes/ → 各仓 build.sh → start.sh
 # 成功后写入标记文件，再次执行会直接退出（除非强制）。
+# 重试：未成功时不会写标记文件；再次执行时，codes/<repo> 若已是 git 仓库则 git pull（非重新 clone），
+#       然后从未完成的仓库起继续 build，最后仍会执行 start.sh。
+# SSL 证书由仓库内置（ssl/），本脚本不负责生成。
 #
 # 用法:
-#   ./init-once.sh <服务器IP>              # 首次：生成含该 IP 的自签证书并启动（与 config/generate-ssl.sh 一致）
-#   ./init-once.sh --force <服务器IP>     # 忽略已完成标记重新跑一遍（仍会覆盖/更新 codes 内仓库）
+#   ./init-once.sh              首次完整初始化（需本机尚未存在完成标记）
+#   ./init-once.sh --force      忽略「仅一次」标记重新执行全流程
 #
 # 环境变量:
 #   G2RAIN_DEPLOY_INIT_FORCE=1           # 等同于 --force
@@ -25,6 +28,10 @@ REPOS=(
   g2rain-iam
   g2rain-gateway-webflux
   g2rain-cms
+  g2rain-infra-app
+  g2rain-manager-app
+  g2rain-cms-app
+  g2rain-main-shell
 )
 
 RED='\033[0;31m'
@@ -41,23 +48,22 @@ log_err() { echo -e "${RED}[ERROR]${NC} $*" >&2; }
 usage() {
   cat <<'EOF'
 用法:
-  ./init-once.sh <服务器IP>           首次完整初始化（需本机尚未存在完成标记）
-  ./init-once.sh --force <服务器IP>  忽略「仅一次」标记重新执行全流程
+  ./init-once.sh           首次完整初始化（需本机尚未存在完成标记）
+  ./init-once.sh --force   忽略「仅一次」标记重新执行全流程
 
 说明:
   - 会克隆/更新 GitHub 仓库到 ./codes/ 并依次执行各仓 ./build.sh（Docker 镜像构建）。
-  - 若 ssl/server.crt 与 ssl/server.key 尚不存在，必须提供 <服务器IP> 用于生成自签证书（nginx HTTPS）。
-  - 成功后写入 .g2rain-deploy-one-shot-init.done；再次执行本脚本将直接退出。
-  - 日常发布/更新请使用: ./update.sh
+  - 已克隆过的仓库再次执行时会 git pull（不会禁止「再下载」）；仅空目录才会 git clone。
+  - 仅当全流程成功结束后才写入 .g2rain-deploy-one-shot-init.done；失败未写标记，可修正问题后直接重跑。
+  - 成功后再次执行本脚本将直接退出；日常发布/更新请使用: ./update.sh
 
 强制重新初始化:
   删除标记文件: rm -f .g2rain-deploy-one-shot-init.done
-  或: G2RAIN_DEPLOY_INIT_FORCE=1 ./init-once.sh --force <服务器IP>
+  或: G2RAIN_DEPLOY_INIT_FORCE=1 ./init-once.sh --force
 EOF
 }
 
 FORCE=false
-SSL_IP=""
 
 for arg in "$@"; do
   case "$arg" in
@@ -69,13 +75,9 @@ for arg in "$@"; do
       FORCE=true
       ;;
     *)
-      if [[ -z "$SSL_IP" ]]; then
-        SSL_IP="$arg"
-      else
-        log_err "多余参数: $arg"
-        usage
-        exit 1
-      fi
+      log_err "未知参数: $arg"
+      usage
+      exit 1
       ;;
   esac
 done
@@ -87,7 +89,7 @@ fi
 if [[ -f "$MARKER" && "$FORCE" != true ]]; then
   log_warn "检测到已完成一次性初始化（标记文件: ${MARKER}）"
   log_warn "本脚本不会再次执行。若需更新服务请运行: ./update.sh"
-  log_warn "若确需重新跑初始化，请删除该标记文件或使用: ./init-once.sh --force <服务器IP>"
+  log_warn "若确需重新跑初始化，请删除该标记文件或使用: ./init-once.sh --force"
   exit 0
 fi
 
@@ -130,23 +132,6 @@ if ! command -v docker-compose >/dev/null 2>&1; then
   log_warn "若仅有「docker compose」插件，请安装 docker-compose v1 兼容入口，或为 docker compose 提供同名包装。"
 fi
 
-need_ssl_gen=false
-if [[ ! -f "${ROOT}/ssl/server.crt" || ! -f "${ROOT}/ssl/server.key" ]]; then
-  need_ssl_gen=true
-fi
-
-if [[ "$need_ssl_gen" == true && -z "$SSL_IP" ]]; then
-  log_err "尚未生成 SSL 证书，请提供服务器 IP 用于 generate-ssl，例如:"
-  log_err "  ./init-once.sh 192.168.1.100"
-  exit 1
-fi
-
-if [[ -n "$SSL_IP" && "$SSL_IP" == --* ]]; then
-  log_err "服务器 IP 参数无效。"
-  usage
-  exit 1
-fi
-
 log_ok "依赖检查通过（docker / compose / git / mvn / jdk）"
 
 mkdir -p "$CODES"
@@ -155,7 +140,7 @@ for repo in "${REPOS[@]}"; do
   target="${CODES}/${repo}"
   url="${GIT_BASE}/${repo}.git"
   if [[ -d "${target}/.git" ]]; then
-    log_info "更新仓库: ${repo}"
+    log_info "已存在仓库，拉取最新: ${repo}（git fetch + pull --ff-only）"
     git -C "$target" fetch --tags --prune
     git -C "$target" pull --ff-only
   else
@@ -179,17 +164,6 @@ for repo in "${REPOS[@]}"; do
   (cd "$target" && ./build.sh)
   log_ok "构建完成: ${repo}"
 done
-
-if [[ "$need_ssl_gen" == true ]]; then
-  gen_ssl="${ROOT}/config/generate-ssl.sh"
-  if [[ ! -f "$gen_ssl" ]]; then
-    log_err "未找到 ${gen_ssl}"
-    exit 1
-  fi
-  [[ -x "$gen_ssl" ]] || chmod +x "$gen_ssl"
-  log_info "生成 SSL 证书（IP: ${SSL_IP}）"
-  "$gen_ssl" "$SSL_IP"
-fi
 
 start_sh="${ROOT}/start.sh"
 if [[ ! -f "$start_sh" ]]; then

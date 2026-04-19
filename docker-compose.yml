@@ -347,7 +347,7 @@ services:
   # MySQL数据库服务
   mysql:
     image: mysql:8.0
-    container_name: g2rain-mysql
+    container_name: mysql
     restart: unless-stopped
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-g2rain123456}
@@ -377,7 +377,7 @@ services:
   # Redis缓存服务
   redis:
     image: redis:7-alpine
-    container_name: g2rain-redis
+    container_name: redis
     restart: unless-stopped
     ports:
       - "${REDIS_PORT:-6379}:6379"
@@ -396,7 +396,7 @@ services:
   # Nacos注册中心
   nacos:
     image: nacos/nacos-server:v2.3.0
-    container_name: g2rain-nacos
+    container_name: nacos
     restart: unless-stopped
     ports:
       - "${NACOS_PORT:-8848}:8848"
@@ -444,7 +444,7 @@ services:
   # Nginx反向代理
   nginx:
     image: nginx:alpine
-    container_name: g2rain-nginx
+    container_name: nginx
     restart: unless-stopped
     ports:
       - "${NGINX_HTTP_PORT:-8080}:80"
