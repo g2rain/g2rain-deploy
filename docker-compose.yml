@@ -1,0 +1,473 @@
+version: '3.8'
+
+services:
+
+    # 应用服务 测试子应用
+  g2rain-example-app:
+    image: g2rain/g2rain-example-app:latest
+    container_name: g2rain-example-app
+    restart: unless-stopped
+    volumes:
+      - ./logs/g2rain-example-app:/logs
+      - ./config/g2rain-example-app/keys:/usr/local/openresty/nginx/lua/keys:ro
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - SERVER_PORT=8080
+      - CONTEXT_PATH=/example
+      - SSO_BASE_URL=${PLATFORM_HOST}:${PLATFORM_PORT}
+      - GATEWAY_HOST=g2rain-gateway
+      - GATEWAY_PORT=8080
+      - IAM_HOST=g2rain-iam
+      - IAM_PORT=8080
+    networks:
+      - g2rain-network
+    depends_on:
+      g2rain-gateway:
+        condition: service_healthy
+        
+    # 应用服务 测试子应用
+  g2rain-manager-app:
+    image: g2rain/g2rain-manager-app:latest
+    container_name: g2rain-manager-app
+    restart: unless-stopped
+    volumes:
+      - ./logs/g2rain-manager-app:/logs
+      - ./config/g2rain-manager-app/keys:/usr/local/openresty/nginx/lua/keys:ro
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - SERVER_PORT=8080
+      - CONTEXT_PATH=/manager
+      - SSO_BASE_URL=${PLATFORM_HOST}:${PLATFORM_PORT}
+      - GATEWAY_HOST=g2rain-gateway
+      - GATEWAY_PORT=8080
+      - IAM_HOST=g2rain-iam
+      - IAM_PORT=8080
+    networks:
+      - g2rain-network
+    depends_on:
+      g2rain-gateway:
+        condition: service_healthy
+
+  # 应用服务 CMS 子应用
+  g2rain-cms-app:
+    image: g2rain/g2rain-cms-app:latest
+    container_name: g2rain-cms-app
+    restart: unless-stopped
+    volumes:
+      - ./logs/g2rain-cms-app:/logs
+      - ./config/g2rain-cms-app/keys:/usr/local/openresty/nginx/lua/keys:ro
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - SERVER_PORT=8080
+      - CONTEXT_PATH=/cms
+      - SSO_BASE_URL=${PLATFORM_HOST}:${PLATFORM_PORT}
+      - GATEWAY_HOST=g2rain-gateway
+      - GATEWAY_PORT=8080
+      - IAM_HOST=g2rain-iam
+      - IAM_PORT=8080
+    networks:
+      - g2rain-network
+    depends_on:
+      g2rain-gateway:
+        condition: service_healthy
+
+  # 应用服务 基础设施控制台子应用
+  g2rain-infra-app:
+    image: ${INFRA_APP_IMAGE:-g2rain/g2rain-infra-app:latest}
+    container_name: g2rain-infra-app
+    restart: unless-stopped
+    volumes:
+      - ./logs/g2rain-infra-app:/logs
+      - ./config/g2rain-infra-app/keys:/usr/local/openresty/nginx/lua/keys:ro
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - SERVER_PORT=8080
+      - CONTEXT_PATH=/infra
+      - SSO_BASE_URL=${PLATFORM_HOST}:${PLATFORM_PORT}
+      - GATEWAY_HOST=g2rain-gateway
+      - GATEWAY_PORT=8080
+      - IAM_HOST=g2rain-iam
+      - IAM_PORT=8080
+    networks:
+      - g2rain-network
+    depends_on:
+      g2rain-gateway:
+        condition: service_healthy
+
+  # 应用服务 健康管理 H5
+  g2rain-health-app:
+    image: ${HEALTH_APP_IMAGE:-g2rain/g2rain-health-app:latest}
+    container_name: g2rain-health-app
+    restart: unless-stopped
+    volumes:
+      - ./logs/g2rain-health-app:/logs
+      - ./config/g2rain-health-app/keys:/usr/local/openresty/nginx/lua/keys:ro
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - SERVER_PORT=8080
+      - CONTEXT_PATH=/h-app
+      - SSO_BASE_URL=${PLATFORM_HOST}:${PLATFORM_PORT}
+      - GATEWAY_HOST=g2rain-gateway
+      - GATEWAY_PORT=8080
+      - IAM_HOST=g2rain-iam
+      - IAM_PORT=8080
+    networks:
+      - g2rain-network
+    depends_on:
+      g2rain-gateway:
+        condition: service_healthy
+
+  # 应用服务 控制台默认应用
+  g2rain-main-shell:
+    image: g2rain/g2rain-main-shell:latest
+    container_name: g2rain-main-shell
+    restart: unless-stopped
+    volumes:
+      - ./logs/g2rain-main-shell:/logs
+      - ./config/g2rain-main-shell/keys:/usr/local/openresty/nginx/lua/keys:ro
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - SERVER_PORT=8080
+      - CONTEXT_PATH=/main
+      - SSO_BASE_URL=${PLATFORM_HOST}:${PLATFORM_PORT}
+      - GATEWAY_HOST=g2rain-gateway
+      - GATEWAY_PORT=8080
+      - IAM_HOST=g2rain-iam
+      - IAM_PORT=8080
+    networks:
+      - g2rain-network
+    depends_on:
+      g2rain-gateway:
+        condition: service_healthy
+
+  # 后端服务 网关
+  g2rain-gateway:
+    image: ${GATEWAY_IMAGE:-g2rain/g2rain-gateway-webflux:latest}
+    container_name: g2rain-gateway
+    restart: unless-stopped
+    ports:
+      - "${GATEWAY_PORT:-10001}:8080"
+    volumes:
+      - ./logs/g2rain-gateway:/logs
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - SERVER_PORT=8080
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-test}
+      - NACOS_SERVER_ADDR=${NACOS_SERVER_ADDR:-nacos:8848}
+      - SPRING_CLOUD_NACOS_CONFIG_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
+      - SPRING_CLOUD_NACOS_CONFIG_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
+      - SPRING_CLOUD_NACOS_CONFIG_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
+      - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
+      - SPRING_CLOUD_NACOS_DISCOVERY_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
+      - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
+    networks:
+      - g2rain-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8080 || timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # 后端服务 basis认证
+  g2rain-basis:
+    image: g2rain/g2rain-basis:latest
+    container_name: g2rain-basis
+    restart: unless-stopped
+    volumes:
+      - ./logs/g2rain-basis:/logs
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - SERVER_PORT=8080
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-test}
+      - NACOS_SERVER_ADDR=${NACOS_SERVER_ADDR:-nacos:8848}
+      - SPRING_CLOUD_NACOS_CONFIG_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
+      - SPRING_CLOUD_NACOS_CONFIG_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
+      - SPRING_CLOUD_NACOS_CONFIG_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
+      - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
+      - SPRING_CLOUD_NACOS_DISCOVERY_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
+      - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
+    networks:
+      - g2rain-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8080 || timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # 后端服务 cms
+  g2rain-cms:
+    image: ${CMS_IMAGE:-g2rain/g2rain-cms:latest}
+    container_name: g2rain-cms
+    restart: unless-stopped
+    volumes:
+      - ./logs/g2rain-cms:/logs
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - SERVER_PORT=8080
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-test}
+      - NACOS_SERVER_ADDR=${NACOS_SERVER_ADDR:-nacos:8848}
+      - SPRING_CLOUD_NACOS_CONFIG_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
+      - SPRING_CLOUD_NACOS_CONFIG_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
+      - SPRING_CLOUD_NACOS_CONFIG_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
+      - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
+      - SPRING_CLOUD_NACOS_DISCOVERY_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
+      - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
+    networks:
+      - g2rain-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8080 || timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # 后端服务 infra认证
+  g2rain-infra:
+    image: g2rain/g2rain-infra:latest
+    container_name: g2rain-infra
+    restart: unless-stopped
+    volumes:
+      - ./logs/g2rain-infra:/logs
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - SERVER_PORT=8080
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-test}
+      - NACOS_SERVER_ADDR=${NACOS_SERVER_ADDR:-nacos:8848}
+      - SPRING_CLOUD_NACOS_CONFIG_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
+      - SPRING_CLOUD_NACOS_CONFIG_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
+      - SPRING_CLOUD_NACOS_CONFIG_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
+      - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
+      - SPRING_CLOUD_NACOS_DISCOVERY_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
+      - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
+    networks:
+      - g2rain-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8080 || timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # 后端服务 health
+  g2rain-health:
+    image: ${HEALTH_IMAGE:-g2rain/g2rain-health:latest}
+    container_name: g2rain-health
+    restart: unless-stopped
+    volumes:
+      - ./logs/g2rain-health:/logs
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - SERVER_PORT=8080
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-test}
+      - NACOS_SERVER_ADDR=${NACOS_SERVER_ADDR:-nacos:8848}
+      - SPRING_CLOUD_NACOS_CONFIG_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
+      - SPRING_CLOUD_NACOS_CONFIG_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
+      - SPRING_CLOUD_NACOS_CONFIG_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
+      - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
+      - SPRING_CLOUD_NACOS_DISCOVERY_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
+      - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
+    networks:
+      - g2rain-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8080 || timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # 后端服务 IAM认证
+  g2rain-iam:
+    image: ${IAM_IMAGE:-g2rain/g2rain-iam:latest}
+    container_name: g2rain-iam
+    restart: unless-stopped
+    ports:
+      - "${IAM_PORT:-10000}:8080"
+    volumes:
+      - ./logs/g2rain-iam:/logs
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - SERVER_PORT=8080
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-test}
+      - NACOS_SERVER_ADDR=${NACOS_SERVER_ADDR:-nacos:8848}
+      - SPRING_CLOUD_NACOS_CONFIG_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
+      - SPRING_CLOUD_NACOS_CONFIG_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
+      - SPRING_CLOUD_NACOS_CONFIG_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
+      - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
+      - SPRING_CLOUD_NACOS_DISCOVERY_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
+      - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
+    networks:
+      - g2rain-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8080 || timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # MySQL数据库服务
+  mysql:
+    image: mysql:8.0
+    container_name: g2rain-mysql
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-g2rain123456}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-g2rain}
+      - MYSQL_USER=${MYSQL_USER:-g2rain}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-g2rain123456}
+      - TZ=${TZ:-Asia/Shanghai}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+      - ./config/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+      - ./config/mysql/init-nacos.sql:/docker-entrypoint-initdb.d/init-nacos.sql
+      # 业务库初始化 SQL 放在 config/mysql/ 下（仅空数据卷首次启动时执行）
+      - ./config/mysql/g2rain-infra.sql:/docker-entrypoint-initdb.d/g2rain-infra.sql
+      - ./config/mysql/g2rain-basis.sql:/docker-entrypoint-initdb.d/g2rain-basis.sql
+      - ./config/mysql/cms.sql:/docker-entrypoint-initdb.d/g2rain-cms.sql
+      - ./logs/mysql:/var/log/mysql
+    networks:
+      - g2rain-network
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Redis缓存服务
+  redis:
+    image: redis:7-alpine
+    container_name: g2rain-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - ./data/redis:/data
+      - ./config/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      - g2rain-network
+    command: redis-server /usr/local/etc/redis/redis.conf
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Nacos注册中心
+  nacos:
+    image: nacos/nacos-server:v2.3.0
+    container_name: g2rain-nacos
+    restart: unless-stopped
+    ports:
+      - "${NACOS_PORT:-8848}:8848"
+      - "${NACOS_GRPC_PORT:-9848}:9848"
+    volumes:
+      - ./data/nacos:/home/nacos/data
+      - ./logs/nacos:/home/nacos/logs
+      - ./config/nacos/logback-spring.xml:/home/nacos/conf/logback-spring.xml
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - MODE=standalone
+      - SPRING_DATASOURCE_PLATFORM=mysql
+      - MYSQL_SERVICE_HOST=mysql
+      - MYSQL_SERVICE_PORT=3306
+      - MYSQL_SERVICE_DB_NAME=${NACOS_DATABASE:-nacos}
+      - MYSQL_SERVICE_USER=${NACOS_MYSQL_USER:-nacos}
+      - MYSQL_SERVICE_PASSWORD=${NACOS_MYSQL_PASSWORD:-g2rain_nacos}
+      - NACOS_AUTH_ENABLE=true
+      - NACOS_AUTH_TOKEN=${NACOS_AUTH_TOKEN:-VGhyZWVGb3J0eVR3b0J5dGVzU2VjcmV0S2V5Rm9yTmFjb3M=}
+      - NACOS_AUTH_IDENTITY_KEY=${NACOS_AUTH_IDENTITY_KEY:-nacos}
+      - NACOS_AUTH_IDENTITY_VALUE=${NACOS_AUTH_IDENTITY_VALUE:-g2rain_nacos}
+      # 日志优化配置
+      - LOGGING_LEVEL_ROOT=WARN
+      - LOGGING_LEVEL_COM_ALIBABA_NACOS=WARN
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK=WARN
+      - LOGGING_LEVEL_ORG_MYBATIS=WARN
+      - LOGGING_LEVEL_ORG_APACHE=WARN
+      - NACOS_SERVER_LOG_LEVEL=WARN
+      # 性能优化配置
+      - NACOS_SERVER_TOMCAT_ACCESSLOG_ENABLED=false
+      - NACOS_SERVER_TOMCAT_ACCESSLOG_PATTERN=
+      - NACOS_SERVER_TOMCAT_ACCESSLOG_MAXDAYS=3
+      - NACOS_SERVER_TOMCAT_ACCESSLOG_MAXSIZE=10MB
+    networks:
+      - g2rain-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8848/nacos/v1/console/health/readiness"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Nginx反向代理
+  nginx:
+    image: nginx:alpine
+    container_name: g2rain-nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_HTTP_PORT:-8080}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./config/nginx/conf.d:/etc/nginx/conf.d
+      - ./logs/nginx:/var/log/nginx
+      - ./ssl:/etc/nginx/ssl:ro
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+    networks:
+      - g2rain-network
+
+networks:
+  g2rain-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  mysql-data:
+    driver: local
+  redis-data:
+    driver: local

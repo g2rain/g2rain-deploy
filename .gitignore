@@ -1,0 +1,51 @@
+# 一次性初始化克隆的源码与完成标记（勿提交）
+codes/
+.g2rain-deploy-one-shot-init.done
+
+# 环境变量文件
+.env
+.env.local
+.env.production
+
+# 数据目录（包含敏感数据）
+data/
+# logs 目录：保留目录结构，但忽略所有文件
+logs/*
+logs/**
+
+# 备份目录
+backup/
+
+# SSL证书
+ssl/*.pem
+ssl/*.key
+ssl/*.crt
+
+# 临时文件
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# config 目录：只保留 mysql、nacos、nginx、redis 目录和脚本文件
+config/*
+!config/mysql/
+!config/nacos/
+!config/nginx/
+!config/redis/
+!config/mysql/**
+!config/nacos/**
+!config/nginx/**
+!config/redis/**
+!config/generate_key.sh
+!config/generate-ssl.sh
