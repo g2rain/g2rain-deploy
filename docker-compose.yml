@@ -364,7 +364,7 @@ services:
       # 业务库初始化 SQL 放在 config/mysql/ 下（仅空数据卷首次启动时执行）
       - ./config/mysql/g2rain-infra.sql:/docker-entrypoint-initdb.d/g2rain-infra.sql
       - ./config/mysql/g2rain-basis.sql:/docker-entrypoint-initdb.d/g2rain-basis.sql
-      - ./config/mysql/cms.sql:/docker-entrypoint-initdb.d/g2rain-cms.sql
+      - ./config/mysql/g2rain-cms.sql:/docker-entrypoint-initdb.d/g2rain-cms.sql
       - ./logs/mysql:/var/log/mysql
     networks:
       - g2rain-network
