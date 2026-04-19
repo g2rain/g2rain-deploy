@@ -30,23 +30,77 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# 验证 IPv4
+is_valid_ipv4() {
+    local ip=$1
+    local IFS='.'
+    local -a octets
+
+    # 基础格式校验
+    if [[ ! $ip =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+        return 1
+    fi
+
+    read -r -a octets <<< "$ip"
+    if [ ${#octets[@]} -ne 4 ]; then
+        return 1
+    fi
+
+    # 每段范围 0-255
+    for octet in "${octets[@]}"; do
+        if [ "$octet" -lt 0 ] || [ "$octet" -gt 255 ]; then
+            return 1
+        fi
+    done
+
+    return 0
+}
+
+# 验证域名（简单校验）
+is_valid_domain() {
+    local domain=$1
+
+    # 允许 localhost 作为本地域名
+    if [ "$domain" = "localhost" ]; then
+        return 0
+    fi
+
+    # 基本域名格式：至少包含一个点，每段 1-63，整体不超过 253
+    if [[ ! $domain =~ ^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,63}$ ]]; then
+        return 1
+    fi
+
+    if [ "${#domain}" -gt 253 ]; then
+        return 1
+    fi
+
+    return 0
+}
+
 # 生成自签名SSL证书
 generate_ssl_certificate() {
-    local server_ip=$1
+    local server_host=$1
+    local host_type=""
     
-    # 检查IP地址参数
-    if [ -z "$server_ip" ]; then
-        log_error "请提供服务器IP地址"
+    # 检查参数
+    if [ -z "$server_host" ]; then
+        log_error "请提供服务器IP或域名"
         echo ""
-        echo "用法: $0 <IP地址>"
-        echo "示例: $0 192.168.1.100"
+        echo "用法: $0 <IP地址|域名>"
+        echo "示例:"
+        echo "  $0 192.168.1.100"
+        echo "  $0 demo.g2rain.com"
         echo ""
         exit 1
     fi
     
-    # 验证IP地址格式（简单验证）
-    if ! echo "$server_ip" | grep -qE '^([0-9]{1,3}\.){3}[0-9]{1,3}$'; then
-        log_error "无效的IP地址格式: $server_ip"
+    # 判断参数类型（IP 或 域名）
+    if is_valid_ipv4 "$server_host"; then
+        host_type="ip"
+    elif is_valid_domain "$server_host"; then
+        host_type="domain"
+    else
+        log_error "无效的IP地址或域名格式: $server_host"
         exit 1
     fi
     
@@ -67,7 +121,11 @@ generate_ssl_certificate() {
     fi
     
     log_info "生成自签名SSL证书..."
-    log_info "服务器IP地址: $server_ip"
+    if [ "$host_type" = "ip" ]; then
+        log_info "服务器IP地址: $server_host"
+    else
+        log_info "服务器域名: $server_host"
+    fi
     
     # 确保ssl目录存在
     mkdir -p "$ssl_dir"
@@ -84,6 +142,18 @@ generate_ssl_certificate() {
         rm -f "$cert_file" "$key_file"
     fi
     
+    # 根据参数类型构造 SAN
+    local san_entries=""
+    if [ "$host_type" = "ip" ]; then
+        san_entries="IP.1 = $server_host
+IP.2 = 127.0.0.1
+DNS.1 = localhost"
+    else
+        san_entries="DNS.1 = $server_host
+DNS.2 = localhost
+IP.1 = 127.0.0.1"
+    fi
+
     # 生成证书配置
     local cert_config="
 [req]
@@ -99,7 +169,7 @@ ST=State
 L=City
 O=G2Rain
 OU=IT Department
-CN=$server_ip
+CN=$server_host
 
 [v3_req]
 basicConstraints = CA:FALSE
@@ -107,10 +177,7 @@ keyUsage = nonRepudiation, digitalSignature, keyEncipherment
 subjectAltName = @alt_names
 
 [alt_names]
-IP.1 = $server_ip
-IP.2 = 127.0.0.1
-DNS.1 = localhost
-DNS.2 = $server_ip
+$san_entries
 "
     
     # 创建临时配置文件
@@ -138,7 +205,13 @@ DNS.2 = $server_ip
         echo "  私钥: $key_file"
         echo ""
         echo "证书信息:"
-        echo "  包含IP地址: $server_ip, 127.0.0.1"
+        if [ "$host_type" = "ip" ]; then
+            echo "  包含IP地址: $server_host, 127.0.0.1"
+            echo "  包含域名: localhost"
+        else
+            echo "  包含域名: $server_host, localhost"
+            echo "  包含IP地址: 127.0.0.1"
+        fi
         echo "  有效期: 365天"
         echo ""
         echo "现在可以运行 ./start.sh 启动服务"
@@ -158,12 +231,14 @@ main() {
     echo ""
     
     if [ $# -eq 0 ]; then
-        log_error "请提供服务器IP地址"
+        log_error "请提供服务器IP或域名"
         echo ""
-        echo "用法: $0 <IP地址>"
-        echo "示例: $0 192.168.1.100"
+        echo "用法: $0 <IP地址|域名>"
+        echo "示例:"
+        echo "  $0 192.168.1.100"
+        echo "  $0 demo.g2rain.com"
         echo ""
-        echo "注意: 请使用服务器的公网IP地址或内网IP地址"
+        echo "注意: 请使用服务器公网IP、内网IP或可访问域名"
         echo ""
         exit 1
     fi
