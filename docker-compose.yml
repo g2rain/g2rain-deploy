@@ -1,29 +1,6 @@
 version: '3.8'
 
 services:
-
-    # 应用服务 测试子应用
-  g2rain-example-app:
-    image: g2rain/g2rain-example-app:latest
-    container_name: g2rain-example-app
-    restart: unless-stopped
-    volumes:
-      - ./logs/g2rain-example-app:/logs
-      - ./config/g2rain-example-app/keys:/usr/local/openresty/nginx/lua/keys:ro
-    environment:
-      - TZ=${TZ:-Asia/Shanghai}
-      - SERVER_PORT=8080
-      - CONTEXT_PATH=/example
-      - SSO_BASE_URL=${PLATFORM_HOST}:${PLATFORM_PORT}
-      - GATEWAY_HOST=g2rain-gateway
-      - GATEWAY_PORT=8080
-      - IAM_HOST=g2rain-iam
-      - IAM_PORT=8080
-    networks:
-      - g2rain-network
-    depends_on:
-      g2rain-gateway:
-        condition: service_healthy
         
     # 应用服务 测试子应用
   g2rain-manager-app:
@@ -83,29 +60,6 @@ services:
       - TZ=${TZ:-Asia/Shanghai}
       - SERVER_PORT=8080
       - CONTEXT_PATH=/infra
-      - SSO_BASE_URL=${PLATFORM_HOST}:${PLATFORM_PORT}
-      - GATEWAY_HOST=g2rain-gateway
-      - GATEWAY_PORT=8080
-      - IAM_HOST=g2rain-iam
-      - IAM_PORT=8080
-    networks:
-      - g2rain-network
-    depends_on:
-      g2rain-gateway:
-        condition: service_healthy
-
-  # 应用服务 健康管理 H5
-  g2rain-health-app:
-    image: ${HEALTH_APP_IMAGE:-g2rain/g2rain-health-app:latest}
-    container_name: g2rain-health-app
-    restart: unless-stopped
-    volumes:
-      - ./logs/g2rain-health-app:/logs
-      - ./config/g2rain-health-app/keys:/usr/local/openresty/nginx/lua/keys:ro
-    environment:
-      - TZ=${TZ:-Asia/Shanghai}
-      - SERVER_PORT=8080
-      - CONTEXT_PATH=/h-app
       - SSO_BASE_URL=${PLATFORM_HOST}:${PLATFORM_PORT}
       - GATEWAY_HOST=g2rain-gateway
       - GATEWAY_PORT=8080
@@ -270,36 +224,6 @@ services:
       redis:
         condition: service_healthy
       nacos:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "nc -z localhost 8080 || timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080' || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
-
-  # 后端服务 health
-  g2rain-health:
-    image: ${HEALTH_IMAGE:-g2rain/g2rain-health:latest}
-    container_name: g2rain-health
-    restart: unless-stopped
-    volumes:
-      - ./logs/g2rain-health:/logs
-    environment:
-      - TZ=${TZ:-Asia/Shanghai}
-      - SERVER_PORT=8080
-      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-test}
-      - NACOS_SERVER_ADDR=${NACOS_SERVER_ADDR:-nacos:8848}
-      - SPRING_CLOUD_NACOS_CONFIG_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
-      - SPRING_CLOUD_NACOS_CONFIG_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
-      - SPRING_CLOUD_NACOS_CONFIG_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
-      - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
-      - SPRING_CLOUD_NACOS_DISCOVERY_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
-      - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
-    networks:
-      - g2rain-network
-    depends_on:
-      mysql:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "nc -z localhost 8080 || timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080' || exit 1"]
