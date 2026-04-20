@@ -6,6 +6,10 @@
 
 set -e
 
+# 目录与配置
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+CONFIG="${ROOT}/services.conf"
+
 # 颜色定义
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -30,6 +34,107 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+list_config_services() {
+    if [ ! -f "$CONFIG" ]; then
+        return 0
+    fi
+    # shellcheck disable=SC1090
+    source "$CONFIG"
+    local codes_dir="${CODES_DIR:-./codes}"
+    while IFS= read -r entry; do
+        IFS='|' read -r repo dir compose_service build_cmd <<<"$entry"
+        repo="${repo:-}"
+        dir="${dir:-$repo}"
+        compose_service="${compose_service:-}"
+        build_cmd="${build_cmd:-./build.sh}"
+        if [ -z "$repo" ] || [ -z "$dir" ] || [ -z "$compose_service" ]; then
+            continue
+        fi
+        printf "%s\t%s\t%s\t%s\t%s\n" "$repo" "$dir" "$build_cmd" "$compose_service" "$codes_dir"
+    done < <(printf "%s\n" "${SERVICES[@]:-}")
+}
+
+get_service_by_compose_name() {
+    local compose_service="$1"
+    if [ ! -f "$CONFIG" ]; then
+        return 1
+    fi
+    # shellcheck disable=SC1090
+    source "$CONFIG"
+    local codes_dir="${CODES_DIR:-./codes}"
+    for entry in "${SERVICES[@]:-}"; do
+        IFS='|' read -r repo dir svc build_cmd <<<"$entry"
+        repo="${repo:-}"
+        dir="${dir:-$repo}"
+        build_cmd="${build_cmd:-./build.sh}"
+        svc="${svc:-}"
+        if [ "$svc" = "$compose_service" ] && [ -n "$repo" ] && [ -n "$dir" ] && [ -n "$build_cmd" ]; then
+            printf "%s\t%s\t%s\t%s\n" "$repo" "$dir" "$build_cmd" "$codes_dir"
+            return 0
+        fi
+    done
+    return 1
+}
+
+pull_and_build_repo() {
+    local repo="$1"
+    local dir="$2"
+    local build_cmd="$3"
+    local codes_dir="$4"
+
+    local target="${codes_dir}/${dir}"
+    # shellcheck disable=SC1090
+    source "$CONFIG" 2>/dev/null || true
+    local git_base="${G2RAIN_GIT_BASE:-${GIT_BASE_DEFAULT:-https://github.com/g2rain}}"
+    local url="${git_base}/${repo}.git"
+
+    mkdir -p "$codes_dir"
+
+    if [ -d "${target}/.git" ]; then
+        log_info "拉取最新代码: ${repo}（git fetch + pull --ff-only）"
+        git -C "$target" fetch --tags --prune
+        git -C "$target" pull --ff-only
+    else
+        if [ -e "$target" ]; then
+            log_error "路径已存在但不是 git 仓库: $target"
+            return 1
+        fi
+        log_info "克隆仓库: ${repo}"
+        git clone "$url" "$target"
+    fi
+
+    log_info "构建镜像: ${repo}（${build_cmd}）"
+    (cd "$target" && bash -lc "$build_cmd")
+    log_success "构建完成: ${repo}"
+}
+
+build_from_source() {
+    local service_name="${1:-}"
+
+    if [ ! -f "$CONFIG" ]; then
+        log_warning "未找到 services.conf，跳过源码构建（仅执行镜像拉取/容器更新）"
+        return 0
+    fi
+
+    if [ -n "$service_name" ]; then
+        local row
+        if ! row="$(get_service_by_compose_name "$service_name")"; then
+            log_info "服务 $service_name 未在 services.conf 中配置，跳过源码构建"
+            return 0
+        fi
+        local repo dir build_cmd codes_dir
+        IFS=$'\t' read -r repo dir build_cmd codes_dir <<<"$row"
+        pull_and_build_repo "$repo" "$dir" "$build_cmd" "$codes_dir"
+        return 0
+    fi
+
+    log_info "按 services.conf 全量拉取代码并构建镜像..."
+    while IFS=$'\t' read -r repo dir build_cmd compose_service codes_dir; do
+        pull_and_build_repo "$repo" "$dir" "$build_cmd" "$codes_dir"
+    done < <(list_config_services)
+    log_success "全量源码构建完成"
+}
+
 # 检查Docker Compose是否安装
 check_dependencies() {
     log_info "检查依赖环境..."
@@ -37,6 +142,13 @@ check_dependencies() {
     if ! command -v docker-compose &> /dev/null; then
         log_error "Docker Compose未安装"
         exit 1
+    fi
+
+    if [ -f "$CONFIG" ]; then
+        if ! command -v git &> /dev/null; then
+            log_error "检测到 services.conf，但系统未安装 git"
+            exit 1
+        fi
     fi
     
     log_success "依赖环境检查通过"
@@ -263,9 +375,9 @@ show_help() {
     echo "G2Rain更新脚本使用说明:"
     echo ""
     echo "用法:"
-    echo "  ./update.sh                   更新所有服务（镜像存在时跳过拉取）"
-    echo "  ./update.sh [服务名]           更新指定服务（使用本地镜像，不拉取）"
-    echo "  ./update.sh [服务名] --force-pull  更新指定服务并强制拉取该服务镜像"
+    echo "  ./update.sh                   按 services.conf 拉代码+构建镜像后更新所有服务"
+    echo "  ./update.sh [服务名]           按 services.conf 拉代码+构建该服务镜像后更新该服务"
+    echo "  ./update.sh [服务名] --force-pull  更新指定服务并强制拉取该服务镜像（会跳过源码构建）"
     echo "  ./update.sh --force-pull      强制拉取最新镜像并更新所有服务"
     echo "  ./update.sh --cleanup-all     更新并清理所有未使用镜像"
     echo "  ./update.sh --help            显示帮助信息"
@@ -330,6 +442,9 @@ main() {
     
     check_dependencies
     backup_data
+    if [ "$force_pull" = false ]; then
+        build_from_source "$service_name"
+    fi
     pull_images "$force_pull" "$service_name"
     update_services "$service_name"
     if [ "$cleanup_all" = true ]; then

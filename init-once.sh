@@ -21,18 +21,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MARKER="${ROOT}/.g2rain-deploy-one-shot-init.done"
 CODES="${ROOT}/codes"
 GIT_BASE="${G2RAIN_GIT_BASE:-https://github.com/g2rain}"
-
-REPOS=(
-  g2rain-infra
-  g2rain-basis
-  g2rain-iam
-  g2rain-gateway-webflux
-  g2rain-cms
-  g2rain-infra-app
-  g2rain-manager-app
-  g2rain-cms-app
-  g2rain-main-shell
-)
+CONFIG="${ROOT}/services.conf"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -52,7 +41,7 @@ usage() {
   ./init-once.sh --force   忽略「仅一次」标记重新执行全流程
 
 说明:
-  - 会克隆/更新 GitHub 仓库到 ./codes/ 并依次执行各仓 ./build.sh（Docker 镜像构建）。
+  - 会根据 services.conf 克隆/更新 GitHub 仓库到 ./codes/ 并依次执行各仓 build 脚本（默认 ./build.sh）。
   - 已克隆过的仓库再次执行时会 git pull（不会禁止「再下载」）；仅空目录才会 git clone。
   - 仅当全流程成功结束后才写入 .g2rain-deploy-one-shot-init.done；失败未写标记，可修正问题后直接重跑。
   - 成功后再次执行本脚本将直接退出；日常发布/更新请使用: ./update.sh
@@ -61,6 +50,26 @@ usage() {
   删除标记文件: rm -f .g2rain-deploy-one-shot-init.done
   或: G2RAIN_DEPLOY_INIT_FORCE=1 ./init-once.sh --force
 EOF
+}
+
+list_config_services() {
+  if [[ ! -f "$CONFIG" ]]; then
+    log_err "未找到配置文件: $CONFIG"
+    exit 1
+  fi
+  # shellcheck disable=SC1090
+  source "$CONFIG"
+  for entry in "${SERVICES[@]}"; do
+    IFS='|' read -r repo dir compose_service build_cmd <<<"$entry"
+    repo="${repo:-}"
+    dir="${dir:-$repo}"
+    build_cmd="${build_cmd:-./build.sh}"
+    compose_service="${compose_service:-}"
+    if [[ -z "$repo" ]]; then
+      continue
+    fi
+    printf "%s\t%s\t%s\t%s\n" "$repo" "$dir" "$build_cmd" "$compose_service"
+  done
 }
 
 FORCE=false
@@ -136,8 +145,8 @@ log_ok "依赖检查通过（docker / compose / git / mvn / jdk）"
 
 mkdir -p "$CODES"
 
-for repo in "${REPOS[@]}"; do
-  target="${CODES}/${repo}"
+while IFS=$'\t' read -r repo dir build_cmd compose_service; do
+  target="${CODES}/${dir}"
   url="${GIT_BASE}/${repo}.git"
   if [[ -d "${target}/.git" ]]; then
     log_info "已存在仓库，拉取最新: ${repo}（git fetch + pull --ff-only）"
@@ -152,18 +161,14 @@ for repo in "${REPOS[@]}"; do
     git clone "$url" "$target"
   fi
 
-  build_script="${target}/build.sh"
-  if [[ ! -f "$build_script" ]]; then
-    log_err "未找到 build.sh: $build_script"
+  if [[ -z "$build_cmd" ]]; then
+    log_err "未配置 build 命令: repo=${repo}"
     exit 1
   fi
-  if [[ ! -x "$build_script" ]]; then
-    chmod +x "$build_script"
-  fi
-  log_info "构建镜像: ${repo}（./build.sh）"
-  (cd "$target" && ./build.sh)
+  log_info "构建镜像: ${repo}（${build_cmd}）"
+  (cd "$target" && bash -lc "$build_cmd")
   log_ok "构建完成: ${repo}"
-done
+done < <(list_config_services)
 
 start_sh="${ROOT}/start.sh"
 if [[ ! -f "$start_sh" ]]; then

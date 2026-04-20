@@ -49,10 +49,22 @@ check_dependencies() {
 
 # 检查环境变量文件
 check_env_file() {
+    local platform_host="${1:-}"
+    local platform_port="${2:-}"
+
     if [ ! -f ".env" ]; then
         log_warning "未找到.env文件，正在从env.example创建..."
         if [ -f "env.example" ]; then
             cp env.example .env
+
+            # 如果传入了 host/port，则在生成 .env 时替换对应项
+            if [ -n "$platform_host" ]; then
+                sed -i "s/^PLATFORM_HOST=.*/PLATFORM_HOST=${platform_host}/" .env
+            fi
+            if [ -n "$platform_port" ]; then
+                sed -i "s/^PLATFORM_PORT=.*/PLATFORM_PORT=${platform_port}/" .env
+            fi
+
             log_success "已创建.env文件，请根据需要修改配置"
         else
             log_error "未找到env.example文件"
@@ -323,18 +335,40 @@ main() {
             echo ""
             echo "用法:"
             echo "  $0                   启动所有服务"
+            echo "  $0 --host <HOST> --port <PORT>  启动服务并在首次生成 .env 时写入平台地址"
             echo "  $0 --generate-ssl <IP地址>  生成SSL证书"
             echo "  $0 --help            显示帮助信息"
             echo ""
             echo "示例:"
+            echo "  $0 --host 43.138.13.145 --port 10080"
             echo "  $0 --generate-ssl 192.168.1.100  生成包含指定IP的SSL证书"
             echo ""
             exit 0
             ;;
         *)
+            # 解析可选参数（用于首次生成 .env 时写入平台地址）
+            local platform_host=""
+            local platform_port=""
+
+            while [ $# -gt 0 ]; do
+                case "$1" in
+                    --host)
+                        platform_host="${2:-}"
+                        shift 2
+                        ;;
+                    --port)
+                        platform_port="${2:-}"
+                        shift 2
+                        ;;
+                    *)
+                        shift
+                        ;;
+                esac
+            done
+
             # 正常启动流程
             check_dependencies
-            check_env_file
+            check_env_file "$platform_host" "$platform_port"
             create_directories
             set_permissions
             
