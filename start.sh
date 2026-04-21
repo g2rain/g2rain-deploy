@@ -170,6 +170,86 @@ generate_ssl_certificate() {
     return $?
 }
 
+# 从 docker-compose.yml 读取某服务的 image 行（不含变量展开）
+compose_image_for_service() {
+    local svc="$1"
+    local yml="${SCRIPT_DIR}/docker-compose.yml"
+    if [[ ! -f "$yml" ]]; then
+        echo ""
+        return 0
+    fi
+    awk -v s="$svc" '
+        $0 ~ "^  " s ":" { found=1; next }
+        found && /^  [a-zA-Z0-9_-]+:/ { exit }
+        found && /^    image:/ {
+            sub(/^    image:[[:space:]]*/, "");
+            gsub(/\r/, "");
+            print;
+            exit
+        }
+    ' "$yml"
+}
+
+# 将 image: ${VAR:-default} 中的 default 展开（满足本仓库 compose 写法）
+expand_compose_image() {
+    local s="$1"
+    local prev=""
+    while [[ "$s" != "$prev" ]]; do
+        prev="$s"
+        s="$(echo "$s" | sed -E 's/\$\{[A-Z0-9_]+:-([^}]+)\}/\1/g')"
+    done
+    echo "$s" | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
+}
+
+# 若本地缺少镜像且存在 services.conf 与源码目录，则尝试执行对应 build.sh
+build_missing_from_services_conf() {
+    local conf="${SCRIPT_DIR}/services.conf"
+    if [[ ! -f "$conf" ]]; then
+        return 0
+    fi
+    # shellcheck disable=SC1090
+    source "$conf"
+    local codes_dir="${CODES_DIR:-./codes}"
+    local codes_abs
+    if [[ "$codes_dir" == ./* ]]; then
+        codes_abs="${SCRIPT_DIR}/${codes_dir#./}"
+    elif [[ "$codes_dir" == /* ]]; then
+        codes_abs="$codes_dir"
+    else
+        codes_abs="${SCRIPT_DIR}/${codes_dir}"
+    fi
+
+    local entry repo dir compose_service build_cmd img_raw img
+    for entry in "${SERVICES[@]:-}"; do
+        IFS='|' read -r repo dir compose_service build_cmd <<<"$entry"
+        repo="${repo:-}"
+        dir="${dir:-$repo}"
+        compose_service="${compose_service:-}"
+        build_cmd="${build_cmd:-./build.sh}"
+        if [[ -z "$repo" || -z "$dir" || -z "$compose_service" ]]; then
+            continue
+        fi
+        img_raw="$(compose_image_for_service "$compose_service")"
+        img="$(expand_compose_image "$img_raw")"
+        if [[ -z "$img" ]]; then
+            continue
+        fi
+        if docker image inspect "$img" &>/dev/null; then
+            continue
+        fi
+        if [[ ! -d "${codes_abs}/${dir}" ]]; then
+            log_warning "镜像不存在且缺少源码目录: $img → ${codes_abs}/${dir}（请先执行 ./init-once.sh）"
+            continue
+        fi
+        log_info "尝试从源码构建缺失镜像: $compose_service ($img)"
+        if (cd "${codes_abs}/${dir}" && bash -lc "$build_cmd"); then
+            log_success "源码构建完成: $compose_service"
+        else
+            log_warning "源码构建失败: $compose_service（将仍可能尝试 pull）"
+        fi
+    done
+}
+
 # 检查镜像是否存在
 check_images_exist() {
     log_info "检查Docker镜像是否存在..."
@@ -249,13 +329,14 @@ check_images_exist() {
 start_services() {
     log_info "启动G2Rain服务..."
     
-    # 检查镜像是否存在，如果不存在则拉取
+    if ! check_images_exist; then
+        build_missing_from_services_conf
+    fi
     if ! check_images_exist; then
         log_info "拉取Docker镜像..."
         docker-compose pull
     fi
     
-    # 启动服务
     log_info "启动容器服务..."
     docker-compose up -d
     
@@ -311,6 +392,8 @@ show_access_info() {
 
 # 主函数
 main() {
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
     echo "=========================================="
     echo "    G2Rain Docker Compose 启动脚本"
     echo "=========================================="
@@ -319,6 +402,7 @@ main() {
     # 处理命令行参数
     case "${1:-}" in
         --generate-ssl)
+            cd "$SCRIPT_DIR" || exit 1
             if [ -z "$2" ]; then
                 log_error "请提供服务器IP地址"
                 echo ""
@@ -346,6 +430,8 @@ main() {
             exit 0
             ;;
         *)
+            cd "$SCRIPT_DIR" || exit 1
+
             # 解析可选参数（用于首次生成 .env 时写入平台地址）
             local platform_host=""
             local platform_port=""
@@ -369,6 +455,11 @@ main() {
             # 正常启动流程
             check_dependencies
             check_env_file "$platform_host" "$platform_port"
+
+            if [ ! -f "${SCRIPT_DIR}/.g2rain-deploy-install.done" ]; then
+                log_warning "未检测到 .g2rain-deploy-install.done；若为全新部署请先执行: ./init-once.sh"
+            fi
+
             create_directories
             set_permissions
             

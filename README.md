@@ -1,79 +1,134 @@
 # G2Rain Docker Compose 部署项目
 
-这是一个基于Docker Compose的G2Rain开源SaaS平台部署配置项目，提供了完整的容器化部署解决方案。
+这是一个基于 Docker Compose 的 G2Rain 开源 SaaS 平台部署配置项目：推荐先通过 **`init-once.sh`** 完成环境、SQL 占位符、源码克隆与默认镜像构建，再通过 **`start.sh`** 启动栈，日常迭代使用 **`update.sh`**。
 
 ## 🚀 快速开始
 
 ### 环境要求
 
-- Docker 20.10+
-- Docker Compose 2.0+
-- 至少4GB可用内存
-- 至少10GB可用磁盘空间
+**运行 `start.sh` / Compose 栈：**
 
-### 一键启动
+- Docker 20.10+
+- 可执行的 `docker-compose` 命令（与仓库内脚本一致；同时兼容 `docker compose` 插件用于部分检查）
+- 至少 4GB 可用内存；建议预留 **10GB+** 磁盘（含镜像、`data/`、`codes/`）
+
+**首次执行 `./init-once.sh`（克隆源码并默认构建本地镜像）还需：**
+
+- Git、JDK、Maven（`java`、`mvn` 在 `PATH` 中）
+- 能访问克隆源（默认 `https://github.com/g2rain`，可通过环境变量 `G2RAIN_GIT_BASE` 改为镜像站或私有前缀）
+
+### 职责划分（推荐心智模型）
+
+| 脚本 | 作用 |
+|------|------|
+| **`init-once.sh`** | 一次性安装：若无则生成 `.env`、按 `.env` 替换 `config/mysql/g2rain-basis.sql` 中的 `__PLATFORM_HOST__` / `__PLATFORM_PORT__`、可选生成 SSL、按 **`services.conf`** 克隆到 **`codes/`**、**默认**在各仓库执行 **`build.sh`**（可配置重试）、成功后写入 **`.g2rain-deploy-install.done`**。不执行 `docker compose up`。 |
+| **`start.sh`** | 可重复启动：检查依赖与证书、缺镜像时尝试从 `codes/` 构建再 `pull`、`docker-compose up -d`。 |
+| **`update.sh`** | 日常更新：按 `services.conf` 拉代码、构建、滚动容器等。 |
+
+**MySQL：** 业务初始化 SQL 仅在 **`data/mysql` 为空**、MySQL 首次执行 `docker-entrypoint-initdb.d` 时导入。若数据卷已有数据，事后修改 `g2rain-basis.sql` 或 `.env` **不会**自动更新库内旧行，需自行迁移或清空数据卷后重装。
+
+---
+
+### `init-once.sh`：快捷方案与全参数
+
+**快捷方案（最少命令）** — 适合先跑通流程，再在 `.env` 里改平台地址、端口等：
 
 ```bash
-# 1. 复制环境变量文件
-cp env.example .env
-
-# 2. 修改配置（可选）
-vim .env
-
-# 3. 生成SSL证书（必需，用于nginx的HTTPS访问）
-./config/generate-ssl.sh <服务器IP地址>
-# 或使用 start.sh 的参数
-./start.sh --generate-ssl <服务器IP地址>
-
-# 示例：如果服务器IP是 192.168.1.100
-./config/generate-ssl.sh 192.168.1.100
-
-# 4. 启动服务
+./init-once.sh
+./config/generate-ssl.sh <服务器IP或域名>
 ./start.sh
 ```
 
-**注意**: 
-- SSL证书仅用于集群总入口的 nginx 服务，其他服务不需要证书
-- SSL证书是启动服务的必需项，如果证书不存在，启动脚本会提示并阻止启动
-- 请使用服务器的公网IP地址或内网IP地址生成证书
-- 证书有效期：365天
-- 如需重新生成证书，删除 `ssl/server.crt` 和 `ssl/server.key` 后重新运行生成命令
+说明：`init-once.sh` 若发现没有 `.env`，会从 `env.example` 复制一份；克隆后**默认**会依次执行各仓 **`build.sh`**，整段构建常见 **约 20～60 分钟**（视机器与网络而定）。完成后务必具备 **`ssl/server.crt`** 与 **`ssl/server.key`**，否则 `start.sh` 会拒绝启动。
+
+**全参数方案** — 适合自动化或一次写清平台地址与证书：
+
+```bash
+# 创建 .env 时写入 PLATFORM_HOST / PLATFORM_PORT；安装阶段生成 ssl/；忽略已完成标记重装
+./init-once.sh --host 43.138.13.145 --port 10443 --ssl-ip 192.168.1.100 --force
+
+# 仅克隆与 SQL/.env，暂不构建镜像（网络差或先配环境）
+./init-once.sh --skip-build
+
+# 调整每仓 build 失败重试（默认 3 次、间隔 15 秒）
+G2RAIN_BUILD_RETRIES=5 G2RAIN_BUILD_RETRY_SLEEP=30 ./init-once.sh
+
+# 使用其他 Git 组织或镜像前缀
+G2RAIN_GIT_BASE=https://github.com/your-org ./init-once.sh
+```
+
+常用选项：`--host` / `--port`（**仅当尚不存在 `.env` 时**与从模板创建联动）、`--skip-build`、`--ssl-ip`、`--force`；环境变量 `G2RAIN_DEPLOY_INIT_FORCE=1` 等同 `--force`。完整说明：`./init-once.sh --help`。
+
+---
+
+### `start.sh`：快捷方案与全参数
+
+**快捷方案：**
+
+```bash
+./start.sh
+```
+
+**全参数方案：**
+
+```bash
+# 若尚无 .env，从 env.example 创建并写入平台 host/port（与手动改 .env 等价）
+./start.sh --host 43.138.13.145 --port 10080
+
+# 仅生成 SSL（完成后需再执行 ./start.sh 正常启动）
+./start.sh --generate-ssl 192.168.1.100
+
+./start.sh --help
+```
+
+未检测到 **`.g2rain-deploy-install.done`** 时，`start.sh` 会提示先执行 **`./init-once.sh`**（不强制退出）。若缺少业务镜像且存在 **`codes/<目录>`**，会按 **`services.conf`** 尝试对应 **`build.sh`**，仍缺再执行 **`docker-compose pull`**。
+
+**注意：**
+
+- SSL 证书仅用于集群总入口 **nginx**；其他后端服务不依赖该证书文件。
+- 证书不存在时 **`start.sh` 会阻止启动**；请使用服务器公网 IP、内网 IP 或域名生成（与 `generate-ssl.sh` 说明一致）。
+- 重新生成证书：删除 `ssl/server.crt`、`ssl/server.key` 后重新执行 `./config/generate-ssl.sh` 或 `./start.sh --generate-ssl <地址>`。
 
 ### 服务访问
 
-- **HTTP地址**: http://localhost:8080
-- **HTTPS地址**: https://localhost:443（使用自签名证书，浏览器会显示安全警告）
-- **MySQL端口**: 3306
-- **Redis端口**: 6379
+端口以 **`.env`** 为准（参见 `env.example` 中的 `NGINX_HTTP_PORT`、`NGINX_HTTPS_PORT`、`MYSQL_PORT`、`REDIS_PORT`）。默认示例常为：
+
+- **HTTP：** `http://localhost:10080`（若你未改 `NGINX_HTTP_PORT`）
+- **HTTPS：** `https://localhost:10443`（自签名证书时浏览器会提示风险）
+- **MySQL / Redis：** 默认映射端口见 `.env`（如 `MYSQL_PORT=3306`）
 
 ## 📁 项目结构
 
 ```
 g2rain-deploy/
-├── docker-compose.yml          # Docker Compose配置文件
-├── env.example                 # 环境变量示例文件
-├── start.sh                    # 启动脚本
+├── docker-compose.yml          # Docker Compose 配置
+├── env.example                 # 环境变量模板（复制为 .env）
+├── services.conf               # 克隆目录与 compose 服务、build 命令映射（Bash 源文件）
+├── init-once.sh                # 一次性安装：.env / SQL 占位符 / 克隆 codes / 默认 build
+├── start.sh                    # 启动栈（缺镜像时可从 codes/ 构建）
 ├── stop.sh                     # 停止脚本
-├── update.sh                   # 更新脚本
-├── config/                     # 配置文件目录
-│   ├── generate-ssl.sh         # SSL证书生成脚本
-│   ├── generate_key.sh         # 前端项目密钥生成脚本
-├── data/                       # 数据持久化目录
-│   ├── mysql/                  # MySQL数据目录
-│   └── redis/                  # Redis数据目录
-├── logs/                       # 日志目录
-│   ├── mysql/                  # MySQL日志
-│   ├── nginx/                  # Nginx日志
-│   └── app/                    # 应用日志
-├── config/                     # 配置文件目录
-│   ├── mysql/                  # MySQL配置
-│   ├── redis/                  # Redis配置
-│   ├── nginx/                  # Nginx配置
-│   └── app/                    # 应用配置
-└── ssl/                        # SSL证书目录
-    ├── server.crt              # SSL证书文件
-    └── server.key              # SSL私钥文件
+├── update.sh                   # 更新：拉代码、构建、更新容器
+├── codes/                      # 克隆的业务仓库根目录（.gitignore，由 init-once 创建）
+├── .g2rain-deploy-install.done # 安装完成标记（.gitignore，存在则 init-once 默认跳过）
+├── config/
+│   ├── generate-ssl.sh         # SSL 证书生成
+│   ├── generate_key.sh         # 前端 ES256 密钥生成
+│   ├── mysql/                  # MySQL 配置与初始化 SQL（含 g2rain-basis.sql 平台占位符）
+│   ├── redis/
+│   ├── nginx/
+│   └── nacos/
+├── data/                       # 持久化数据（.gitignore）
+│   ├── mysql/
+│   └── redis/
+├── logs/                       # 日志（.gitignore）
+└── ssl/                        # 入口证书（私钥勿提交）
+    ├── server.crt
+    └── server.key
 ```
+
+### `services.conf` 与 `codes/`
+
+`services.conf` 为 Bash 片段，定义数组 **`SERVICES`**：每一项为 **`repo|dir|compose_service|build_cmd`**（GitHub 仓库名、检出到 `codes/` 下的目录名、`docker-compose.yml` 中的服务名、构建命令，默认 `./build.sh`）。**`init-once.sh`**、**`update.sh`**、**`start.sh`**（缺镜像时）均依赖该映射。克隆根目录由其中的 **`CODES_DIR`** 控制（默认同级 **`codes/`**）。
 
 ## 🛠️ 服务组件
 
@@ -89,28 +144,30 @@ g2rain-deploy/
 - **配置文件**: `config/redis/redis.conf`
 
 ### Nginx
-- **HTTP端口**: 8080（可通过环境变量 `NGINX_HTTP_PORT` 配置）
-- **HTTPS端口**: 443（可通过环境变量 `NGINX_HTTPS_PORT` 配置）
+- **HTTP / HTTPS 端口**：由 `.env` 中 `NGINX_HTTP_PORT`、`NGINX_HTTPS_PORT` 配置（默认见 `env.example`，如 `10080` / `10443`）
 - **配置文件**: `config/nginx/`
 - **日志目录**: `logs/nginx`
 - **SSL证书**: `ssl/server.crt` 和 `ssl/server.key`
 
-### 应用服务
-- **端口**: 8080
-- **镜像**: 可配置
-- **日志目录**: `logs/app`
+### 应用与中间件容器
+
+各业务容器对外端口由 **`docker-compose.yml`** 与 **`.env`** 共同决定（例如网关、IAM 等映射到宿主机的端口）；容器内 Spring 服务常见监听 **8080**。镜像名多为 `g2rain/...:latest`，本地开发可通过 **`init-once.sh`** / **`update.sh`** 在 **`codes/`** 中构建。各服务日志目录见 **`logs/<服务名>/`**。
+
 
 ## 📋 管理命令
 
-### 启动服务
+### 首次安装（init-once）
+
+与上文 **「`init-once.sh`：快捷方案与全参数」** 一致。完成后执行 `./start.sh` 拉起栈。日常代码与镜像更新请用 **`./update.sh`**。
+
+### 启动服务（start）
+
+与上文 **「`start.sh`：快捷方案与全参数」** 一致。简要对照：
+
 ```bash
-# 首次启动前，需要先生成SSL证书
-./config/generate-ssl.sh <服务器IP地址>
-
-# 启动所有服务
 ./start.sh
-
-# 查看帮助信息
+./start.sh --host <HOST> --port <PORT>
+./start.sh --generate-ssl <IP或域名>
 ./start.sh --help
 ```
 
@@ -226,6 +283,13 @@ location /test/ {
 - **重要**：路径映射配置必须与前端项目的 `VITE_CONTEXT_PATH` 保持一致，否则前端应用无法正常访问
 
 ### 更新服务
+
+`update.sh` 会读取 **`services.conf`**：默认先对有关仓库 **`git pull`** 并执行 **`build.sh`**，再 **`docker-compose pull` / `up`**（细节以 **`./update.sh --help`** 为准）。
+
+**快捷方案：** 全量更新所有服务。
+
+**全参数方案：** 只更新指定服务、强制拉镜像等。
+
 ```bash
 # 更新所有服务
 ./update.sh
@@ -267,32 +331,28 @@ docker-compose logs -f nginx
 
 ### 环境变量配置
 
-复制 `env.example` 为 `.env` 并根据需要修改：
+复制 `env.example` 为 `.env` 并根据需要修改（**`init-once.sh` / `start.sh` 在首次时也可代为创建 `.env`**）：
 
 ```bash
 cp env.example .env
 ```
 
-主要配置项：
+与部署脚本强相关的主要项（完整列表以 `env.example` 为准）：
 
 ```env
-# 应用配置
-APP_IMAGE=g2rain/app:latest
-APP_PORT=8080
+# 平台对外的 Host / Port（写入 compose 中 SSO 等；init-once 会据此替换 g2rain-basis.sql 占位符）
+PLATFORM_HOST=your server host
+PLATFORM_PORT=your server host
 
-# MySQL配置
+# Nginx 入口端口（HTTP / HTTPS）
+NGINX_HTTP_PORT=10080
+NGINX_HTTPS_PORT=10443
+
+# MySQL / Redis
 MYSQL_ROOT_PASSWORD=g2rain123456
 MYSQL_DATABASE=g2rain
-MYSQL_USER=g2rain
-MYSQL_PASSWORD=g2rain123456
-
-# Redis配置
+MYSQL_PORT=3306
 REDIS_PORT=6379
-REDIS_PASSWORD=
-
-# Nginx配置
-NGINX_HTTP_PORT=8080
-NGINX_HTTPS_PORT=443
 ```
 
 ### 数据持久化
@@ -404,30 +464,31 @@ rm ssl/server.crt ssl/server.key
 
 ### 常见问题
 
-1. **SSL证书不存在**
+1. **SSL 证书不存在**
    ```bash
    # 错误提示：SSL证书不存在，无法启动HTTPS服务
-   # 解决方法：生成SSL证书
-   ./config/generate-ssl.sh <服务器IP地址>
+   ./config/generate-ssl.sh <服务器IP或域名>
+   # 或在安装阶段一并生成：
+   ./init-once.sh --ssl-ip <服务器IP或域名>
    ```
 
 2. **端口冲突**
    ```bash
-   # 检查端口占用
+   # 检查端口占用（按 .env 中实际端口调整，以下为 env.example 常见示例）
    netstat -tulpn | grep :3306
    netstat -tulpn | grep :6379
-   netstat -tulpn | grep :8080
-   netstat -tulpn | grep :443
+   netstat -tulpn | grep :10080
+   netstat -tulpn | grep :10443
    ```
 
-2. **权限问题**
+3. **权限问题**
    ```bash
    # 设置目录权限
    chmod -R 755 data/
    chmod -R 755 logs/
    ```
 
-3. **服务启动失败**
+4. **服务启动失败**
    ```bash
    # 查看详细日志
    docker-compose logs -f [服务名]

@@ -1,5 +1,6 @@
 # 一次性初始化克隆的源码与完成标记（勿提交）
 codes/
+.g2rain-deploy-install.done
 .g2rain-deploy-one-shot-init.done
 
 # 环境变量文件
