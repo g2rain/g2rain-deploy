@@ -212,9 +212,7 @@ sync_repo() {
   local repo="$3"
 
   if [[ -d "${target}/.git" ]]; then
-    log_info "已存在仓库，拉取最新: ${repo}（git fetch + pull --ff-only）"
-    git -C "$target" fetch --tags --prune
-    git -C "$target" pull --ff-only
+    log_info "已存在仓库，跳过拉取: ${repo}"
   else
     if [[ -e "$target" ]]; then
       log_err "路径已存在但不是 git 仓库: $target （请手动处理后重试）"
