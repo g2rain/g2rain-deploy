@@ -342,7 +342,7 @@ start_services() {
         docker-compose pull
     fi
     
-    log_info "启动容器服务..."
+    log_info "启动容器服务（由 docker-compose 依赖与健康检查控制顺序）..."
     docker-compose up -d
     
     log_success "服务启动完成"
@@ -351,10 +351,7 @@ start_services() {
 # 检查服务状态
 check_services() {
     log_info "检查服务状态..."
-    
-    # 等待服务启动
-    sleep 10
-    
+
     # 检查MySQL
     if docker-compose exec -T mysql mysqladmin ping -h localhost &> /dev/null; then
         log_success "MySQL服务运行正常"
