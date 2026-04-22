@@ -30,6 +30,38 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+container_health_status() {
+    local name="$1"
+    docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$name" 2>/dev/null || echo "missing"
+}
+
+wait_core_services_healthy() {
+    local timeout_s="${1:-600}"
+    local interval_s="${2:-2}"
+    local elapsed=0
+    local mysql_status redis_status nacos_status
+
+    log_info "等待核心依赖服务就绪: mysql / redis / nacos（超时 ${timeout_s}s）"
+    while [ "$elapsed" -lt "$timeout_s" ]; do
+        mysql_status="$(container_health_status mysql)"
+        redis_status="$(container_health_status redis)"
+        nacos_status="$(container_health_status nacos)"
+
+        log_info "健康状态 mysql=${mysql_status}, redis=${redis_status}, nacos=${nacos_status}"
+        if [ "$mysql_status" = "healthy" ] && [ "$redis_status" = "healthy" ] && [ "$nacos_status" = "healthy" ]; then
+            log_success "核心依赖服务已全部健康"
+            return 0
+        fi
+
+        sleep "$interval_s"
+        elapsed=$((elapsed + interval_s))
+    done
+
+    log_error "核心依赖服务在 ${timeout_s}s 内未全部健康"
+    docker-compose ps
+    return 1
+}
+
 # 检查Docker和Docker Compose是否安装
 check_dependencies() {
     log_info "检查依赖环境..."
@@ -342,7 +374,12 @@ start_services() {
         docker-compose pull
     fi
     
-    log_info "启动容器服务（由 docker-compose 依赖与健康检查控制顺序）..."
+    log_info "先启动核心依赖服务: mysql redis nacos"
+    docker-compose up -d --remove-orphans mysql redis nacos
+
+    wait_core_services_healthy 600 2
+
+    log_info "核心依赖就绪，启动全量服务..."
     docker-compose up -d --remove-orphans
     
     log_success "服务启动完成"
