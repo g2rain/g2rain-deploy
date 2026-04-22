@@ -97,6 +97,9 @@ ensure_env_file() {
     if grep -q '^PLATFORM_PORT=' "$ENV_FILE"; then
       sed -i.bak "s|^PLATFORM_PORT=.*|PLATFORM_PORT=${platform_port}|" "$ENV_FILE" && rm -f "${ENV_FILE}.bak"
     fi
+    if grep -q '^NGINX_HTTPS_PORT=' "$ENV_FILE"; then
+      sed -i.bak "s|^NGINX_HTTPS_PORT=.*|NGINX_HTTPS_PORT=${platform_port}|" "$ENV_FILE" && rm -f "${ENV_FILE}.bak"
+    fi
   fi
   log_ok "已创建 .env，可按需编辑"
 }

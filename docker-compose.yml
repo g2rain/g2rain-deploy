@@ -14,7 +14,7 @@ services:
       - TZ=${TZ:-Asia/Shanghai}
       - SERVER_PORT=8080
       - CONTEXT_PATH=/manager
-      - SSO_BASE_URL=${PLATFORM_HOST}:${PLATFORM_PORT}
+      - SSO_BASE_URL=${PLATFORM_BASE_URL}
       - GATEWAY_HOST=g2rain-gateway
       - GATEWAY_PORT=8080
       - IAM_HOST=g2rain-iam
@@ -37,7 +37,7 @@ services:
       - TZ=${TZ:-Asia/Shanghai}
       - SERVER_PORT=8080
       - CONTEXT_PATH=/cms
-      - SSO_BASE_URL=${PLATFORM_HOST}:${PLATFORM_PORT}
+      - SSO_BASE_URL=${PLATFORM_BASE_URL}
       - GATEWAY_HOST=g2rain-gateway
       - GATEWAY_PORT=8080
       - IAM_HOST=g2rain-iam
@@ -60,7 +60,7 @@ services:
       - TZ=${TZ:-Asia/Shanghai}
       - SERVER_PORT=8080
       - CONTEXT_PATH=/infra
-      - SSO_BASE_URL=${PLATFORM_HOST}:${PLATFORM_PORT}
+      - SSO_BASE_URL=${PLATFORM_BASE_URL}
       - GATEWAY_HOST=g2rain-gateway
       - GATEWAY_PORT=8080
       - IAM_HOST=g2rain-iam
@@ -83,7 +83,7 @@ services:
       - TZ=${TZ:-Asia/Shanghai}
       - SERVER_PORT=8080
       - CONTEXT_PATH=/main
-      - SSO_BASE_URL=${PLATFORM_HOST}:${PLATFORM_PORT}
+      - SSO_BASE_URL=${PLATFORM_BASE_URL}
       - GATEWAY_HOST=g2rain-gateway
       - GATEWAY_PORT=8080
       - IAM_HOST=g2rain-iam
@@ -374,7 +374,6 @@ services:
     container_name: nginx
     restart: unless-stopped
     ports:
-      - "${NGINX_HTTP_PORT:-80}:80"
       - "${NGINX_HTTPS_PORT:-443}:443"
     volumes:
       - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf
