@@ -89,12 +89,24 @@ check_env_file() {
         if [ -f "env.example" ]; then
             cp env.example .env
 
-            # 如果传入了 host/port，则在生成 .env 时替换对应项
+            # 如果传入了 host/port，则在生成 .env 时替换对应项（与 init-once.sh 对齐）
             if [ -n "$platform_host" ]; then
-                sed -i "s/^PLATFORM_HOST=.*/PLATFORM_HOST=${platform_host}/" .env
+                if grep -q '^PLATFORM_HOST=' .env; then
+                    sed -i.bak "s|^PLATFORM_HOST=.*|PLATFORM_HOST=${platform_host}|" .env && rm -f ".env.bak"
+                fi
             fi
             if [ -n "$platform_port" ]; then
-                sed -i "s/^PLATFORM_PORT=.*/PLATFORM_PORT=${platform_port}/" .env
+                if grep -q '^PLATFORM_PORT=' .env; then
+                    sed -i.bak "s|^PLATFORM_PORT=.*|PLATFORM_PORT=${platform_port}|" .env && rm -f ".env.bak"
+                fi
+                if grep -q '^NGINX_HTTPS_PORT=' .env; then
+                    sed -i.bak "s|^NGINX_HTTPS_PORT=.*|NGINX_HTTPS_PORT=${platform_port}|" .env && rm -f ".env.bak"
+                fi
+            fi
+            if [ -n "$platform_host" ] && [ -n "$platform_port" ]; then
+                if grep -q '^PLATFORM_BASE_URL=' .env; then
+                    sed -i.bak "s|^PLATFORM_BASE_URL=.*|PLATFORM_BASE_URL=https://${platform_host}:${platform_port}|" .env && rm -f ".env.bak"
+                fi
             fi
 
             log_success "已创建.env文件，请根据需要修改配置"
