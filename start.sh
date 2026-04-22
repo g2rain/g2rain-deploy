@@ -241,6 +241,11 @@ build_missing_from_services_conf() {
             log_warning "镜像不存在且缺少源码目录: $img → ${codes_abs}/${dir}（请先执行 ./init-once.sh）"
             continue
         fi
+        local first_token="${build_cmd%% *}"
+        if [[ "$first_token" == ./*.sh && -f "${codes_abs}/${dir}/${first_token}" && ! -x "${codes_abs}/${dir}/${first_token}" ]]; then
+            log_warning "检测到脚本不可执行，自动修复权限: ${codes_abs}/${dir}/${first_token}"
+            chmod +x "${codes_abs}/${dir}/${first_token}"
+        fi
         log_info "尝试从源码构建缺失镜像: $compose_service ($img)"
         if (cd "${codes_abs}/${dir}" && bash -lc "$build_cmd"); then
             log_success "源码构建完成: $compose_service"

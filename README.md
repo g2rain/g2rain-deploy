@@ -45,7 +45,7 @@
 
 ```bash
 # 创建 .env 时写入 PLATFORM_HOST / PLATFORM_PORT；安装阶段生成 ssl/；忽略已完成标记重装
-./init-once.sh --host 43.138.13.145 --port 10443 --ssl-ip 192.168.1.100 --force
+./init-once.sh --host 43.138.13.145 --port 443 --ssl-ip 43.138.13.145 --force
 
 # 仅克隆与 SQL/.env，暂不构建镜像（网络差或先配环境）
 ./init-once.sh --skip-build

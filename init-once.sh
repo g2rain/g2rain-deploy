@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # g2rain-deploy 一次性安装：依赖检查 → .env → 替换 MySQL 初始化 SQL 占位符 →（可选）SSL →
-# 克隆 services.conf 中的仓库到 codes/ → 默认各仓 build.sh（可重试）→ 写完成标记。
+# 克隆/拉取 services.conf 中的仓库到 codes/ → 统一循环执行各仓 build.sh（可重试）→ 写完成标记。
 # 不包含 docker compose up；装完后请在本目录执行: ./start.sh
 #
-# 默认「克隆后构建」阶段（对应安装说明第 4 节第 7 步，现为默认行为）：
+# 默认「先拉代码后统一构建」阶段（对应安装说明第 4 节第 7 步，现为默认行为）：
 #   - 耗时：整段通常约 20～60 分钟（视 CPU、磁盘、Docker 与网络而定），单仓常见约 3～15 分钟。
 #   - 失败重试：每个仓库的 build 默认最多 G2RAIN_BUILD_RETRIES 次（默认 3），两次尝试之间休眠
 #     G2RAIN_BUILD_RETRY_SLEEP 秒（默认 15）。某仓耗尽重试仍失败则脚本以非零退出、不写完成标记；
@@ -195,6 +195,36 @@ build_with_retries() {
   return 1
 }
 
+ensure_build_script_executable_if_needed() {
+  local target="$1"
+  local build_cmd="$2"
+  local first_token="${build_cmd%% *}"
+
+  if [[ "$first_token" == ./*.sh && -f "${target}/${first_token}" && ! -x "${target}/${first_token}" ]]; then
+    log_warn "检测到脚本不可执行，自动修复权限: ${target}/${first_token}"
+    chmod +x "${target}/${first_token}"
+  fi
+}
+
+sync_repo() {
+  local target="$1"
+  local url="$2"
+  local repo="$3"
+
+  if [[ -d "${target}/.git" ]]; then
+    log_info "已存在仓库，拉取最新: ${repo}（git fetch + pull --ff-only）"
+    git -C "$target" fetch --tags --prune
+    git -C "$target" pull --ff-only
+  else
+    if [[ -e "$target" ]]; then
+      log_err "路径已存在但不是 git 仓库: $target （请手动处理后重试）"
+      return 1
+    fi
+    log_info "克隆仓库: ${repo}"
+    git clone "$url" "$target"
+  fi
+}
+
 FORCE=false
 SKIP_BUILD=false
 PLATFORM_HOST_ARG=""
@@ -310,36 +340,39 @@ run_ssl_if_requested "$SSL_IP"
 
 mkdir -p "$CODES"
 
-while IFS=$'\t' read -r repo dir build_cmd compose_service; do
+mapfile -t service_rows < <(list_config_services)
+
+for row in "${service_rows[@]}"; do
+  IFS=$'\t' read -r repo dir build_cmd compose_service <<<"$row"
   target="${CODES}/${dir}"
   url="${GIT_BASE}/${repo}.git"
-  if [[ -d "${target}/.git" ]]; then
-    log_info "已存在仓库，拉取最新: ${repo}（git fetch + pull --ff-only）"
-    git -C "$target" fetch --tags --prune
-    git -C "$target" pull --ff-only
-  else
-    if [[ -e "$target" ]]; then
-      log_err "路径已存在但不是 git 仓库: $target （请手动处理后重试）"
-      exit 1
-    fi
-    log_info "克隆仓库: ${repo}"
-    git clone "$url" "$target"
-  fi
+  sync_repo "$target" "$url" "$repo" || exit 1
 
   if [[ -z "$build_cmd" ]]; then
     log_err "未配置 build 命令: repo=${repo}"
     exit 1
   fi
+done
 
-  if [[ "$SKIP_BUILD" == true ]]; then
-    log_info "已 --skip-build，跳过构建: ${repo}"
-    continue
-  fi
+if [[ "$SKIP_BUILD" == true ]]; then
+  log_info "已 --skip-build，跳过全部仓库构建"
+else
+  for row in "${service_rows[@]}"; do
+    IFS=$'\t' read -r repo dir build_cmd compose_service <<<"$row"
+    target="${CODES}/${dir}"
 
-  if ! build_with_retries "$target" "$build_cmd" "$repo"; then
-    exit 1
-  fi
-done < <(list_config_services)
+    if [[ -z "$build_cmd" ]]; then
+      log_err "未配置 build 命令: repo=${repo}"
+      exit 1
+    fi
+
+    ensure_build_script_executable_if_needed "$target" "$build_cmd"
+
+    if ! build_with_retries "$target" "$build_cmd" "$repo"; then
+      exit 1
+    fi
+  done
+fi
 
 date -u +"%Y-%m-%dT%H:%M:%SZ" >"$MARKER"
 log_ok "安装流程已完成。标记: ${MARKER}"
