@@ -343,7 +343,7 @@ start_services() {
     fi
     
     log_info "启动容器服务（由 docker-compose 依赖与健康检查控制顺序）..."
-    docker-compose up -d
+    docker-compose up -d --remove-orphans
     
     log_success "服务启动完成"
 }

@@ -294,11 +294,11 @@ services:
       - g2rain-network
     command: --default-authentication-plugin=mysql_native_password
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u${MYSQL_USER:-g2rain} -p${MYSQL_PASSWORD:-g2rain123456} || exit 1"]
-      interval: 10s
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p${MYSQL_ROOT_PASSWORD:-g2rain123456} || exit 1"]
+      interval: 5s
       timeout: 5s
-      retries: 30
-      start_period: 120s
+      retries: 60
+      start_period: 180s
 
   # Redis缓存服务
   redis:
