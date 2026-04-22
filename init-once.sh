@@ -32,7 +32,7 @@ CONFIG="${ROOT}/services.conf"
 ENV_EXAMPLE="${ROOT}/env.example"
 ENV_FILE="${ROOT}/.env"
 SQL_BASIS="${ROOT}/config/mysql/g2rain-basis.sql"
-GIT_BASE="${G2RAIN_GIT_BASE:-https://github.com/g2rain}"
+GIT_BASE="${G2RAIN_GIT_BASE:-git@github.com:g2rain}"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
