@@ -374,8 +374,31 @@ start_services() {
         docker-compose pull
     fi
     
-    log_info "先启动核心依赖服务: mysql redis nacos"
-    docker-compose up -d --remove-orphans mysql redis nacos
+    log_info "先启动核心依赖服务: mysql redis"
+    docker-compose up -d --remove-orphans mysql redis
+
+    log_info "等待 mysql / redis 就绪后启动 nacos"
+    local timeout_s=600
+    local interval_s=2
+    local elapsed=0
+    local mysql_status redis_status
+    while [ "$elapsed" -lt "$timeout_s" ]; do
+        mysql_status="$(container_health_status mysql)"
+        redis_status="$(container_health_status redis)"
+        log_info "健康状态 mysql=${mysql_status}, redis=${redis_status}"
+        if [ "$mysql_status" = "healthy" ] && [ "$redis_status" = "healthy" ]; then
+            break
+        fi
+        sleep "$interval_s"
+        elapsed=$((elapsed + interval_s))
+    done
+    if [ "$mysql_status" != "healthy" ] || [ "$redis_status" != "healthy" ]; then
+        log_error "mysql / redis 在 ${timeout_s}s 内未就绪"
+        docker-compose ps
+        return 1
+    fi
+
+    docker-compose up -d nacos
 
     wait_core_services_healthy 600 2
 
