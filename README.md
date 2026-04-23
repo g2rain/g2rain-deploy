@@ -31,21 +31,20 @@
 
 ### `init-once.sh`：快捷方案与全参数
 
-**快捷方案（最少命令）** — 适合先跑通流程，再在 `.env` 里改平台地址、端口等：
+**快捷方案（最少命令）** — 一次写入平台地址、HTTPS 端口、生成证书并完成安装，再启动栈：
 
 ```bash
-./init-once.sh
-./config/generate-ssl.sh <服务器IP或域名>
+./init-once.sh --host <服务器IP或域名> --port <HTTPS端口> --ssl-ip <服务器IP或域名>
 ./start.sh
 ```
 
-说明：`init-once.sh` 若发现没有 `.env`，会从 `env.example` 复制一份；克隆后**默认**会依次执行各仓 **`build.sh`**，整段构建常见 **约 20～60 分钟**（视机器与网络而定）。完成后务必具备 **`ssl/server.crt`** 与 **`ssl/server.key`**，否则 `start.sh` 会拒绝启动。
+说明：`init-once.sh` 若发现没有 `.env`，会从 `env.example` 复制一份，并用 `--host` / `--port` 写入 `PLATFORM_HOST`、`PLATFORM_PORT`、`NGINX_HTTPS_PORT` 等；`--ssl-ip` 会在安装阶段调用 `config/generate-ssl.sh` 生成 **`ssl/server.crt`** 与 **`ssl/server.key`**（无 `--ssl-ip` 时需自行执行 `generate-ssl.sh` 后再 `./start.sh`）。克隆后**默认**会依次执行各仓 **`build.sh`**，整段构建常见 **约 20～60 分钟**（视机器与网络而定）。
 
 **全参数方案** — 适合自动化或一次写清平台地址与证书：
 
 ```bash
 # 创建 .env 时写入 PLATFORM_HOST / PLATFORM_PORT；安装阶段生成 ssl/；忽略已完成标记重装
-./init-once.sh --host 43.138.13.145 --port 10443 --ssl-ip 192.168.1.100 --force
+./init-once.sh --host 43.138.13.145 --port 443 --ssl-ip 43.138.13.145 --force
 
 # 仅克隆与 SQL/.env，暂不构建镜像（网络差或先配环境）
 ./init-once.sh --skip-build
@@ -73,7 +72,11 @@ G2RAIN_GIT_BASE=https://github.com/your-org ./init-once.sh
 
 ```bash
 # 若尚无 .env，从 env.example 创建并写入平台 host/port（与手动改 .env 等价）
-./start.sh --host 43.138.13.145 --port 10080
+./start.sh --host 43.138.13.145 --port 443
+
+# 使用 Docker Compose V2 插件与 compose-v2/compose.yaml（需 docker compose）
+./start.sh --compose-v2
+./start.sh --compose-v2 --host 43.138.13.145 --port 443
 
 # 仅生成 SSL（完成后需再执行 ./start.sh 正常启动）
 ./start.sh --generate-ssl 192.168.1.100
@@ -81,7 +84,7 @@ G2RAIN_GIT_BASE=https://github.com/your-org ./init-once.sh
 ./start.sh --help
 ```
 
-未检测到 **`.g2rain-deploy-install.done`** 时，`start.sh` 会提示先执行 **`./init-once.sh`**（不强制退出）。若缺少业务镜像且存在 **`codes/<目录>`**，会按 **`services.conf`** 尝试对应 **`build.sh`**，仍缺再执行 **`docker-compose pull`**。
+未检测到 **`.g2rain-deploy-install.done`** 时，`start.sh` 会提示先执行 **`./init-once.sh`**（不强制退出）。若缺少业务镜像且存在 **`codes/<目录>`**，会按 **`services.conf`** 尝试对应 **`build.sh`**，仍缺再执行 **`docker-compose pull`**（使用 **`--compose-v2`** 时则为 **`docker compose … pull`**）。
 
 **注意：**
 
@@ -101,7 +104,9 @@ G2RAIN_GIT_BASE=https://github.com/your-org ./init-once.sh
 
 ```
 g2rain-deploy/
-├── docker-compose.yml          # Docker Compose 配置
+├── docker-compose.yml          # Docker Compose 配置（v1 独立命令 docker-compose 与脚本默认使用）
+├── compose-v2/
+│   └── compose.yaml            # Compose Specification / Docker Compose V2 插件用（无 version 键，含 name）
 ├── env.example                 # 环境变量模板（复制为 .env）
 ├── services.conf               # 克隆目录与 compose 服务、build 命令映射（Bash 源文件）
 ├── init-once.sh                # 一次性安装：.env / SQL 占位符 / 克隆 codes / 默认 build
@@ -167,18 +172,62 @@ g2rain-deploy/
 ```bash
 ./start.sh
 ./start.sh --host <HOST> --port <PORT>
+./start.sh --compose-v2                    # 使用 V2 插件 + compose-v2/compose.yaml（可与 --host/--port 同用）
 ./start.sh --generate-ssl <IP或域名>
 ./start.sh --help
 ```
 
-### 停止服务
+### Docker Compose V2 启动（`compose-v2/compose.yaml`）
+
+适用于已安装 **Docker Compose 插件**（命令为 `docker compose`，非旧版 `docker-compose`）的环境。`compose-v2/compose.yaml` 与根目录 `docker-compose.yml` **服务定义一致**，但采用 Compose Specification：**无废弃的 `version` 键**，并声明 **`name: g2rain-deploy`**。
+
+**必须在仓库根目录**执行，并显式指定 **项目目录**为当前目录，这样文件中的 `./config`、`./data`、`./ssl`、`.env` 等路径才会解析正确：
+
 ```bash
-# 停止服务但保留容器
+cd /path/to/g2rain-deploy
+
+# 校验配置
+docker compose -f compose-v2/compose.yaml --project-directory . config
+
+# 后台启动全栈（与根目录 compose 使用同一套数据与配置）
+docker compose -f compose-v2/compose.yaml --project-directory . up -d
+
+# 可选：启动并等待服务就绪（需插件版本支持，如 v2.20+）
+docker compose -f compose-v2/compose.yaml --project-directory . up -d --wait
+
+# 常用运维
+docker compose -f compose-v2/compose.yaml --project-directory . ps
+docker compose -f compose-v2/compose.yaml --project-directory . logs -f
+docker compose -f compose-v2/compose.yaml --project-directory . down
+```
+
+也可用 **`./start.sh --compose-v2`**（与 **`--host` / `--port`** 任意顺序组合），分阶段拉起逻辑与默认方式相同，底层改为 **`docker compose -f compose-v2/compose.yaml --project-directory .`**。
+
+说明：
+
+- **`./start.sh` 加 `--compose-v2`** 时使用 V2 与 **`compose-v2/compose.yaml`**；**`./stop.sh` / `./update.sh` 仍默认根目录 `docker-compose.yml`**。停止 V2 栈可用 `docker compose -f compose-v2/compose.yaml --project-directory . down`，或继续用根目录配置 + `docker compose -f docker-compose.yml --project-directory .`（根目录文件仍含 `version`，部分版本会提示忽略）。
+- 修改 **`docker-compose.yml`** 后，请同步更新 **`compose-v2/compose.yaml`**（可对照提交或按文件头注释从根文件生成），避免两套配置漂移。
+
+### 停止服务（`stop.sh`）
+
+`stop.sh` 提供两种模式，对应是否删除本 Compose 项目下的容器（含已停止、状态为 `Exited` 的实例）：
+
+| 模式 | 命令 | 行为说明 |
+|------|------|----------|
+| **不清理容器** | `./stop.sh` | 执行 `docker-compose stop`：进程停止，**容器记录仍保留**，`docker ps -a` 中多为 `Exited`。数据卷（如 `data/mysql`、`data/redis`）与绑定目录**不删除**，下次 `./start.sh` 可快速拉起。 |
+| **清理容器** | `./stop.sh --cleanup` | 在停止后执行 `docker-compose down`：**删除**本 `docker-compose.yml` 所管理的服务容器及默认网络，并执行 `docker image prune -f` 清理悬空镜像。数据卷目录一般仍保留在宿主机（除非 compose 中定义为命名卷且被一并移除，本仓库以 bind mount 为主）。 |
+
+```bash
+# 仅停止：保留 Exited 容器，便于排查或再次 start
 ./stop.sh
 
-# 停止服务并清理容器
+# 停止并清理：删除本项目容器与网络，并 prune 悬空镜像
 ./stop.sh --cleanup
+
+./stop.sh --help
 ```
+
+说明：若只想删除**全局**已退出容器、与本脚本无关，可使用 `docker container prune -f`（慎用，会影响所有已停止容器）。完整行为以 `stop.sh` 内实现为准。
 
 ### 生成SSL证书
 ```bash

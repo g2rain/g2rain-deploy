@@ -30,6 +30,56 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+container_health_status() {
+    local name="$1"
+    docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$name" 2>/dev/null || echo "missing"
+}
+
+wait_core_services_healthy() {
+    local timeout_s="${1:-600}"
+    local interval_s="${2:-2}"
+    local elapsed=0
+    local mysql_status redis_status nacos_status
+
+    log_info "等待核心依赖服务就绪: mysql / redis / nacos（超时 ${timeout_s}s）"
+    while [ "$elapsed" -lt "$timeout_s" ]; do
+        mysql_status="$(container_health_status mysql)"
+        redis_status="$(container_health_status redis)"
+        nacos_status="$(container_health_status nacos)"
+
+        log_info "健康状态 mysql=${mysql_status}, redis=${redis_status}, nacos=${nacos_status}"
+        if [ "$mysql_status" = "healthy" ] && [ "$redis_status" = "healthy" ] && [ "$nacos_status" = "healthy" ]; then
+            log_success "核心依赖服务已全部健康"
+            return 0
+        fi
+
+        sleep "$interval_s"
+        elapsed=$((elapsed + interval_s))
+    done
+
+    log_error "核心依赖服务在 ${timeout_s}s 内未全部健康"
+    dc ps
+    return 1
+}
+
+# Compose 文件路径（与 USE_COMPOSE_V2 / SCRIPT_DIR 配合；需在 main 中设置 SCRIPT_DIR 后使用）
+compose_file_for_stack() {
+    if [ "${USE_COMPOSE_V2:-0}" = 1 ]; then
+        echo "${SCRIPT_DIR}/compose-v2/compose.yaml"
+    else
+        echo "${SCRIPT_DIR}/docker-compose.yml"
+    fi
+}
+
+# 统一调用：V1 为 docker-compose（工作目录为仓库根），V2 为 docker compose -f compose-v2/compose.yaml --project-directory .
+dc() {
+    if [ "${USE_COMPOSE_V2:-0}" = 1 ]; then
+        docker compose -f "${SCRIPT_DIR}/compose-v2/compose.yaml" --project-directory "${SCRIPT_DIR}" "$@"
+    else
+        docker-compose "$@"
+    fi
+}
+
 # 检查Docker和Docker Compose是否安装
 check_dependencies() {
     log_info "检查依赖环境..."
@@ -38,10 +88,22 @@ check_dependencies() {
         log_error "Docker未安装，请先安装Docker"
         exit 1
     fi
-    
-    if ! command -v docker-compose &> /dev/null; then
-        log_error "Docker Compose未安装，请先安装Docker Compose"
-        exit 1
+
+    if [ "${USE_COMPOSE_V2:-0}" = 1 ]; then
+        if ! docker compose version &> /dev/null; then
+            log_error "未检测到 Docker Compose V2 插件（docker compose），请安装或使用默认方式（去掉 --compose-v2）"
+            exit 1
+        fi
+        if [ ! -f "${SCRIPT_DIR}/compose-v2/compose.yaml" ]; then
+            log_error "未找到 ${SCRIPT_DIR}/compose-v2/compose.yaml"
+            exit 1
+        fi
+        log_info "使用 Compose V2: compose-v2/compose.yaml"
+    else
+        if ! command -v docker-compose &> /dev/null; then
+            log_error "Docker Compose未安装，请先安装Docker Compose"
+            exit 1
+        fi
     fi
     
     log_success "依赖环境检查通过"
@@ -57,12 +119,24 @@ check_env_file() {
         if [ -f "env.example" ]; then
             cp env.example .env
 
-            # 如果传入了 host/port，则在生成 .env 时替换对应项
+            # 如果传入了 host/port，则在生成 .env 时替换对应项（与 init-once.sh 对齐）
             if [ -n "$platform_host" ]; then
-                sed -i "s/^PLATFORM_HOST=.*/PLATFORM_HOST=${platform_host}/" .env
+                if grep -q '^PLATFORM_HOST=' .env; then
+                    sed -i.bak "s|^PLATFORM_HOST=.*|PLATFORM_HOST=${platform_host}|" .env && rm -f ".env.bak"
+                fi
             fi
             if [ -n "$platform_port" ]; then
-                sed -i "s/^PLATFORM_PORT=.*/PLATFORM_PORT=${platform_port}/" .env
+                if grep -q '^PLATFORM_PORT=' .env; then
+                    sed -i.bak "s|^PLATFORM_PORT=.*|PLATFORM_PORT=${platform_port}|" .env && rm -f ".env.bak"
+                fi
+                if grep -q '^NGINX_HTTPS_PORT=' .env; then
+                    sed -i.bak "s|^NGINX_HTTPS_PORT=.*|NGINX_HTTPS_PORT=${platform_port}|" .env && rm -f ".env.bak"
+                fi
+            fi
+            if [ -n "$platform_host" ] && [ -n "$platform_port" ]; then
+                if grep -q '^PLATFORM_BASE_URL=' .env; then
+                    sed -i.bak "s|^PLATFORM_BASE_URL=.*|PLATFORM_BASE_URL=https://${platform_host}:${platform_port}|" .env && rm -f ".env.bak"
+                fi
             fi
 
             log_success "已创建.env文件，请根据需要修改配置"
@@ -170,10 +244,11 @@ generate_ssl_certificate() {
     return $?
 }
 
-# 从 docker-compose.yml 读取某服务的 image 行（不含变量展开）
+# 从 compose 文件读取某服务的 image 行（不含变量展开）
 compose_image_for_service() {
     local svc="$1"
-    local yml="${SCRIPT_DIR}/docker-compose.yml"
+    local yml
+    yml="$(compose_file_for_stack)"
     if [[ ! -f "$yml" ]]; then
         echo ""
         return 0
@@ -241,6 +316,11 @@ build_missing_from_services_conf() {
             log_warning "镜像不存在且缺少源码目录: $img → ${codes_abs}/${dir}（请先执行 ./init-once.sh）"
             continue
         fi
+        local first_token="${build_cmd%% *}"
+        if [[ "$first_token" == ./*.sh && -f "${codes_abs}/${dir}/${first_token}" && ! -x "${codes_abs}/${dir}/${first_token}" ]]; then
+            log_warning "检测到脚本不可执行，自动修复权限: ${codes_abs}/${dir}/${first_token}"
+            chmod +x "${codes_abs}/${dir}/${first_token}"
+        fi
         log_info "尝试从源码构建缺失镜像: $compose_service ($img)"
         if (cd "${codes_abs}/${dir}" && bash -lc "$build_cmd"); then
             log_success "源码构建完成: $compose_service"
@@ -254,14 +334,14 @@ build_missing_from_services_conf() {
 check_images_exist() {
     log_info "检查Docker镜像是否存在..."
     
-    # 方法1: 尝试使用 docker-compose config --images (适用于较新版本)
-    local images=$(docker-compose config --images 2>/dev/null)
+    # 方法1: 尝试使用 compose config --images (适用于较新版本)
+    local images=$(dc config --images 2>/dev/null)
     local exit_code=$?
     
     # 方法2: 如果方法1失败，从docker-compose config输出中提取镜像
     if [ -z "$images" ] || [ $exit_code -ne 0 ]; then
-        log_info "尝试从docker-compose配置中提取镜像列表..."
-        local config_output=$(docker-compose config 2>&1)
+        log_info "尝试从 compose 配置中提取镜像列表..."
+        local config_output=$(dc config 2>&1)
         local config_exit_code=$?
         
         if [ $config_exit_code -eq 0 ] && [ -n "$config_output" ]; then
@@ -271,11 +351,13 @@ check_images_exist() {
         fi
     fi
     
-    # 方法3: 如果方法2也失败，直接从docker-compose.yml文件解析
+    # 方法3: 如果方法2也失败，直接从 compose 文件解析
     if [ -z "$images" ]; then
-        log_info "尝试从docker-compose.yml文件中解析镜像列表..."
-        if [ -f "docker-compose.yml" ]; then
-            images=$(grep -E "^\s+image:" docker-compose.yml | sed 's/.*image:\s*//' | sed 's/\${[^}]*}//g' | sed 's/:-[^}]*}//g' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//' | sort -u)
+        local yml
+        yml="$(compose_file_for_stack)"
+        log_info "尝试从 $(basename "$yml") 文件中解析镜像列表..."
+        if [ -f "$yml" ]; then
+            images=$(grep -E "^\s+image:" "$yml" | sed 's/.*image:\s*//' | sed 's/\${[^}]*}//g' | sed 's/:-[^}]*}//g' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//' | sort -u)
         fi
     fi
     
@@ -334,11 +416,39 @@ start_services() {
     fi
     if ! check_images_exist; then
         log_info "拉取Docker镜像..."
-        docker-compose pull
+        dc pull
     fi
     
-    log_info "启动容器服务..."
-    docker-compose up -d
+    log_info "先启动核心依赖服务: mysql redis"
+    dc up -d --remove-orphans mysql redis
+
+    log_info "等待 mysql / redis 就绪后启动 nacos"
+    local timeout_s=600
+    local interval_s=2
+    local elapsed=0
+    local mysql_status redis_status
+    while [ "$elapsed" -lt "$timeout_s" ]; do
+        mysql_status="$(container_health_status mysql)"
+        redis_status="$(container_health_status redis)"
+        log_info "健康状态 mysql=${mysql_status}, redis=${redis_status}"
+        if [ "$mysql_status" = "healthy" ] && [ "$redis_status" = "healthy" ]; then
+            break
+        fi
+        sleep "$interval_s"
+        elapsed=$((elapsed + interval_s))
+    done
+    if [ "$mysql_status" != "healthy" ] || [ "$redis_status" != "healthy" ]; then
+        log_error "mysql / redis 在 ${timeout_s}s 内未就绪"
+        dc ps
+        return 1
+    fi
+
+    dc up -d nacos
+
+    wait_core_services_healthy 600 2
+
+    log_info "核心依赖就绪，启动全量服务..."
+    dc up -d --remove-orphans
     
     log_success "服务启动完成"
 }
@@ -346,19 +456,16 @@ start_services() {
 # 检查服务状态
 check_services() {
     log_info "检查服务状态..."
-    
-    # 等待服务启动
-    sleep 10
-    
+
     # 检查MySQL
-    if docker-compose exec -T mysql mysqladmin ping -h localhost &> /dev/null; then
+    if dc exec -T mysql mysqladmin ping -h localhost &> /dev/null; then
         log_success "MySQL服务运行正常"
     else
         log_warning "MySQL服务可能未完全启动，请稍后检查"
     fi
     
     # 检查Redis
-    if docker-compose exec -T redis redis-cli ping &> /dev/null; then
+    if dc exec -T redis redis-cli ping &> /dev/null; then
         log_success "Redis服务运行正常"
     else
         log_warning "Redis服务可能未完全启动，请稍后检查"
@@ -366,7 +473,7 @@ check_services() {
     
     # 显示服务状态
     log_info "当前服务状态:"
-    docker-compose ps
+    dc ps
 }
 
 # 显示访问信息
@@ -383,9 +490,16 @@ show_access_info() {
     echo "  Redis端口: 6379"
     echo ""
     echo "管理命令:"
-    echo "  查看日志: docker-compose logs -f"
-    echo "  停止服务: ./stop.sh"
-    echo "  重启服务: docker-compose restart"
+    if [ "${USE_COMPOSE_V2:-0}" = 1 ]; then
+        echo "  查看日志: docker compose -f compose-v2/compose.yaml --project-directory . logs -f"
+        echo "  停止栈:   docker compose -f compose-v2/compose.yaml --project-directory . down"
+        echo "  重启服务: docker compose -f compose-v2/compose.yaml --project-directory . restart"
+        echo "  （./stop.sh 默认使用根目录 docker-compose.yml；V2 栈请用上面的 down）"
+    else
+        echo "  查看日志: docker-compose logs -f"
+        echo "  停止服务: ./stop.sh"
+        echo "  重启服务: docker-compose restart"
+    fi
     echo "  更新服务: ./update.sh"
     echo ""
 }
@@ -393,6 +507,23 @@ show_access_info() {
 # 主函数
 main() {
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    USE_COMPOSE_V2=0
+
+    # 先剥离 --compose-v2，便于与 --host/--port 等任意顺序组合
+    local stripped=()
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --compose-v2)
+                USE_COMPOSE_V2=1
+                shift
+                ;;
+            *)
+                stripped+=("$1")
+                shift
+                ;;
+        esac
+    done
+    set -- "${stripped[@]}"
 
     echo "=========================================="
     echo "    G2Rain Docker Compose 启动脚本"
@@ -418,13 +549,15 @@ main() {
             echo "G2Rain部署启动脚本使用说明:"
             echo ""
             echo "用法:"
-            echo "  $0                   启动所有服务"
+            echo "  $0                   启动所有服务（docker-compose + 根目录 docker-compose.yml）"
+            echo "  $0 --compose-v2      使用 Docker Compose V2 插件与 compose-v2/compose.yaml"
             echo "  $0 --host <HOST> --port <PORT>  启动服务并在首次生成 .env 时写入平台地址"
             echo "  $0 --generate-ssl <IP地址>  生成SSL证书"
             echo "  $0 --help            显示帮助信息"
             echo ""
             echo "示例:"
             echo "  $0 --host 43.138.13.145 --port 10080"
+            echo "  $0 --compose-v2 --host 43.138.13.145 --port 10080"
             echo "  $0 --generate-ssl 192.168.1.100  生成包含指定IP的SSL证书"
             echo ""
             exit 0
