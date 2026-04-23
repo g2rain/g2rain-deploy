@@ -411,6 +411,13 @@ services:
     depends_on:
       g2rain-gateway:
         condition: service_healthy
+    # 覆盖镜像默认对 http://localhost:80/ 的检查：本项目仅监听 443（HTTPS），否则会被误判 unhealthy
+    healthcheck:
+      test: ["CMD-SHELL", "nginx -t && nc -z 127.0.0.1 443"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
 
 networks:
   g2rain-network:
