@@ -103,9 +103,48 @@ pull_and_build_repo() {
         git clone "$url" "$target"
     fi
 
+    ensure_build_script_executable_if_needed "$target" "$build_cmd"
     log_info "构建镜像: ${repo}（${build_cmd}）"
     (cd "$target" && bash -lc "$build_cmd")
     log_success "构建完成: ${repo}"
+}
+
+ensure_build_script_executable_if_needed() {
+    local target="$1"
+    local build_cmd="$2"
+    local first_token="${build_cmd%% *}"
+
+    if [[ "$first_token" == ./*.sh && -f "${target}/${first_token}" && ! -x "${target}/${first_token}" ]]; then
+        log_warning "检测到脚本不可执行，自动修复权限: ${target}/${first_token}"
+        chmod +x "${target}/${first_token}"
+    fi
+}
+
+sync_repo_only() {
+    local repo="$1"
+    local dir="$2"
+    local codes_dir="$3"
+
+    local target="${codes_dir}/${dir}"
+    # shellcheck disable=SC1090
+    source "$CONFIG" 2>/dev/null || true
+    local git_base="${G2RAIN_GIT_BASE:-${GIT_BASE_DEFAULT:-https://github.com/g2rain}}"
+    local url="${git_base}/${repo}.git"
+
+    mkdir -p "$codes_dir"
+
+    if [ -d "${target}/.git" ]; then
+        log_info "拉取最新代码: ${repo}（git fetch + pull --ff-only）"
+        git -C "$target" fetch --tags --prune
+        git -C "$target" pull --ff-only
+    else
+        if [ -e "$target" ]; then
+            log_error "路径已存在但不是 git 仓库: $target"
+            return 1
+        fi
+        log_info "克隆仓库: ${repo}"
+        git clone "$url" "$target"
+    fi
 }
 
 build_from_source() {
@@ -128,10 +167,22 @@ build_from_source() {
         return 0
     fi
 
-    log_info "按 services.conf 全量拉取代码并构建镜像..."
-    while IFS=$'\t' read -r repo dir build_cmd compose_service codes_dir; do
-        pull_and_build_repo "$repo" "$dir" "$build_cmd" "$codes_dir"
-    done < <(list_config_services)
+    log_info "按 services.conf 全量拉取代码..."
+    mapfile -t rows < <(list_config_services)
+    for row in "${rows[@]}"; do
+        IFS=$'\t' read -r repo dir build_cmd compose_service codes_dir <<<"$row"
+        sync_repo_only "$repo" "$dir" "$codes_dir"
+    done
+
+    log_info "按 services.conf 全量构建镜像..."
+    for row in "${rows[@]}"; do
+        IFS=$'\t' read -r repo dir build_cmd compose_service codes_dir <<<"$row"
+        local target="${codes_dir}/${dir}"
+        ensure_build_script_executable_if_needed "$target" "$build_cmd"
+        log_info "构建镜像: ${repo}（${build_cmd}）"
+        (cd "$target" && bash -lc "$build_cmd")
+        log_success "构建完成: ${repo}"
+    done
     log_success "全量源码构建完成"
 }
 
