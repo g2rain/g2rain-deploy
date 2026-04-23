@@ -24,6 +24,12 @@ services:
     depends_on:
       g2rain-gateway:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/ 2>/dev/null || nc -z 127.0.0.1 8080 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
 
   # 应用服务 CMS 子应用
   g2rain-cms-app:
@@ -47,6 +53,12 @@ services:
     depends_on:
       g2rain-gateway:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/ 2>/dev/null || nc -z 127.0.0.1 8080 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
 
   # 应用服务 基础设施控制台子应用
   g2rain-infra-app:
@@ -70,6 +82,12 @@ services:
     depends_on:
       g2rain-gateway:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/ 2>/dev/null || nc -z 127.0.0.1 8080 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
 
   # 应用服务 控制台默认应用
   g2rain-main-shell:
@@ -93,6 +111,12 @@ services:
     depends_on:
       g2rain-gateway:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/ 2>/dev/null || nc -z 127.0.0.1 8080 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
 
   # 后端服务 网关
   g2rain-gateway:
@@ -125,10 +149,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "nc -z localhost 8080 || timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080' || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
+      interval: 15s
+      timeout: 15s
+      retries: 15
+      start_period: 180s
 
   # 后端服务 basis认证
   g2rain-basis:
@@ -159,10 +183,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "nc -z localhost 8080 || timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080' || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
+      interval: 15s
+      timeout: 15s
+      retries: 15
+      start_period: 180s
 
   # 后端服务 cms
   g2rain-cms:
@@ -193,10 +217,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "nc -z localhost 8080 || timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080' || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
+      interval: 15s
+      timeout: 15s
+      retries: 15
+      start_period: 180s
 
   # 后端服务 infra认证
   g2rain-infra:
@@ -227,10 +251,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "nc -z localhost 8080 || timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080' || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
+      interval: 15s
+      timeout: 15s
+      retries: 15
+      start_period: 180s
 
   # 后端服务 IAM认证
   g2rain-iam:
@@ -263,10 +287,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "nc -z localhost 8080 || timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080' || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
+      interval: 15s
+      timeout: 15s
+      retries: 15
+      start_period: 180s
 
   # MySQL数据库服务
   mysql:

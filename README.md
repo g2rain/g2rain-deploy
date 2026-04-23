@@ -31,15 +31,14 @@
 
 ### `init-once.sh`：快捷方案与全参数
 
-**快捷方案（最少命令）** — 适合先跑通流程，再在 `.env` 里改平台地址、端口等：
+**快捷方案（最少命令）** — 一次写入平台地址、HTTPS 端口、生成证书并完成安装，再启动栈：
 
 ```bash
-./init-once.sh
-./config/generate-ssl.sh <服务器IP或域名>
+./init-once.sh --host <服务器IP或域名> --port <HTTPS端口> --ssl-ip <服务器IP或域名>
 ./start.sh
 ```
 
-说明：`init-once.sh` 若发现没有 `.env`，会从 `env.example` 复制一份；克隆后**默认**会依次执行各仓 **`build.sh`**，整段构建常见 **约 20～60 分钟**（视机器与网络而定）。完成后务必具备 **`ssl/server.crt`** 与 **`ssl/server.key`**，否则 `start.sh` 会拒绝启动。
+说明：`init-once.sh` 若发现没有 `.env`，会从 `env.example` 复制一份，并用 `--host` / `--port` 写入 `PLATFORM_HOST`、`PLATFORM_PORT`、`NGINX_HTTPS_PORT` 等；`--ssl-ip` 会在安装阶段调用 `config/generate-ssl.sh` 生成 **`ssl/server.crt`** 与 **`ssl/server.key`**（无 `--ssl-ip` 时需自行执行 `generate-ssl.sh` 后再 `./start.sh`）。克隆后**默认**会依次执行各仓 **`build.sh`**，整段构建常见 **约 20～60 分钟**（视机器与网络而定）。
 
 **全参数方案** — 适合自动化或一次写清平台地址与证书：
 
@@ -171,14 +170,26 @@ g2rain-deploy/
 ./start.sh --help
 ```
 
-### 停止服务
+### 停止服务（`stop.sh`）
+
+`stop.sh` 提供两种模式，对应是否删除本 Compose 项目下的容器（含已停止、状态为 `Exited` 的实例）：
+
+| 模式 | 命令 | 行为说明 |
+|------|------|----------|
+| **不清理容器** | `./stop.sh` | 执行 `docker-compose stop`：进程停止，**容器记录仍保留**，`docker ps -a` 中多为 `Exited`。数据卷（如 `data/mysql`、`data/redis`）与绑定目录**不删除**，下次 `./start.sh` 可快速拉起。 |
+| **清理容器** | `./stop.sh --cleanup` | 在停止后执行 `docker-compose down`：**删除**本 `docker-compose.yml` 所管理的服务容器及默认网络，并执行 `docker image prune -f` 清理悬空镜像。数据卷目录一般仍保留在宿主机（除非 compose 中定义为命名卷且被一并移除，本仓库以 bind mount 为主）。 |
+
 ```bash
-# 停止服务但保留容器
+# 仅停止：保留 Exited 容器，便于排查或再次 start
 ./stop.sh
 
-# 停止服务并清理容器
+# 停止并清理：删除本项目容器与网络，并 prune 悬空镜像
 ./stop.sh --cleanup
+
+./stop.sh --help
 ```
+
+说明：若只想删除**全局**已退出容器、与本脚本无关，可使用 `docker container prune -f`（慎用，会影响所有已停止容器）。完整行为以 `stop.sh` 内实现为准。
 
 ### 生成SSL证书
 ```bash
