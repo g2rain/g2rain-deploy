@@ -72,7 +72,11 @@ G2RAIN_GIT_BASE=https://github.com/your-org ./init-once.sh
 
 ```bash
 # 若尚无 .env，从 env.example 创建并写入平台 host/port（与手动改 .env 等价）
-./start.sh --host 43.138.13.145 --port 10080
+./start.sh --host 43.138.13.145 --port 443
+
+# 使用 Docker Compose V2 插件与 compose-v2/compose.yaml（需 docker compose）
+./start.sh --compose-v2
+./start.sh --compose-v2 --host 43.138.13.145 --port 443
 
 # 仅生成 SSL（完成后需再执行 ./start.sh 正常启动）
 ./start.sh --generate-ssl 192.168.1.100
@@ -80,7 +84,7 @@ G2RAIN_GIT_BASE=https://github.com/your-org ./init-once.sh
 ./start.sh --help
 ```
 
-未检测到 **`.g2rain-deploy-install.done`** 时，`start.sh` 会提示先执行 **`./init-once.sh`**（不强制退出）。若缺少业务镜像且存在 **`codes/<目录>`**，会按 **`services.conf`** 尝试对应 **`build.sh`**，仍缺再执行 **`docker-compose pull`**。
+未检测到 **`.g2rain-deploy-install.done`** 时，`start.sh` 会提示先执行 **`./init-once.sh`**（不强制退出）。若缺少业务镜像且存在 **`codes/<目录>`**，会按 **`services.conf`** 尝试对应 **`build.sh`**，仍缺再执行 **`docker-compose pull`**（使用 **`--compose-v2`** 时则为 **`docker compose … pull`**）。
 
 **注意：**
 
@@ -100,7 +104,9 @@ G2RAIN_GIT_BASE=https://github.com/your-org ./init-once.sh
 
 ```
 g2rain-deploy/
-├── docker-compose.yml          # Docker Compose 配置
+├── docker-compose.yml          # Docker Compose 配置（v1 独立命令 docker-compose 与脚本默认使用）
+├── compose-v2/
+│   └── compose.yaml            # Compose Specification / Docker Compose V2 插件用（无 version 键，含 name）
 ├── env.example                 # 环境变量模板（复制为 .env）
 ├── services.conf               # 克隆目录与 compose 服务、build 命令映射（Bash 源文件）
 ├── init-once.sh                # 一次性安装：.env / SQL 占位符 / 克隆 codes / 默认 build
@@ -166,9 +172,41 @@ g2rain-deploy/
 ```bash
 ./start.sh
 ./start.sh --host <HOST> --port <PORT>
+./start.sh --compose-v2                    # 使用 V2 插件 + compose-v2/compose.yaml（可与 --host/--port 同用）
 ./start.sh --generate-ssl <IP或域名>
 ./start.sh --help
 ```
+
+### Docker Compose V2 启动（`compose-v2/compose.yaml`）
+
+适用于已安装 **Docker Compose 插件**（命令为 `docker compose`，非旧版 `docker-compose`）的环境。`compose-v2/compose.yaml` 与根目录 `docker-compose.yml` **服务定义一致**，但采用 Compose Specification：**无废弃的 `version` 键**，并声明 **`name: g2rain-deploy`**。
+
+**必须在仓库根目录**执行，并显式指定 **项目目录**为当前目录，这样文件中的 `./config`、`./data`、`./ssl`、`.env` 等路径才会解析正确：
+
+```bash
+cd /path/to/g2rain-deploy
+
+# 校验配置
+docker compose -f compose-v2/compose.yaml --project-directory . config
+
+# 后台启动全栈（与根目录 compose 使用同一套数据与配置）
+docker compose -f compose-v2/compose.yaml --project-directory . up -d
+
+# 可选：启动并等待服务就绪（需插件版本支持，如 v2.20+）
+docker compose -f compose-v2/compose.yaml --project-directory . up -d --wait
+
+# 常用运维
+docker compose -f compose-v2/compose.yaml --project-directory . ps
+docker compose -f compose-v2/compose.yaml --project-directory . logs -f
+docker compose -f compose-v2/compose.yaml --project-directory . down
+```
+
+也可用 **`./start.sh --compose-v2`**（与 **`--host` / `--port`** 任意顺序组合），分阶段拉起逻辑与默认方式相同，底层改为 **`docker compose -f compose-v2/compose.yaml --project-directory .`**。
+
+说明：
+
+- **`./start.sh` 加 `--compose-v2`** 时使用 V2 与 **`compose-v2/compose.yaml`**；**`./stop.sh` / `./update.sh` 仍默认根目录 `docker-compose.yml`**。停止 V2 栈可用 `docker compose -f compose-v2/compose.yaml --project-directory . down`，或继续用根目录配置 + `docker compose -f docker-compose.yml --project-directory .`（根目录文件仍含 `version`，部分版本会提示忽略）。
+- 修改 **`docker-compose.yml`** 后，请同步更新 **`compose-v2/compose.yaml`**（可对照提交或按文件头注释从根文件生成），避免两套配置漂移。
 
 ### 停止服务（`stop.sh`）
 
