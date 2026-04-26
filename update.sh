@@ -92,8 +92,8 @@ pull_and_build_repo() {
 
     if [ -d "${target}/.git" ]; then
         log_info "拉取最新代码: ${repo}（git fetch + pull --ff-only）"
-        git -C "$target" fetch --tags --prune
-        git -C "$target" pull --ff-only
+        (cd "$target" && git fetch --tags --prune)
+        (cd "$target" && git pull --ff-only)
     else
         if [ -e "$target" ]; then
             log_error "路径已存在但不是 git 仓库: $target"
@@ -135,8 +135,8 @@ sync_repo_only() {
 
     if [ -d "${target}/.git" ]; then
         log_info "拉取最新代码: ${repo}（git fetch + pull --ff-only）"
-        git -C "$target" fetch --tags --prune
-        git -C "$target" pull --ff-only
+        (cd "$target" && git fetch --tags --prune)
+        (cd "$target" && git pull --ff-only)
     else
         if [ -e "$target" ]; then
             log_error "路径已存在但不是 git 仓库: $target"
