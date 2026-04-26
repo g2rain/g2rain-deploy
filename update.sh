@@ -361,12 +361,13 @@ update_services() {
 # 清理旧镜像
 cleanup_images() {
     log_info "清理未使用的Docker镜像..."
+    local cleanup_opt="${1:-}"
     
     # 删除悬空镜像
     docker image prune -f
     
     # 删除未使用的镜像（可选）
-    if [ "$1" = "--cleanup-all" ]; then
+    if [ "$cleanup_opt" = "--cleanup-all" ]; then
         log_warning "清理所有未使用的镜像..."
         docker system prune -f
     fi
