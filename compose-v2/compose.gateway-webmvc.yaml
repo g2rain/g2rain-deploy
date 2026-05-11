@@ -1,0 +1,10 @@
+# 使用 g2rain-gateway-webmvc 替代 compose.yaml 中默认的 g2rain-gateway-webflux。
+# 务必与主文件相同使用 --project-directory，使卷路径指向仓库根目录的 ./config、./logs 等。
+# 启动示例（在 g2rain-deploy 仓库根目录执行）：
+#   docker compose -f compose-v2/compose.yaml -f compose-v2/compose.gateway-webmvc.yaml --project-directory . up -d
+# 或仅设置环境变量（不改文件）：
+#   set GATEWAY_IMAGE=g2rain/g2rain-gateway-webmvc:latest
+#   docker compose -f compose-v2/compose.yaml --project-directory . up -d
+services:
+  g2rain-gateway:
+    image: ${GATEWAY_IMAGE:-g2rain/g2rain-gateway-webmvc:latest}

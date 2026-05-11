@@ -1,4 +1,5 @@
 # Compose V2：本文件符合 Compose Specification，不使用已废弃的 compose file version 键。
+# 网关使用 WebMVC 实现时叠加：compose-v2/compose.gateway-webmvc.yaml（见该文件内命令示例）。
 # 务必在仓库根目录指定项目目录，使 ./config、./data、./ssl、./logs 指向正确：
 #   docker compose -f compose-v2/compose.yaml --project-directory . up -d
 # 等待全部服务健康（需插件较新版本，可选）：
