@@ -224,9 +224,9 @@ backup_data() {
         cp -r data/redis "$backup_dir/" 2>/dev/null || true
     fi
 
-    # 备份 Kafka 数据（可能较大，按需保留备份目录）
+    # Kafka 默认使用命名卷 kafka_data，无宿主 data/kafka 目录；若曾用绑定挂载可在此备份
     if [ -d "data/kafka" ]; then
-        log_info "备份Kafka数据目录..."
+        log_info "备份Kafka数据目录（仅旧版绑定挂载路径存在时）..."
         cp -r data/kafka "$backup_dir/" 2>/dev/null || true
     fi
     

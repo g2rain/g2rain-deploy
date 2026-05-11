@@ -153,7 +153,6 @@ create_directories() {
     log_info "创建必要的目录结构..."
     
     directories=(
-        "data/kafka"
         "data/mysql"
         "data/redis"
         "logs/mysql"
@@ -187,9 +186,6 @@ set_permissions() {
     # 设置Redis数据目录权限
     chmod 755 data/redis 2>/dev/null || true
 
-    # Kafka 数据目录（与 compose 中 ./data/kafka 挂载一致）
-    chmod 755 data/kafka 2>/dev/null || true
-    
     # 设置Nginx日志目录权限
     chmod 755 logs/nginx 2>/dev/null || true
     
