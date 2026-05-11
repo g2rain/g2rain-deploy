@@ -39,16 +39,17 @@ wait_core_services_healthy() {
     local timeout_s="${1:-600}"
     local interval_s="${2:-2}"
     local elapsed=0
-    local mysql_status redis_status nacos_status
+    local mysql_status redis_status nacos_status kafka_status
 
-    log_info "等待核心依赖服务就绪: mysql / redis / nacos（超时 ${timeout_s}s）"
+    log_info "等待核心依赖服务就绪: mysql / redis / nacos / kafka（超时 ${timeout_s}s）"
     while [ "$elapsed" -lt "$timeout_s" ]; do
         mysql_status="$(container_health_status mysql)"
         redis_status="$(container_health_status redis)"
         nacos_status="$(container_health_status nacos)"
+        kafka_status="$(container_health_status kafka)"
 
-        log_info "健康状态 mysql=${mysql_status}, redis=${redis_status}, nacos=${nacos_status}"
-        if [ "$mysql_status" = "healthy" ] && [ "$redis_status" = "healthy" ] && [ "$nacos_status" = "healthy" ]; then
+        log_info "健康状态 mysql=${mysql_status}, redis=${redis_status}, nacos=${nacos_status}, kafka=${kafka_status}"
+        if [ "$mysql_status" = "healthy" ] && [ "$redis_status" = "healthy" ] && [ "$nacos_status" = "healthy" ] && [ "$kafka_status" = "healthy" ]; then
             log_success "核心依赖服务已全部健康"
             return 0
         fi
@@ -184,7 +185,7 @@ set_permissions() {
     
     # 设置Redis数据目录权限
     chmod 755 data/redis 2>/dev/null || true
-    
+
     # 设置Nginx日志目录权限
     chmod 755 logs/nginx 2>/dev/null || true
     
@@ -422,7 +423,7 @@ start_services() {
     log_info "先启动核心依赖服务: mysql redis"
     dc up -d --remove-orphans mysql redis
 
-    log_info "等待 mysql / redis 就绪后启动 nacos"
+    log_info "等待 mysql / redis 就绪后启动 kafka、nacos"
     local timeout_s=600
     local interval_s=2
     local elapsed=0
@@ -443,7 +444,8 @@ start_services() {
         return 1
     fi
 
-    dc up -d nacos
+    # kafka 与 nacos 无相互依赖，一并拉起；后续与 mysql/redis 一起做健康等待（gateway/basis 依赖 kafka）
+    dc up -d kafka nacos
 
     wait_core_services_healthy 600 2
 
@@ -470,6 +472,17 @@ check_services() {
     else
         log_warning "Redis服务可能未完全启动，请稍后检查"
     fi
+
+    # Kafka（依赖 compose 健康检查；无容器时跳过）
+    local kafka_h
+    kafka_h="$(container_health_status kafka)"
+    if [ "$kafka_h" = "healthy" ]; then
+        log_success "Kafka服务运行正常"
+    elif [ "$kafka_h" = "missing" ]; then
+        log_info "Kafka 容器未运行（若未使用消息队列可忽略）"
+    else
+        log_warning "Kafka 健康状态: ${kafka_h}，请稍后检查或查看日志: dc logs kafka"
+    fi
     
     # 显示服务状态
     log_info "当前服务状态:"
@@ -488,6 +501,7 @@ show_access_info() {
     fi
     echo "  MySQL端口: 3306"
     echo "  Redis端口: 6379"
+    echo "  Kafka端口: ${KAFKA_PORT:-9092}（宿主机映射，容器内 bootstrap: kafka:9092）"
     echo ""
     echo "管理命令:"
     if [ "${USE_COMPOSE_V2:-0}" = 1 ]; then
@@ -550,6 +564,7 @@ main() {
             echo ""
             echo "用法:"
             echo "  $0                   启动所有服务（docker-compose + 根目录 docker-compose.yml）"
+            echo "  $0 kafka             仅启动 Kafka（不校验 SSL，不启动其它服务；需默认 compose 含 kafka 服务）"
             echo "  $0 --compose-v2      使用 Docker Compose V2 插件与 compose-v2/compose.yaml"
             echo "  $0 --host <HOST> --port <PORT>  启动服务并在首次生成 .env 时写入平台地址"
             echo "  $0 --generate-ssl <IP地址>  生成SSL证书"
@@ -559,7 +574,29 @@ main() {
             echo "  $0 --host 43.138.13.145 --port 10080"
             echo "  $0 --compose-v2 --host 43.138.13.145 --port 10080"
             echo "  $0 --generate-ssl 192.168.1.100  生成包含指定IP的SSL证书"
+            echo "  $0 kafka              仅拉起 Kafka 容器（联调常用，不要求 SSL）"
             echo ""
+            exit 0
+            ;;
+        kafka)
+            cd "$SCRIPT_DIR" || exit 1
+            check_dependencies
+            check_env_file
+            create_directories
+            set_permissions
+            local compose_yml
+            compose_yml="$(compose_file_for_stack)"
+            if ! grep -qE '^[[:space:]]+kafka:' "$compose_yml" 2>/dev/null; then
+                log_error "当前 Compose 文件未定义 kafka 服务: $compose_yml"
+                log_info "默认 docker-compose.yml 含 kafka；若使用 --compose-v2，请先在 compose-v2 中增加 kafka 或与根目录 compose 对齐后再试"
+                exit 1
+            fi
+            log_info "仅启动中间件: kafka（不校验 SSL，不启动其它服务）"
+            log_info "拉取 kafka 服务镜像（若已存在则较快返回）..."
+            dc pull kafka || log_warning "docker pull kafka 未完全成功，仍将尝试 up（可能使用本地缓存镜像）"
+            dc up -d --remove-orphans kafka
+            log_success "Kafka 已提交启动，查看状态: dc ps"
+            dc ps
             exit 0
             ;;
         *)

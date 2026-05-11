@@ -90,6 +90,7 @@ show_status() {
     if [ -d "data" ]; then
         echo "  MySQL数据: data/mysql"
         echo "  Redis数据: data/redis"
+        echo "  Kafka数据: Docker 命名卷 kafka_data（见 docker-compose.yml）"
     fi
     
     if [ -d "logs" ]; then

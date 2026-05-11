@@ -92,8 +92,8 @@ pull_and_build_repo() {
 
     if [ -d "${target}/.git" ]; then
         log_info "拉取最新代码: ${repo}（git fetch + pull --ff-only）"
-        git -C "$target" fetch --tags --prune
-        git -C "$target" pull --ff-only
+        (cd "$target" && git fetch --tags --prune)
+        (cd "$target" && git pull --ff-only)
     else
         if [ -e "$target" ]; then
             log_error "路径已存在但不是 git 仓库: $target"
@@ -135,8 +135,8 @@ sync_repo_only() {
 
     if [ -d "${target}/.git" ]; then
         log_info "拉取最新代码: ${repo}（git fetch + pull --ff-only）"
-        git -C "$target" fetch --tags --prune
-        git -C "$target" pull --ff-only
+        (cd "$target" && git fetch --tags --prune)
+        (cd "$target" && git pull --ff-only)
     else
         if [ -e "$target" ]; then
             log_error "路径已存在但不是 git 仓库: $target"
@@ -222,6 +222,12 @@ backup_data() {
     if [ -d "data/redis" ]; then
         log_info "备份Redis数据..."
         cp -r data/redis "$backup_dir/" 2>/dev/null || true
+    fi
+
+    # Kafka 默认使用命名卷 kafka_data，无宿主 data/kafka 目录；若曾用绑定挂载可在此备份
+    if [ -d "data/kafka" ]; then
+        log_info "备份Kafka数据目录（仅旧版绑定挂载路径存在时）..."
+        cp -r data/kafka "$backup_dir/" 2>/dev/null || true
     fi
     
     # 备份配置文件
@@ -361,12 +367,13 @@ update_services() {
 # 清理旧镜像
 cleanup_images() {
     log_info "清理未使用的Docker镜像..."
+    local cleanup_opt="${1:-}"
     
     # 删除悬空镜像
     docker image prune -f
     
     # 删除未使用的镜像（可选）
-    if [ "$1" = "--cleanup-all" ]; then
+    if [ "$cleanup_opt" = "--cleanup-all" ]; then
         log_warning "清理所有未使用的镜像..."
         docker system prune -f
     fi
@@ -382,7 +389,7 @@ check_services() {
     sleep 10
     
     # 检查服务健康状态
-    local services=("mysql" "redis" "nginx" "app")
+    local services=("mysql" "redis" "kafka" "nacos" "nginx" "app")
     local all_healthy=true
     
     for service in "${services[@]}"; do
@@ -437,6 +444,7 @@ show_help() {
     echo "  ./update.sh g2rain-manager-app   只更新指定服务（使用本地镜像）"
     echo "  ./update.sh g2rain-health-app    只更新健康管理H5服务（使用本地镜像）"
     echo "  ./update.sh mysql                 只更新MySQL服务"
+    echo "  ./update.sh kafka                 只更新Kafka服务"
     echo "  ./update.sh nginx                只更新Nginx服务"
     echo "  ./update.sh g2rain-iam --force-pull  更新指定服务并拉取最新镜像"
     echo "  ./update.sh --force-pull        强制拉取所有服务的最新镜像"
