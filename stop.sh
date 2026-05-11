@@ -90,6 +90,7 @@ show_status() {
     if [ -d "data" ]; then
         echo "  MySQL数据: data/mysql"
         echo "  Redis数据: data/redis"
+        echo "  Kafka数据: data/kafka"
     fi
     
     if [ -d "logs" ]; then

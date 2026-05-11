@@ -223,6 +223,12 @@ backup_data() {
         log_info "备份Redis数据..."
         cp -r data/redis "$backup_dir/" 2>/dev/null || true
     fi
+
+    # 备份 Kafka 数据（可能较大，按需保留备份目录）
+    if [ -d "data/kafka" ]; then
+        log_info "备份Kafka数据目录..."
+        cp -r data/kafka "$backup_dir/" 2>/dev/null || true
+    fi
     
     # 备份配置文件
     if [ -d "config" ]; then
@@ -383,7 +389,7 @@ check_services() {
     sleep 10
     
     # 检查服务健康状态
-    local services=("mysql" "redis" "nginx" "app")
+    local services=("mysql" "redis" "kafka" "nacos" "nginx" "app")
     local all_healthy=true
     
     for service in "${services[@]}"; do
@@ -438,6 +444,7 @@ show_help() {
     echo "  ./update.sh g2rain-manager-app   只更新指定服务（使用本地镜像）"
     echo "  ./update.sh g2rain-health-app    只更新健康管理H5服务（使用本地镜像）"
     echo "  ./update.sh mysql                 只更新MySQL服务"
+    echo "  ./update.sh kafka                 只更新Kafka服务"
     echo "  ./update.sh nginx                只更新Nginx服务"
     echo "  ./update.sh g2rain-iam --force-pull  更新指定服务并拉取最新镜像"
     echo "  ./update.sh --force-pull        强制拉取所有服务的最新镜像"
