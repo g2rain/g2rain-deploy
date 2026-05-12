@@ -6,8 +6,7 @@
 -- 创建数据库
 CREATE
 DATABASE IF NOT EXISTS `g2rain_infra` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE
-`g2rain_infra`;
+USE `g2rain_infra`;
 
 -- =============================================
 -- 1. 字典用途表 (dictionary_usage)
