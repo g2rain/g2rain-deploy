@@ -1,702 +1,1098 @@
-CREATE DATABASE  IF NOT EXISTS `g2rain_basis` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+-- =============================================
+-- g2rain_basis 数据库表结构
+-- MySQL 8.0 版本
+-- =============================================
+
+-- 创建数据库
+CREATE DATABASE IF NOT EXISTS `g2rain_basis` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE `g2rain_basis`;
--- MySQL dump 10.13  Distrib 8.0.41, for macos15 (arm64)
---
--- Host: 43.138.13.145    Database: g2rain_basis
--- ------------------------------------------------------
--- Server version	8.0.45
 
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!50503 SET NAMES utf8 */;
-/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
-/*!40103 SET TIME_ZONE='+00:00' */;
-/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
-/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
-/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
-/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
-
---
--- Table structure for table `api_endpoint`
---
-
-DROP TABLE IF EXISTS `api_endpoint`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `api_endpoint` (
-  `id` bigint NOT NULL COMMENT '接口标识',
-  `api_name` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '接口名称',
-  `api_url` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '接口路径',
-  `request_method` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '请求方法',
-  `api_tag` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '接口标签, 接口分类',
-  `description` varchar(512) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '业务说明',
-  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `version` int NOT NULL DEFAULT '0' COMMENT '记录版本',
-  `delete_flag` tinyint NOT NULL DEFAULT '0' COMMENT '删除标识[0:未删除, 1:已删除]',
-  PRIMARY KEY (`id`),
-  KEY `uk_api_url_method` (`api_url`,`request_method`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='接口地址表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `api_endpoint`
---
-
-LOCK TABLES `api_endpoint` WRITE;
-/*!40000 ALTER TABLE `api_endpoint` DISABLE KEYS */;
-INSERT INTO `api_endpoint` VALUES (123,'字典新增','/dict/save','POST','字典','e312','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0);
-/*!40000 ALTER TABLE `api_endpoint` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `application`
---
-
-DROP TABLE IF EXISTS `application`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `application` (
-  `id` bigint NOT NULL COMMENT '应用标识',
-  `organ_id` bigint NOT NULL COMMENT '机构标识',
-  `application_name` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '应用名称',
-  `application_code` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '应用编码',
-  `can_integrate` tinyint NOT NULL DEFAULT '0' COMMENT '是否具备集成功能[0:否, 1:是]',
-  `landing` tinyint NOT NULL DEFAULT '0' COMMENT '默认数据[0:否, 1:是]',
-  `application_type` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '应用类型[SUPPORT:支撑, SYSTEM:系统提供, PUBLIC:第三方提供, PRIVATE:私有]',
-  `public_key_algorithm` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '应用公钥算法',
-  `public_key_format` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '应用公钥格式',
-  `public_key` text COLLATE utf8mb4_unicode_ci COMMENT '应用公钥内容',
-  `access_token_expires_in` int NOT NULL COMMENT '访问令牌生存时间(秒)',
-  `refresh_token_expires_in` int NOT NULL COMMENT '刷新访问令牌生存时间(秒)',
-  `endpoint_url` varchar(512) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '访问地址',
-  `context_path` varchar(512) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '应用路径',
-  `status` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'UNPUBLISHED' COMMENT '应用状态[PUBLISHED:已发布, UNPUBLISHED:未发布]',
-  `description` varchar(512) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '业务说明',
-  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `version` int NOT NULL DEFAULT '0' COMMENT '记录版本',
-  `delete_flag` tinyint NOT NULL DEFAULT '0' COMMENT '删除标识[0:未删除, 1:已删除]',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='应用表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `application`
---
-
-LOCK TABLES `application` WRITE;
-/*!40000 ALTER TABLE `application` DISABLE KEYS */;
-INSERT INTO `application` VALUES (8,2,'综合管理平台','g2rain-main-shell',1,1,'SUPPORT','EC','PEM','-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEXmlg1y2fUD9KJj4WB6DrRZU+iVwA\nyzz60AxRoFb2yDnBvYiiK9JR1p5QUw2jkR9RPvkZez1Kx2BqxwyOoWRV/A==\n-----END PUBLIC KEY-----\n',3600,86400,'http://__PLATFORM_HOST__:__PLATFORM_PORT__','/main/','PUBLISHED','管理平台入口','2026-02-01 01:12:28','2026-02-08 12:09:48',0,0),(9,2,'支撑管理平台','g2rain-manager-app',0,1,'SUPPORT','EC','PEM','-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEXGDOn5B+GFE42lcMd5u47r6na9iE\nH1AzxAU49KiWBz17su0M1vPZ+s57bvMlYvbcPG2nfWcJvJzRuKUakrUhsA==\n-----END PUBLIC KEY-----\n',3600,86400,'//__PLATFORM_HOST__:__PLATFORM_PORT__','/manager/','PUBLISHED','系统支撑功能','2026-02-01 01:12:28','2026-03-25 13:25:37',0,0),(4016,2,'健康管理应用','g2rain-health-app',0,0,'PUBLIC','EC','PEM','-----BEGIN PUBLIC KEY-----\r\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEIySBrMJs3HJ0pNFPul1Az0onfD7+\r\nAW8APjyv5cDCNOUxiOJK1HrB3gQzMCg2BkMns2h6IjnQ849a6z9k5l9oKQ==\r\n-----END PUBLIC KEY-----',3600,86400,'//__PLATFORM_HOST__:__PLATFORM_PORT__','/h-app','PUBLISHED','','2026-04-01 14:00:15','2026-04-08 01:03:47',1,0),(4033,2,'技术支撑平台','g2rain-infra-app',0,0,'SUPPORT','EC','PEM','-----BEGIN PUBLIC KEY----- MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAcmLmXDroj3aJiTFxP6oy5Q+3Tawz1LFg0BY1a5CRNynqpVvG+/wVGUhXf7KOJ7/nA2OO/H+IQaHryS+SXtnOA== -----END PUBLIC KEY-----',3600,86400,'//__PLATFORM_HOST__:__PLATFORM_PORT__','/infra','PUBLISHED','用于管理字典，路由转发等功能','2026-04-03 01:12:34','2026-04-11 04:03:39',0,0),(7006,2,'内容管理系统','g2rain-cms-app',0,0,'SYSTEM','EC','PEM','-----BEGIN PUBLIC KEY----- MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE4z6oYfk8k/TTCzwhCMtzi6le8JTIg+dwCZECyLetKhkV8sVkjihmtEL6ak6i6W4tVYr8jcwY9Jm2q7AoscnO/g== -----END PUBLIC KEY-----',3600,86400,'//__PLATFORM_HOST__:__PLATFORM_PORT__','/cms','UNPUBLISHED','','2026-04-16 00:30:25','2026-04-16 00:34:17',1,0);
-/*!40000 ALTER TABLE `application` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `application_authorization`
---
-
-DROP TABLE IF EXISTS `application_authorization`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `application_authorization` (
-  `id` bigint NOT NULL COMMENT '应用授权标识',
-  `organ_id` bigint NOT NULL COMMENT '机构标识',
-  `application_id` bigint NOT NULL COMMENT '应用标识',
-  `control_domain_id` bigint NOT NULL COMMENT '控制域标识',
-  `subscription_id` bigint DEFAULT NULL COMMENT '订阅标识',
-  `status` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ACTIVATED' COMMENT '应用授权状态[ACTIVATED:激活, DEACTIVATED:关停]',
-  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `version` int NOT NULL DEFAULT '0' COMMENT '记录版本',
-  `delete_flag` tinyint NOT NULL DEFAULT '0' COMMENT '删除标识[0:未删除, 1:已删除]',
-  PRIMARY KEY (`id`),
-  KEY `idx_application_id` (`application_id`),
-  KEY `idx_control_domain_id` (`control_domain_id`),
-  KEY `idx_organ_st_del_app` (`organ_id`,`status`,`delete_flag`,`application_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='应用授权记录表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `application_authorization`
---
-
-LOCK TABLES `application_authorization` WRITE;
-/*!40000 ALTER TABLE `application_authorization` DISABLE KEYS */;
-INSERT INTO `application_authorization` VALUES (4042,4020,4016,4040,NULL,'ACTIVATED','2026-04-08 12:14:32','2026-04-08 12:15:50',0,0),(4063,4002,4016,4040,NULL,'ACTIVATED','2026-04-09 15:07:45','2026-04-09 15:07:45',0,0),(4065,2027,4016,4040,NULL,'ACTIVATED','2026-04-09 15:08:39','2026-04-09 15:08:39',0,0),(4067,3009,4016,4040,NULL,'ACTIVATED','2026-04-09 15:09:00','2026-04-09 15:09:00',0,0),(4080,2,4033,4078,NULL,'ACTIVATED','2026-04-11 04:18:40','2026-04-11 04:18:40',0,0),(8095,4002,7006,8004,NULL,'ACTIVATED','2026-04-19 08:16:51','2026-04-19 08:16:51',0,0);
-/*!40000 ALTER TABLE `application_authorization` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `application_suite`
---
-
-DROP TABLE IF EXISTS `application_suite`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `application_suite` (
-  `id` bigint NOT NULL COMMENT '主键标识',
-  `application_id` bigint NOT NULL COMMENT '应用标识',
-  `master_application_id` bigint NOT NULL COMMENT '主应用标识',
-  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `version` int NOT NULL DEFAULT '0' COMMENT '记录版本',
-  `delete_flag` tinyint NOT NULL DEFAULT '0' COMMENT '删除标识[0:未删除, 1:已删除]',
-  PRIMARY KEY (`id`),
-  KEY `uk_application_id` (`application_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='应用归类关系表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `application_suite`
---
-
-LOCK TABLES `application_suite` WRITE;
-/*!40000 ALTER TABLE `application_suite` DISABLE KEYS */;
-INSERT INTO `application_suite` VALUES (10,9,8,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(6001,4033,8,'2026-04-13 01:20:22','2026-04-13 01:20:22',0,0),(7007,7006,8,'2026-04-16 00:30:41','2026-04-16 00:30:41',0,0);
-/*!40000 ALTER TABLE `application_suite` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `control_domain`
---
-
-DROP TABLE IF EXISTS `control_domain`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `control_domain` (
-  `id` bigint NOT NULL COMMENT '控制域标识',
-  `application_id` bigint NOT NULL COMMENT '应用标识',
-  `control_domain_name` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '控制域名称',
-  `control_domain_type` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '控制域类型[TRADE("交易开通"), APPLICATION("应用授权开通")]',
-  `control_domain_scope` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '交付范围[CUSTOMER("客户交付"), OPERATION("平台运营")]',
-  `description` text COLLATE utf8mb4_unicode_ci COMMENT '业务说明',
-  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `version` int NOT NULL DEFAULT '0' COMMENT '记录版本',
-  `delete_flag` tinyint NOT NULL DEFAULT '0' COMMENT '删除标识[0:未删除, 1:已删除]',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='控制域表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `control_domain`
---
-
-LOCK TABLES `control_domain` WRITE;
-/*!40000 ALTER TABLE `control_domain` DISABLE KEYS */;
-INSERT INTO `control_domain` VALUES (4040,4016,'C端业务能力','APPLICATION','CUSTOMER','健康管理相关C端业务能力','2026-04-08 11:56:10','2026-04-08 11:56:10',0,0),(4078,4033,'平台技术配置','APPLICATION','OPERATION','本业务主要用于支撑平台技术相关设置','2026-04-11 04:17:46','2026-04-11 04:17:46',0,0),(8004,7006,'内容管理','APPLICATION','CUSTOMER','内容管理平台','2026-04-17 00:40:59','2026-04-17 00:40:59',0,0);
-/*!40000 ALTER TABLE `control_domain` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `control_domain_control_unit_relation`
---
-
-DROP TABLE IF EXISTS `control_domain_control_unit_relation`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `control_domain_control_unit_relation` (
-  `id` bigint NOT NULL COMMENT '主键标识',
-  `control_domain_id` bigint NOT NULL COMMENT '控制域标识',
-  `control_unit_id` bigint NOT NULL COMMENT '控制单元标识',
-  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `version` int NOT NULL DEFAULT '0' COMMENT '记录版本',
-  `delete_flag` tinyint NOT NULL DEFAULT '0' COMMENT '删除标识[0:未删除, 1:已删除]',
-  PRIMARY KEY (`id`),
-  KEY `idx_control_domain_unit` (`control_domain_id`,`control_unit_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='控制域控制单元关联表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `control_domain_control_unit_relation`
---
-
-LOCK TABLES `control_domain_control_unit_relation` WRITE;
-/*!40000 ALTER TABLE `control_domain_control_unit_relation` DISABLE KEYS */;
-INSERT INTO `control_domain_control_unit_relation` VALUES (4041,4040,4039,'2026-04-08 11:58:36','2026-04-08 11:58:36',0,0),(4079,4078,4069,'2026-04-11 04:18:27','2026-04-11 04:18:27',0,0),(8094,8004,8005,'2026-04-19 08:10:26','2026-04-19 08:10:26',0,0);
-/*!40000 ALTER TABLE `control_domain_control_unit_relation` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `control_unit`
---
-
-DROP TABLE IF EXISTS `control_unit`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `control_unit` (
-  `id` bigint NOT NULL COMMENT '控制单元标识',
-  `application_id` bigint NOT NULL COMMENT '应用标识',
-  `control_unit_name` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '控制单元名称',
-  `control_unit_scope` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '控制单元类型[OPERATION("运营功能"), CUSTOMER("客户功能"), PERPETUAL("永久有效功能")]',
-  `landing` tinyint NOT NULL DEFAULT '0' COMMENT '默认数据[0:否, 1:是]',
-  `status` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'UNPUBLISHED' COMMENT '控制单元状态[PUBLISHED:已发布, UNPUBLISHED:未发布]',
-  `description` varchar(512) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '业务说明',
-  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `version` int NOT NULL DEFAULT '0' COMMENT '记录版本',
-  `delete_flag` tinyint NOT NULL DEFAULT '0' COMMENT '删除标识[0:未删除, 1:已删除]',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='控制单元表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `control_unit`
---
-
-LOCK TABLES `control_unit` WRITE;
-/*!40000 ALTER TABLE `control_unit` DISABLE KEYS */;
-INSERT INTO `control_unit` VALUES (11,8,'盘古','PERPETUAL',1,'PUBLISHED','平台准入基础能力','2026-02-01 01:12:28','2026-04-08 12:11:13',2,0),(12,9,'燧人氏','OPERATION',1,'PUBLISHED','核心运营支撑组件','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(15,9,'女娲','CUSTOMER',1,'PUBLISHED','租户空间构建逻辑','2026-02-01 01:12:28','2026-04-08 12:12:10',1,0),(4039,4016,'C端用户权限','CUSTOMER',0,'PUBLISHED','C端用户访问权限','2026-04-08 11:55:26','2026-04-08 11:58:28',1,0),(4069,4033,'后羿','OPERATION',0,'PUBLISHED','主要保障平台技术相关能力','2026-04-11 04:05:27','2026-04-13 14:49:54',4,0),(8005,7006,'内容管理全功能','CUSTOMER',0,'PUBLISHED','','2026-04-17 00:41:25','2026-04-19 08:10:17',2,0);
-/*!40000 ALTER TABLE `control_unit` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `control_unit_resource_relation`
---
-
-DROP TABLE IF EXISTS `control_unit_resource_relation`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `control_unit_resource_relation` (
-  `id` bigint NOT NULL COMMENT '主键标识',
-  `control_unit_id` bigint NOT NULL COMMENT '控制单元标识',
-  `resource_id` bigint NOT NULL COMMENT '资源标识',
-  `resource_type` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '资源类型[MENU:菜单, PAGE:页面, PAGE_ELEMENT:页面元素, API_ENDPOINT:接口地址]',
-  `status` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '激活状态[VISIBLE:显示, ENABLED:可用]',
-  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `version` int NOT NULL DEFAULT '0' COMMENT '记录版本',
-  `delete_flag` tinyint NOT NULL DEFAULT '0' COMMENT '删除标识[0:未删除, 1:已删除]',
-  PRIMARY KEY (`id`),
-  KEY `idx_cu_type_del_res` (`control_unit_id`,`resource_type`,`delete_flag`,`resource_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='控制单元资源关联表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `control_unit_resource_relation`
---
-
-LOCK TABLES `control_unit_resource_relation` WRITE;
-/*!40000 ALTER TABLE `control_unit_resource_relation` DISABLE KEYS */;
-INSERT INTO `control_unit_resource_relation` VALUES (120,11,17,'MENU',NULL,'2026-02-01 01:12:28','2026-03-25 12:56:46',1,1),(121,11,18,'MENU',NULL,'2026-02-01 01:12:28','2026-03-25 12:56:46',1,1),(122,12,19,'MENU',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(123,12,20,'MENU',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(125,12,21,'MENU',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(126,12,22,'MENU',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(127,12,23,'MENU',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(128,12,25,'MENU',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(129,12,26,'MENU',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(130,12,27,'MENU',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(131,12,28,'MENU',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(132,12,29,'MENU',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(133,12,30,'MENU',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(135,12,31,'MENU',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(136,12,32,'MENU',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(137,12,33,'MENU',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(138,12,35,'MENU',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(139,12,36,'MENU',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(150,12,37,'MENU',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(151,15,19,'MENU',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(152,15,20,'MENU',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(153,15,21,'MENU',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(155,15,22,'MENU',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(156,15,23,'MENU',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(157,15,25,'MENU',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(158,15,32,'MENU',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(159,11,38,'PAGE',NULL,'2026-02-01 01:12:28','2026-03-25 12:56:55',1,1),(160,12,39,'PAGE',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(161,12,50,'PAGE',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(162,12,51,'PAGE',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(163,12,52,'PAGE',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(165,12,53,'PAGE',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(166,12,55,'PAGE',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(167,12,56,'PAGE',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(168,12,57,'PAGE',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(169,12,58,'PAGE',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(170,12,59,'PAGE',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(171,12,60,'PAGE',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(172,12,61,'PAGE',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(173,12,62,'PAGE',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(175,15,39,'PAGE',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(176,15,50,'PAGE',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(177,15,51,'PAGE',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(178,15,52,'PAGE',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(179,15,60,'PAGE',NULL,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(180,11,63,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-03-25 12:56:55',1,1),(181,12,65,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(182,12,66,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(183,12,67,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(185,12,68,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(186,12,69,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(187,12,70,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(188,12,71,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(189,12,72,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(190,12,73,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(191,12,75,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(192,12,76,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(193,12,77,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(195,12,78,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(196,12,79,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(197,12,80,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(198,12,81,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(199,12,82,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(200,12,83,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(201,12,85,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(202,12,86,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(203,12,87,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(205,12,88,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(206,12,89,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(207,12,90,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(208,12,91,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(209,12,92,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(210,12,93,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(211,12,95,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(212,12,96,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(213,12,97,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(215,12,98,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(216,12,99,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(217,12,100,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(218,12,101,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(219,12,102,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(220,12,103,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(221,12,105,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(222,12,106,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(223,12,107,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(225,12,108,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(226,12,109,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(227,12,110,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(228,12,111,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(229,12,112,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(230,12,113,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(231,12,115,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(232,12,116,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(233,12,117,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(235,12,118,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(236,12,119,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(237,15,65,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(238,15,66,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(239,15,67,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(260,15,68,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(261,15,69,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(262,15,70,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(263,15,71,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(265,15,72,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(266,15,73,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(267,15,75,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(268,15,76,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(269,15,77,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(270,15,78,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(271,15,110,'PAGE_ELEMENT','ENABLED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(4089,4069,4070,'MENU',NULL,'2026-04-11 07:25:33','2026-04-12 11:01:19',1,1),(4090,4069,4071,'MENU',NULL,'2026-04-11 07:25:33','2026-04-11 07:25:33',0,0),(4091,4069,4072,'MENU',NULL,'2026-04-11 07:25:33','2026-04-12 11:01:19',1,1),(4092,4069,4073,'MENU',NULL,'2026-04-11 07:25:33','2026-04-11 07:25:33',0,0),(4093,4069,4074,'MENU',NULL,'2026-04-11 07:25:33','2026-04-11 07:25:33',0,0),(4094,4069,4075,'MENU',NULL,'2026-04-11 07:25:33','2026-04-11 07:25:33',0,0),(4095,4069,4076,'MENU',NULL,'2026-04-11 07:25:33','2026-04-11 07:25:33',0,0),(4096,4069,4077,'MENU',NULL,'2026-04-11 07:25:33','2026-04-11 07:25:33',0,0),(4097,4069,4082,'PAGE',NULL,'2026-04-11 07:25:44','2026-04-11 07:25:44',0,0),(4098,4069,4083,'PAGE',NULL,'2026-04-11 07:25:44','2026-04-12 11:01:29',1,1),(4099,4069,4084,'PAGE',NULL,'2026-04-11 07:25:44','2026-04-11 07:25:44',0,0),(4100,4069,4085,'PAGE',NULL,'2026-04-11 07:25:44','2026-04-11 07:25:44',0,0),(4101,4069,4086,'PAGE',NULL,'2026-04-11 07:25:44','2026-04-11 07:25:44',0,0),(4102,4069,4087,'PAGE',NULL,'2026-04-11 07:25:44','2026-04-11 07:25:44',0,0),(4103,4069,4088,'PAGE',NULL,'2026-04-11 07:25:44','2026-04-11 07:25:44',0,0),(4125,4069,4113,'PAGE_ELEMENT','ENABLED','2026-04-11 14:22:41','2026-04-11 14:22:41',0,0),(4126,4069,4114,'PAGE_ELEMENT','ENABLED','2026-04-11 14:22:41','2026-04-11 14:22:41',0,0),(4127,4069,4115,'PAGE_ELEMENT','ENABLED','2026-04-11 14:22:41','2026-04-11 14:22:41',0,0),(4128,4069,4107,'PAGE_ELEMENT','ENABLED','2026-04-11 14:22:41','2026-04-12 11:01:29',1,1),(4129,4069,4108,'PAGE_ELEMENT','ENABLED','2026-04-11 14:22:41','2026-04-12 11:01:29',1,1),(4130,4069,4109,'PAGE_ELEMENT','ENABLED','2026-04-11 14:22:41','2026-04-12 11:01:29',1,1),(4131,4069,4110,'PAGE_ELEMENT','ENABLED','2026-04-11 14:22:41','2026-04-11 14:22:41',0,0),(4132,4069,4111,'PAGE_ELEMENT','ENABLED','2026-04-11 14:22:41','2026-04-11 14:22:41',0,0),(4133,4069,4112,'PAGE_ELEMENT','ENABLED','2026-04-11 14:22:41','2026-04-11 14:22:41',0,0),(4134,4069,4122,'PAGE_ELEMENT','ENABLED','2026-04-11 14:22:41','2026-04-11 14:22:41',0,0),(4135,4069,4123,'PAGE_ELEMENT','ENABLED','2026-04-11 14:22:41','2026-04-11 14:22:41',0,0),(4136,4069,4124,'PAGE_ELEMENT','ENABLED','2026-04-11 14:22:41','2026-04-11 14:22:41',0,0),(4137,4069,4119,'PAGE_ELEMENT','ENABLED','2026-04-11 14:22:41','2026-04-11 14:22:41',0,0),(4138,4069,4120,'PAGE_ELEMENT','ENABLED','2026-04-11 14:22:41','2026-04-11 14:22:41',0,0),(4139,4069,4121,'PAGE_ELEMENT','ENABLED','2026-04-11 14:22:41','2026-04-11 14:22:41',0,0),(4140,4069,4116,'PAGE_ELEMENT','ENABLED','2026-04-11 14:22:41','2026-04-11 14:22:41',0,0),(4141,4069,4117,'PAGE_ELEMENT','ENABLED','2026-04-11 14:22:41','2026-04-11 14:22:41',0,0),(4142,4069,4118,'PAGE_ELEMENT','ENABLED','2026-04-11 14:22:41','2026-04-11 14:22:41',0,0),(4143,4069,4104,'PAGE_ELEMENT','ENABLED','2026-04-11 14:22:41','2026-04-11 14:22:41',0,0),(4144,4069,4105,'PAGE_ELEMENT','ENABLED','2026-04-11 14:22:41','2026-04-11 14:22:41',0,0),(4145,4069,4106,'PAGE_ELEMENT','ENABLED','2026-04-11 14:22:41','2026-04-11 14:22:41',0,0),(4154,4069,4148,'PAGE_ELEMENT','ENABLED','2026-04-12 14:14:05','2026-04-12 14:15:14',1,1),(4155,4069,4149,'PAGE_ELEMENT','ENABLED','2026-04-12 14:14:05','2026-04-12 14:14:05',0,0),(4156,4069,4150,'PAGE_ELEMENT','ENABLED','2026-04-12 14:14:05','2026-04-12 14:14:05',0,0),(4157,4069,4151,'PAGE_ELEMENT','ENABLED','2026-04-12 14:14:05','2026-04-12 14:14:05',0,0),(4158,4069,4152,'PAGE_ELEMENT','ENABLED','2026-04-12 14:14:05','2026-04-12 14:14:05',0,0),(4159,4069,4153,'PAGE_ELEMENT','ENABLED','2026-04-12 14:14:05','2026-04-12 14:14:05',0,0),(7001,4069,4070,'MENU',NULL,'2026-04-13 14:40:47','2026-04-13 14:40:47',0,0),(8054,8005,8046,'MENU',NULL,'2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8055,8005,8047,'MENU',NULL,'2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8056,8005,8048,'MENU',NULL,'2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8057,8005,8049,'MENU',NULL,'2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8058,8005,8051,'MENU',NULL,'2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8059,8005,8050,'MENU',NULL,'2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8060,8005,8052,'MENU',NULL,'2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8061,8005,8053,'MENU',NULL,'2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8062,8005,8014,'PAGE',NULL,'2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8063,8005,8015,'PAGE',NULL,'2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8064,8005,8016,'PAGE',NULL,'2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8065,8005,8017,'PAGE',NULL,'2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8066,8005,8018,'PAGE',NULL,'2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8067,8005,8019,'PAGE',NULL,'2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8068,8005,8020,'PAGE',NULL,'2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8069,8005,8021,'PAGE',NULL,'2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8070,8005,8037,'PAGE_ELEMENT','ENABLED','2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8071,8005,8038,'PAGE_ELEMENT','ENABLED','2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8072,8005,8039,'PAGE_ELEMENT','ENABLED','2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8073,8005,8031,'PAGE_ELEMENT','ENABLED','2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8074,8005,8032,'PAGE_ELEMENT','ENABLED','2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8075,8005,8033,'PAGE_ELEMENT','ENABLED','2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8076,8005,8028,'PAGE_ELEMENT','ENABLED','2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8077,8005,8029,'PAGE_ELEMENT','ENABLED','2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8078,8005,8030,'PAGE_ELEMENT','ENABLED','2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8079,8005,8034,'PAGE_ELEMENT','ENABLED','2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8080,8005,8035,'PAGE_ELEMENT','ENABLED','2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8081,8005,8036,'PAGE_ELEMENT','ENABLED','2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8082,8005,8040,'PAGE_ELEMENT','ENABLED','2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8083,8005,8041,'PAGE_ELEMENT','ENABLED','2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8084,8005,8042,'PAGE_ELEMENT','ENABLED','2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8085,8005,8025,'PAGE_ELEMENT','ENABLED','2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8086,8005,8026,'PAGE_ELEMENT','ENABLED','2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8087,8005,8027,'PAGE_ELEMENT','ENABLED','2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8088,8005,8043,'PAGE_ELEMENT','ENABLED','2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8089,8005,8044,'PAGE_ELEMENT','ENABLED','2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8090,8005,8045,'PAGE_ELEMENT','ENABLED','2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8091,8005,8022,'PAGE_ELEMENT','ENABLED','2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8092,8005,8023,'PAGE_ELEMENT','ENABLED','2026-04-19 08:09:28','2026-04-19 08:09:28',0,0),(8093,8005,8024,'PAGE_ELEMENT','ENABLED','2026-04-19 08:09:28','2026-04-19 08:09:28',0,0);
-/*!40000 ALTER TABLE `control_unit_resource_relation` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `login_token`
---
-
-DROP TABLE IF EXISTS `login_token`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `login_token` (
-  `id` bigint NOT NULL COMMENT '主键标识',
-  `session_type` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '会话类型',
-  `organ_id` bigint DEFAULT NULL COMMENT '机构标识',
-  `organ_type` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '机构类型',
-  `admin_company` tinyint NOT NULL DEFAULT '0' COMMENT '运营标记[0:否, 1:是]',
-  `passport_id` bigint DEFAULT NULL COMMENT '账号标识',
-  `user_id` bigint DEFAULT NULL COMMENT '用户标识',
-  `real_name` varchar(128) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '真实姓名',
-  `admin_user` tinyint NOT NULL DEFAULT '0' COMMENT '管理员标记[0:否, 1:是]',
-  `application_id` bigint DEFAULT NULL COMMENT '应用标识',
-  `application_organ_id` bigint DEFAULT NULL COMMENT '应用组织标识',
-  `client_id` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '客户端ID',
-  `lastest_refresh_time` timestamp NULL DEFAULT NULL COMMENT '最近一次刷新时间',
-  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `version` int NOT NULL DEFAULT '0' COMMENT '记录版本',
-  `delete_flag` tinyint NOT NULL DEFAULT '0' COMMENT '删除标识[0:未删除, 1:已删除]',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='登录信息表, 记录了当前登录状态的相关信息';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `login_token`
---
-
-LOCK TABLES `login_token` WRITE;
-/*!40000 ALTER TABLE `login_token` DISABLE KEYS */;
-/*!40000 ALTER TABLE `login_token` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `organ`
---
-
-DROP TABLE IF EXISTS `organ`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `organ` (
-  `id` bigint NOT NULL COMMENT '机构标识',
-  `organ_name` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '机构名称',
-  `organ_type` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '机构类型[服务商、渠道、公司、租户]',
-  `status` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ACTIVE' COMMENT '机构状态[ACTIVE:有效, INACTIVE:无效]',
-  `admin` tinyint NOT NULL DEFAULT '0' COMMENT '运营标记[0:否, 1:是]',
-  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `version` int NOT NULL DEFAULT '0' COMMENT '记录版本',
-  `delete_flag` tinyint NOT NULL DEFAULT '0' COMMENT '删除标识[0:未删除, 1:已删除]',
-  PRIMARY KEY (`id`),
-  KEY `idx_organ_name` (`organ_name`),
-  KEY `idx_organ_type` (`organ_type`),
-  KEY `idx_organ_status` (`status`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='机构表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `organ`
---
-
-LOCK TABLES `organ` WRITE;
-/*!40000 ALTER TABLE `organ` DISABLE KEYS */;
-INSERT INTO `organ` VALUES (2,'平台机构','COMPANY','ACTIVE',1,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(2021,'爱国统一战线','COMPANY','ACTIVE',0,'2026-02-06 08:57:34','2026-02-06 08:57:34',0,0),(2027,'铁血救国会','TENANT','ACTIVE',0,'2026-02-06 09:00:56','2026-04-19 08:54:27',1,0),(3002,'test','TENANT','ACTIVE',0,'2026-03-17 11:59:22','2026-03-17 11:59:22',0,0),(3009,'测试租户2','TENANT','ACTIVE',0,'2026-03-18 14:27:30','2026-03-18 14:27:30',0,0),(3015,'测试003','TENANT','ACTIVE',0,'2026-03-18 14:31:38','2026-03-18 14:31:38',0,0),(3022,'测试004','TENANT','ACTIVE',0,'2026-03-19 00:15:49','2026-03-19 00:15:49',0,0),(3028,'测试0031','TENANT','ACTIVE',0,'2026-03-19 00:24:40','2026-03-19 00:24:40',0,0),(4002,'sun001测试-cms验证','TENANT','ACTIVE',0,'2026-03-25 14:47:08','2026-04-19 09:08:09',1,0),(4010,'AI智能问问','TENANT','ACTIVE',0,'2026-03-30 06:21:18','2026-03-30 06:21:18',0,0),(4020,'H001','TENANT','ACTIVE',0,'2026-04-02 12:49:30','2026-04-02 12:49:30',0,0),(4027,'孙豪杰测试','TENANT','ACTIVE',0,'2026-04-03 00:25:03','2026-04-03 00:25:03',0,0);
-/*!40000 ALTER TABLE `organ` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `organ_closure`
---
-
-DROP TABLE IF EXISTS `organ_closure`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `organ_closure` (
-  `id` bigint NOT NULL COMMENT '主键标识',
-  `ancestor_id` bigint NOT NULL COMMENT '祖先机构标识[上级]',
-  `descendant_id` bigint NOT NULL COMMENT '后代机构标识[下级]',
-  `descendant_type` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '后代机构类型[服务商、渠道、公司、租户]',
-  `relation_type` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '关系类型[SELF_ASSOCIATION:自身关联, DIRECT_SUBORDINATE:直属, INDIRECT_SUBORDINATE:从属]',
-  `path_count` int NOT NULL DEFAULT '1' COMMENT '路径引用次数[用于DAG交叉挂载维护]',
-  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `version` int NOT NULL DEFAULT '0' COMMENT '记录版本',
-  `delete_flag` tinyint NOT NULL DEFAULT '0' COMMENT '删除标识[0:未删除, 1:已删除]',
-  PRIMARY KEY (`id`),
-  KEY `idx_ancestor_id` (`ancestor_id`),
-  KEY `idx_descendant_id` (`descendant_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='机构路径关系表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `organ_closure`
---
-
-LOCK TABLES `organ_closure` WRITE;
-/*!40000 ALTER TABLE `organ_closure` DISABLE KEYS */;
-INSERT INTO `organ_closure` VALUES (3,2,2,'COMPANY','SELF_ASSOCIATION',1,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(2022,2021,2021,'COMPANY','SELF_ASSOCIATION',1,'2026-02-06 08:57:34','2026-02-06 08:57:34',0,0),(2028,2027,2027,'TENANT','SELF_ASSOCIATION',1,'2026-02-06 09:00:56','2026-02-06 09:00:56',0,0),(2029,2021,2027,'TENANT','DIRECT_SUBORDINATE',1,'2026-02-06 09:00:56','2026-02-06 09:00:56',0,0),(3003,3002,3002,'TENANT','SELF_ASSOCIATION',1,'2026-03-17 11:59:22','2026-03-17 11:59:22',0,0),(3010,3009,3009,'TENANT','SELF_ASSOCIATION',1,'2026-03-18 14:27:30','2026-03-18 14:27:30',0,0),(3016,3015,3015,'TENANT','SELF_ASSOCIATION',1,'2026-03-18 14:31:38','2026-03-18 14:31:38',0,0),(3023,3022,3022,'TENANT','SELF_ASSOCIATION',1,'2026-03-19 00:15:49','2026-03-19 00:15:49',0,0),(3029,3028,3028,'TENANT','SELF_ASSOCIATION',1,'2026-03-19 00:24:40','2026-03-19 00:24:40',0,0),(4003,4002,4002,'TENANT','SELF_ASSOCIATION',1,'2026-03-25 14:47:08','2026-03-25 14:47:08',0,0),(4011,4010,4010,'TENANT','SELF_ASSOCIATION',1,'2026-03-30 06:21:18','2026-03-30 06:21:18',0,0),(4021,4020,4020,'TENANT','SELF_ASSOCIATION',1,'2026-04-02 12:49:30','2026-04-02 12:49:30',0,0),(4028,4027,4027,'TENANT','SELF_ASSOCIATION',1,'2026-04-03 00:25:03','2026-04-03 00:25:03',0,0);
-/*!40000 ALTER TABLE `organ_closure` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `passport`
---
-
+-- =============================================
+-- 1. 账号表 (passport)
+-- =============================================
 DROP TABLE IF EXISTS `passport`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+
 CREATE TABLE `passport` (
-  `id` bigint NOT NULL COMMENT '账号标识',
-  `username` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '登录用户',
-  `password` varchar(256) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '登录密码',
-  `real_name` varchar(128) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '真实姓名',
-  `sex` varchar(12) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '性别[MALE:男性, FEMALE:女性]',
-  `birthday` varchar(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '生日',
-  `id_no` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '身份证号',
-  `mobile` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT '' COMMENT '手机号码',
-  `email` varchar(128) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '邮箱地址',
-  `status` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'NORMAL' COMMENT '状态[NORMAL:正常, FROZEN:冻结]',
-  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `version` int NOT NULL DEFAULT '0' COMMENT '记录版本',
-  `delete_flag` tinyint NOT NULL DEFAULT '0' COMMENT '删除标识[0:未删除, 1:已删除]',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `username` (`username`),
-  KEY `idx_username` (`username`),
-  KEY `idx_status` (`status`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='账号表';
-/*!40101 SET character_set_client = @saved_cs_client */;
+    `id` BIGINT NOT NULL COMMENT 													                    '账号标识',
+    `username` VARCHAR(64) NOT NULL UNIQUE COMMENT 											            '登录用户',
+    `password` VARCHAR(256) NOT NULL DEFAULT '' COMMENT 												'登录密码',
+    `real_name` VARCHAR(128) DEFAULT NULL COMMENT 														'真实姓名',
+    `sex` VARCHAR(12) DEFAULT NULL COMMENT 															    '性别[MALE:男性, FEMALE:女性]',
+    `birthday` VARCHAR(16) DEFAULT NULL COMMENT 														'生日',
+    `id_no` VARCHAR(32) DEFAULT NULL COMMENT 															'身份证号',
+    `mobile` VARCHAR(32) DEFAULT '' COMMENT 															'手机号码',
+    `email` VARCHAR(128) DEFAULT NULL COMMENT 														    '邮箱地址',
+    `status` VARCHAR(32) NOT NULL DEFAULT 'NORMAL' COMMENT 												'状态[NORMAL:正常, FROZEN:冻结]',
+    `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT                                      '创建时间',
+    `update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT          '更新时间',
+    `version` INT NOT NULL DEFAULT 0 COMMENT                                                            '记录版本',
+    `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                    '删除标识[0:未删除, 1:已删除]',
+    PRIMARY KEY (`id`),
+    INDEX `idx_username` (`username`),
+    INDEX `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=                             '账号表';
 
---
--- Dumping data for table `passport`
---
-
-LOCK TABLES `passport` WRITE;
-/*!40000 ALTER TABLE `passport` DISABLE KEYS */;
-INSERT INTO `passport` VALUES (1,'admin','PBKDF2WithHmacSHA256$65536$YSskABrEQZiuRcM3GMl6gQ==$Hl9gA9UnYmS1BoY3Ov3XY2qYQpUKF1Sl0QneYZ5zc7k=','平台超管','MALE','2026-03-01','','','','NORMAL','2026-02-01 01:12:28','2026-03-12 00:56:52',1,0),(2020,'alpha','PBKDF2WithHmacSHA256$65536$YXfMO73+s4QDNhQrykQdwA==$SAMS54bJpTOA0W3oxxeq2GEl9MGwkOpuNGr+31lhRJw=','alpha','MALE','','','','','NORMAL','2026-02-06 08:56:30','2026-02-06 08:56:30',0,0),(3001,'test','PBKDF2WithHmacSHA256$65536$pnnIyOjRT72rve+xIKv9lg==$WrLk3CWCcaabexydGRjTQOIbRW1T1gGfpKVQkCtTGaU=','测试','MALE','','','','','NORMAL','2026-03-17 11:25:38','2026-03-17 11:25:38',0,0),(3008,'test2','PBKDF2WithHmacSHA256$65536$thM3eiYNJho7Plk6CVwInA==$/SICKuekgw0888BjTEJx+eti0I0Gx66kifYE+oK5bu8=','测试2','MALE','','','','','NORMAL','2026-03-18 14:26:49','2026-03-18 14:26:49',0,0),(3021,'test003','PBKDF2WithHmacSHA256$65536$ju92FLVaOEvY6Cpd/ecTDg==$oCAjWGcRIgqTpYosrmlt4wKqX1z5k5vXgLJZiMfcO0Q=','孙豪杰','','','','','','NORMAL','2026-03-19 00:14:41','2026-03-19 00:14:41',0,0),(3034,'test004','PBKDF2WithHmacSHA256$65536$SR6e6s7pV4WFJDddWHuDCA==$63IDb6R5nZHNazUoBFJED8eUUAkuNfAEsVodNft7owI=','孙豪杰','MALE','','','','','NORMAL','2026-03-19 12:50:26','2026-03-19 12:50:26',0,0),(4001,'sun001','PBKDF2WithHmacSHA256$65536$LquSju4+DXHAe4H9OP8pYg==$sEkYMziTGnhLrmAnNNDFOmkvUnKdeV6ESSm2PVkcmmY=','孙豪杰','','','','','','NORMAL','2026-03-25 14:39:21','2026-03-25 14:39:21',0,0),(4008,'huige','PBKDF2WithHmacSHA256$65536$7L+s5tczfydc9UDNPBFycQ==$bkrTn9EBLH0i2O5T95UGhIni880+COO7EVw+uj32urU=','郭俊辉','MALE','','','','','NORMAL','2026-03-25 22:27:53','2026-03-25 22:27:53',0,0),(4009,'mrbing','PBKDF2WithHmacSHA256$65536$GbGGB7o4palelM1rw6LVjw==$4tgmXSJWuu/QfNG4bW74zeicslvBQ6d5cGwe0406eLc=','xuebing','MALE','','','','','NORMAL','2026-03-27 08:21:59','2026-03-27 08:21:59',0,0),(4019,'h001','PBKDF2WithHmacSHA256$65536$iv3cb4J52bgmWim/AYvzrA==$usPUnNtioSXbGSx0o1493Gh3y/Is1rrLO7VkAm0SZJk=','孙豪杰','MALE','','','','','NORMAL','2026-04-02 12:48:45','2026-04-02 12:48:45',0,0),(4026,'H002','PBKDF2WithHmacSHA256$65536$Jp4fnmFwzUkoI6nEWb+GlA==$XG4T5EWvT/KBISd5jPOFxYtyMSQejDHmFOFg7UNaE6I=','孙豪杰','','','','','','NORMAL','2026-04-03 00:23:06','2026-04-03 00:23:06',0,0),(4034,'hhhh','PBKDF2WithHmacSHA256$65536$mT5B2M9STO9KU9T9kC7JQg==$4i40L7Pe75KuBsEZ1bGqSILqXY556NEOYCab8JuNHO0=','哈哈','','','','','','NORMAL','2026-04-03 04:26:59','2026-04-03 04:26:59',0,0),(4035,'linbuda','PBKDF2WithHmacSHA256$65536$ApuF1LuBC3QXsi9yXt0aWg==$Evj5ZtZJyjlDf9JoYvFsTw/b0e46CbfZ7sgeWff/AH4=','安君逸','MALE','1995-03-03','','','','NORMAL','2026-04-03 04:32:04','2026-04-03 04:32:04',0,0),(4038,'test1','PBKDF2WithHmacSHA256$65536$xo9GcqyyTzxYguBwZ+Z/jA==$vCMdJoR+MYoAnsrvU85Llcnz63kFQDtymJxciTeKTRE=','测试','','','','','','NORMAL','2026-04-08 00:27:20','2026-04-08 00:27:20',0,0);
-/*!40000 ALTER TABLE `passport` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `resource_api_endpoint`
---
-
-DROP TABLE IF EXISTS `resource_api_endpoint`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `resource_api_endpoint` (
-  `id` bigint NOT NULL COMMENT '接口标识',
-  `application_id` bigint NOT NULL COMMENT '应用标识',
-  `api_endpoint_id` bigint NOT NULL COMMENT '接口地址标识',
-  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `version` int NOT NULL DEFAULT '0' COMMENT '记录版本',
-  `delete_flag` tinyint NOT NULL DEFAULT '0' COMMENT '删除标识[0:未删除, 1:已删除]',
-  PRIMARY KEY (`id`),
-  KEY `idx_app_api_del` (`application_id`,`api_endpoint_id`,`delete_flag`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='应用资源接口地址表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `resource_api_endpoint`
---
-
-LOCK TABLES `resource_api_endpoint` WRITE;
-/*!40000 ALTER TABLE `resource_api_endpoint` DISABLE KEYS */;
-INSERT INTO `resource_api_endpoint` VALUES (567,8,10028,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0);
-/*!40000 ALTER TABLE `resource_api_endpoint` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `resource_menu`
---
-
-DROP TABLE IF EXISTS `resource_menu`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `resource_menu` (
-  `id` bigint NOT NULL COMMENT '菜单标识',
-  `parent_id` bigint DEFAULT NULL COMMENT '父菜单标识',
-  `application_id` bigint NOT NULL COMMENT '应用标识',
-  `menu_name` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '菜单名称',
-  `menu_code` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '菜单编码',
-  `link_path` varchar(128) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '链接路径',
-  `icon` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '展示图标',
-  `menu_sort_order` int NOT NULL DEFAULT '0' COMMENT '菜单排序',
-  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `version` int NOT NULL DEFAULT '0' COMMENT '记录版本',
-  `delete_flag` tinyint NOT NULL DEFAULT '0' COMMENT '删除标识[0:未删除, 1:已删除]',
-  PRIMARY KEY (`id`),
-  KEY `idx_app_del_id` (`application_id`,`delete_flag`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='应用资源菜单表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `resource_menu`
---
-
-LOCK TABLES `resource_menu` WRITE;
-/*!40000 ALTER TABLE `resource_menu` DISABLE KEYS */;
-INSERT INTO `resource_menu` VALUES (17,NULL,8,'账号开通','tenant-provision-menu','','',1,'2026-02-01 01:12:28','2026-03-25 12:57:15',1,1),(18,17,8,'开通设置','provision-settings-menu','/tenant-provision','',1,'2026-02-01 01:12:28','2026-03-25 12:57:10',1,1),(19,NULL,9,'系统管理','system-management-menu','','',10000,'2026-02-01 01:12:28','2026-04-19 08:02:38',1,0),(20,19,9,'机构管理','organ-management-menu','/organ','',1,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(21,19,9,'用户管理','user-management-menu','/user','',2,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(22,19,9,'角色管理','role-management-menu','/role','',3,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(23,NULL,9,'应用管理','application-management-menu','','',10001,'2026-02-01 01:12:28','2026-04-19 08:02:44',1,0),(25,23,9,'应用配置','application-config-menu','/application','',1,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(26,23,9,'资源配置','resource-settings-menu','/resource-settings','',2,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(27,23,9,'资源菜单','resource-menu-menu','/resource-menu','',3,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(28,23,9,'资源页面','resource-page-menu','/resource-page','',5,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(29,23,9,'资源接口','resource-api-endpoint-menu','/resource-api-endpoint','',6,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(30,23,9,'功能权限','control-unit-menu','/control-unit','',7,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(31,23,9,'业务能力','control-domain-menu','/control-domain','',8,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(32,23,9,'授权记录','application-authorization-menu','/application-authorization','',9,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(33,NULL,9,'平台配置','platform-settings-menu','','',10002,'2026-02-01 01:12:28','2026-04-19 08:02:50',1,0),(35,33,9,'后端接口','backend-api-endpoint-menu','/api-endpoint','',1,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(36,NULL,9,'平台运营','platform-operations-menu','','',10003,'2026-02-01 01:12:28','2026-04-19 08:02:56',1,0),(37,36,9,'账号管理','passport-management-menu','/passport','',1,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(4070,NULL,4033,'平台技术','infra','','',10004,'2026-04-11 04:06:57','2026-04-19 08:03:01',2,0),(4071,4070,4033,'网关路由配置','route-definition','/route_definition','',1,'2026-04-11 04:09:02','2026-04-11 04:11:06',2,0),(4072,4070,4033,'字典配置','dictionary-item','/dictionary_item','',2,'2026-04-11 04:10:09','2026-04-12 14:16:35',2,1),(4073,4070,4033,'字典用途场景','dictionary-usage','/dictionary_usage','',3,'2026-04-11 04:10:42','2026-04-11 04:12:57',3,0),(4074,4070,4033,'消息国际化','i18n-message','/i18n_message','',4,'2026-04-11 04:13:38','2026-04-11 04:14:39',1,0),(4075,4070,4033,'消息用途场景','i18n-message-usage','/i18n_message_usage','',5,'2026-04-11 04:14:33','2026-04-11 04:14:33',0,0),(4076,4070,4033,'地区语言设置','locale-setting','/locale_setting','',6,'2026-04-11 04:15:06','2026-04-11 04:15:06',0,0),(4077,4070,4033,'发号器','g2rain-raindrop','/g2rain_raindrop','',7,'2026-04-11 04:15:29','2026-04-11 04:15:29',0,0),(8046,NULL,7006,'内容管理','cms','','',1,'2026-04-19 08:02:19','2026-04-19 08:02:19',0,0),(8047,8046,7006,'文章列表','cms_article','/article','',1,'2026-04-19 08:04:17','2026-04-19 08:04:17',0,0),(8048,8046,7006,'文章类型','cms_article_category','/article_category','',2,'2026-04-19 08:05:20','2026-04-19 08:05:28',1,0),(8049,8046,7006,'页面列表','cms_page','/page','',3,'2026-04-19 08:06:09','2026-04-19 08:06:09',0,0),(8050,8046,7006,'站点配置','cms_tag','/tag','',5,'2026-04-19 08:06:57','2026-04-19 08:07:21',1,0),(8051,8046,7006,'文章空间','cms_space','/space','',4,'2026-04-19 08:07:49','2026-04-19 08:07:49',0,0),(8052,8046,7006,'站点配置','cms_web_site','/web_site','',6,'2026-04-19 08:08:15','2026-04-19 08:08:15',0,0),(8053,8046,7006,'站点栏目','cms_channel','/channel','',7,'2026-04-19 08:08:56','2026-04-19 08:08:56',0,0);
-/*!40000 ALTER TABLE `resource_menu` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `resource_page`
---
-
-DROP TABLE IF EXISTS `resource_page`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `resource_page` (
-  `id` bigint NOT NULL COMMENT '页面标识',
-  `application_id` bigint NOT NULL COMMENT '应用标识',
-  `page_name` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '页面名称',
-  `page_code` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '页面编码',
-  `link_path` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '链接路径',
-  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `version` int NOT NULL DEFAULT '0' COMMENT '记录版本',
-  `delete_flag` tinyint NOT NULL DEFAULT '0' COMMENT '删除标识[0:未删除, 1:已删除]',
-  PRIMARY KEY (`id`),
-  KEY `idx_app_del_id` (`application_id`,`delete_flag`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='应用资源页面表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `resource_page`
---
-
-LOCK TABLES `resource_page` WRITE;
-/*!40000 ALTER TABLE `resource_page` DISABLE KEYS */;
-INSERT INTO `resource_page` VALUES (38,8,'账号开通界面','tenant-provision','/tenant-provision','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(39,9,'机构管理界面','organ','/organ','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(50,9,'用户管理界面','user','/user','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(51,9,'角色管理界面','role','/role','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(52,9,'应用配置界面','application','/application','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(53,9,'资源配置界面','resource-settings','/resource-settings','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(55,9,'资源菜单界面','resource-menu','/resource-menu','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(56,9,'资源页面界面','resource-page','/resource-page','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(57,9,'资源接口界面','resource-api-endpoint','/resource-api-endpoint','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(58,9,'功能权限界面','control-unit','/control-unit','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(59,9,'业务能力界面','control-domain','/control-domain','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(60,9,'授权记录界面','application-authorization','/application-authorization','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(61,9,'后端接口界面','api-endpoint','/api-endpoint','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(62,9,'账号管理界面','passport','/passport','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(4082,4033,'网关路由配置','route_definition','/route_definition','2026-04-11 07:20:54','2026-04-11 07:20:54',0,0),(4083,4033,'字典管理','dictionary_item','/dictionary_item','2026-04-11 07:21:45','2026-04-12 11:02:20',1,1),(4084,4033,'字典用途场景','dictionary_usage','/dictionary_usage','2026-04-11 07:22:01','2026-04-11 07:22:01',0,0),(4085,4033,'消息国际化','i18n_message','/i18n_message','2026-04-11 07:22:16','2026-04-11 07:22:31',1,0),(4086,4033,'消息国际化用途','i18n_message_usage','/i18n_message_usage','2026-04-11 07:22:48','2026-04-11 07:22:48',0,0),(4087,4033,'地区语言配置','locale_setting','/locale_setting','2026-04-11 07:23:02','2026-04-11 07:23:02',0,0),(4088,4033,'发号器配置','g2rain_raindrop','/g2rain_raindrop','2026-04-11 07:23:17','2026-04-11 07:23:17',0,0),(8014,7006,'space','space','/space','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8015,7006,'channel','channel','/channel','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8016,7006,'article','article','/article','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8017,7006,'page','page','/page','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8018,7006,'tag','tag','/tag','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8019,7006,'article_tag_relation','article_tag_relation','/article_tag_relation','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8020,7006,'web_site','web_site','/web_site','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8021,7006,'article_category','article_category','/article_category','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0);
-/*!40000 ALTER TABLE `resource_page` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `resource_page_element`
---
-
-DROP TABLE IF EXISTS `resource_page_element`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `resource_page_element` (
-  `id` bigint NOT NULL COMMENT '页面元素标识',
-  `application_id` bigint NOT NULL COMMENT '应用标识',
-  `page_code` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '页面编码',
-  `page_element_name` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '页面元素名称',
-  `page_element_code` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '页面元素编码',
-  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `version` int NOT NULL DEFAULT '0' COMMENT '记录版本',
-  `delete_flag` tinyint NOT NULL DEFAULT '0' COMMENT '删除标识[0:未删除, 1:已删除]',
-  PRIMARY KEY (`id`),
-  KEY `idx_app_del_id` (`application_id`,`delete_flag`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='应用资源页面元素表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `resource_page_element`
---
-
-LOCK TABLES `resource_page_element` WRITE;
-/*!40000 ALTER TABLE `resource_page_element` DISABLE KEYS */;
-INSERT INTO `resource_page_element` VALUES (63,8,'tenant-provision','保存按钮','tenant-provision:save','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(65,9,'organ','新增按钮','organ:add','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(66,9,'organ','修改按钮','organ:edit','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(67,9,'organ','调整归属','organ:reassign','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(68,9,'organ','修改状态','organ:status-update','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(69,9,'organ','删除按钮','organ:delete','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(70,9,'user','新增按钮','user:add','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(71,9,'user','修改按钮','user:edit','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(72,9,'user','删除按钮','user:delete','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(73,9,'role','新增按钮','role:add','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(75,9,'role','修改按钮','role:edit','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(76,9,'role','分配用户','role:users-assign','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(77,9,'role','分配权限','role:control-utils-assign','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(78,9,'role','删除按钮','role:delete','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(79,9,'application','新增按钮','application:add','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(80,9,'application','修改按钮','application:edit','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(81,9,'application','关联应用','application:integrate','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(82,9,'application','公钥配置','application:public-key-config','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(83,9,'application','修改状态','application:status:update','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(85,9,'application','删除按钮','application:delete','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(86,9,'resource-settings','导入按钮','resource-settings:upload','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(87,9,'resource-menu','新增按钮','resource-menu:add','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(88,9,'resource-menu','修改按钮','resource-menu:edit','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(89,9,'resource-menu','删除按钮','resource-menu:delete','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(90,9,'resource-page','新增按钮','resource-page:add','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(91,9,'resource-page','修改按钮','resource-page:edit','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(92,9,'resource-page','页面元素','resource-page:page-element-mgmt','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(93,9,'resource-page','删除按钮','resource-page:delete','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(95,9,'resource-api-endpoint','新增按钮','resource-api-endpoint:add','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(96,9,'resource-api-endpoint','修改按钮','resource-api-endpoint:edit','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(97,9,'resource-api-endpoint','删除按钮','resource-api-endpoint:delete','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(98,9,'control-unit','新增按钮','control-unit:add','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(99,9,'control-unit','修改按钮','control-unit:edit','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(100,9,'control-unit','配置资源','control-unit:resources-config','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(101,9,'control-unit','修改状态','control-unit:status-update','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(102,9,'control-unit','删除按钮','control-unit:delete','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(103,9,'control-domain','新增按钮','control-domain:add','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(105,9,'control-domain','修改按钮','control-domain:edit','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(106,9,'control-domain','关联权限','control-domain:control-utils-associate','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(107,9,'control-domain','开通功能','control-domain:features-activate','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(108,9,'control-domain','删除按钮','control-domain:delete','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(109,9,'application-authorization','修改状态','application-authorization:status-update','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(110,9,'application-authorization','同步能力','application-authorization:control-utils-sync','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(111,9,'api-endpoint','新增按钮','api-endpoint:add','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(112,9,'api-endpoint','修改按钮','api-endpoint:edit','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(113,9,'api-endpoint','导入按钮','api-endpoint:upload','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(115,9,'api-endpoint','删除按钮','api-endpoint:delete','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(116,9,'passport','新增按钮','passport:add','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(117,9,'passport','修改按钮','passport:edit','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(118,9,'passport','修改状态','passport:status-update','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(119,9,'passport','删除按钮','passport:delete','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(4104,4033,'g2rain_raindrop','新增','g2rain_raindrop:add','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),(4105,4033,'g2rain_raindrop','编辑','g2rain_raindrop:edit','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),(4106,4033,'g2rain_raindrop','删除','g2rain_raindrop:delete','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),(4107,4033,'dictionary_item','新增','dictionary_item:add','2026-04-11 14:20:20','2026-04-12 11:02:13',1,1),(4108,4033,'dictionary_item','编辑','dictionary_item:edit','2026-04-11 14:20:20','2026-04-12 11:02:15',1,1),(4109,4033,'dictionary_item','删除','dictionary_item:delete','2026-04-11 14:20:20','2026-04-12 11:02:16',1,1),(4110,4033,'dictionary_usage','新增','dictionary_usage:add','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),(4111,4033,'dictionary_usage','编辑','dictionary_usage:edit','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),(4112,4033,'dictionary_usage','删除','dictionary_usage:delete','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),(4113,4033,'route_definition','新增','route_definition:add','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),(4114,4033,'route_definition','编辑','route_definition:edit','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),(4115,4033,'route_definition','删除','route_definition:delete','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),(4116,4033,'locale_setting','新增','locale_setting:add','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),(4117,4033,'locale_setting','编辑','locale_setting:edit','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),(4118,4033,'locale_setting','删除','locale_setting:delete','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),(4119,4033,'i18n_message_usage','新增','i18n_message_usage:add','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),(4120,4033,'i18n_message_usage','编辑','i18n_message_usage:edit','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),(4121,4033,'i18n_message_usage','删除','i18n_message_usage:delete','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),(4122,4033,'i18n_message','新增','i18n_message:add','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),(4123,4033,'i18n_message','编辑','i18n_message:edit','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),(4124,4033,'i18n_message','删除','i18n_message:delete','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),(4147,4033,'dictionary_usage','查询','dictionary_usage:search','2026-04-12 13:58:31','2026-04-12 14:15:37',1,1),(4148,4033,'dictionary_usage','重置','dictionary_usage:reset','2026-04-12 13:58:31','2026-04-12 14:15:35',1,1),(4149,4033,'dictionary_usage','明细','dictionary_usage:detail','2026-04-12 13:58:31','2026-04-12 13:58:31',0,0),(4150,4033,'dictionary_usage','打开字典明细','dictionary_usage:items','2026-04-12 13:58:31','2026-04-12 14:12:10',1,0),(4151,4033,'dictionary_usage','新增字典','dictionary_item:add','2026-04-12 14:07:40','2026-04-12 14:11:45',1,0),(4152,4033,'dictionary_usage','删除字典','dictionary_item:delete','2026-04-12 14:07:40','2026-04-12 14:11:55',1,0),(4153,4033,'dictionary_usage','编辑字典','dictionary_item:edit','2026-04-12 14:07:40','2026-04-12 14:12:01',1,0),(8022,7006,'article_category','新增','article_category:add','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8023,7006,'article_category','删除','article_category:delete','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8024,7006,'article_category','编辑','article_category:edit','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8025,7006,'article_tag_relation','新增','article_tag_relation:add','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8026,7006,'article_tag_relation','删除','article_tag_relation:delete','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8027,7006,'article_tag_relation','编辑','article_tag_relation:edit','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8028,7006,'article','新增','article:add','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8029,7006,'article','删除','article:delete','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8030,7006,'article','编辑','article:edit','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8031,7006,'channel','新增','channel:add','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8032,7006,'channel','删除','channel:delete','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8033,7006,'channel','编辑','channel:edit','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8034,7006,'page','新增','page:add','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8035,7006,'page','删除','page:delete','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8036,7006,'page','编辑','page:edit','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8037,7006,'space','新增','space:add','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8038,7006,'space','删除','space:delete','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8039,7006,'space','编辑','space:edit','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8040,7006,'tag','新增','tag:add','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8041,7006,'tag','删除','tag:delete','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8042,7006,'tag','编辑','tag:edit','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8043,7006,'web_site','新增','web_site:add','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8044,7006,'web_site','删除','web_site:delete','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0),(8045,7006,'web_site','编辑','web_site:edit','2026-04-19 08:00:02','2026-04-19 08:00:02',0,0);
-/*!40000 ALTER TABLE `resource_page_element` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `role`
---
-
-DROP TABLE IF EXISTS `role`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `role` (
-  `id` bigint NOT NULL COMMENT '角色标识',
-  `organ_id` bigint DEFAULT NULL COMMENT '机构标识',
-  `role_name` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '角色名称',
-  `role_type` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '角色类型[ADMIN:超管角色-只读, USER:用户角色]',
-  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `version` int NOT NULL DEFAULT '0' COMMENT '记录版本',
-  `delete_flag` tinyint NOT NULL DEFAULT '0' COMMENT '删除标识[0:未删除, 1:已删除]',
-  PRIMARY KEY (`id`),
-  KEY `idx_organ_id_id` (`organ_id`,`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `role`
---
-
-LOCK TABLES `role` WRITE;
-/*!40000 ALTER TABLE `role` DISABLE KEYS */;
-INSERT INTO `role` VALUES (5,2,'超管角色','ADMIN','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(2023,2021,'超管角色','ADMIN','2026-02-06 08:57:34','2026-02-06 08:57:34',0,0),(2030,2027,'超管角色','ADMIN','2026-02-06 09:00:56','2026-02-06 09:00:56',0,0),(3004,3002,'超管角色','ADMIN','2026-03-17 11:59:22','2026-03-17 11:59:22',0,0),(3011,3009,'超管角色','ADMIN','2026-03-18 14:27:30','2026-03-18 14:27:30',0,0),(3017,3015,'超管角色','ADMIN','2026-03-18 14:31:38','2026-03-18 14:31:38',0,0),(3024,3022,'超管角色','ADMIN','2026-03-19 00:15:49','2026-03-19 00:15:49',0,0),(3030,3028,'超管角色','ADMIN','2026-03-19 00:24:40','2026-03-19 00:24:40',0,0),(4004,4002,'超管角色','ADMIN','2026-03-25 14:47:08','2026-03-25 14:47:08',0,0),(4012,4010,'超管角色','ADMIN','2026-03-30 06:21:18','2026-03-30 06:21:18',0,0),(4022,4020,'超管角色','ADMIN','2026-04-02 12:49:30','2026-04-02 12:49:30',0,0),(4029,4027,'超管角色','ADMIN','2026-04-03 00:25:03','2026-04-03 00:25:03',0,0),(9001,2027,'超管角色','ADMIN','2026-04-19 08:54:28','2026-04-19 08:54:28',0,0),(9003,4002,'超管角色','ADMIN','2026-04-19 09:08:09','2026-04-19 09:08:09',0,0);
-/*!40000 ALTER TABLE `role` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `role_control_unit_relation`
---
-
-DROP TABLE IF EXISTS `role_control_unit_relation`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `role_control_unit_relation` (
-  `id` bigint NOT NULL COMMENT '主键标识',
-  `role_id` bigint NOT NULL COMMENT '角色标识',
-  `control_unit_id` bigint NOT NULL COMMENT '控制单元标识',
-  `application_authorization_id` bigint DEFAULT NULL COMMENT '应用授权标识',
-  `status` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ACTIVATED' COMMENT '控制单元状态[ACTIVATED:激活, DEACTIVATED:关停]',
-  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `version` int NOT NULL DEFAULT '0' COMMENT '记录版本',
-  `delete_flag` tinyint NOT NULL DEFAULT '0' COMMENT '删除标识[0:未删除, 1:已删除]',
-  PRIMARY KEY (`id`),
-  KEY `idx_role_sts_del_cu` (`role_id`,`status`,`delete_flag`,`control_unit_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色控制单元关联表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `role_control_unit_relation`
---
-
-LOCK TABLES `role_control_unit_relation` WRITE;
-/*!40000 ALTER TABLE `role_control_unit_relation` DISABLE KEYS */;
-INSERT INTO `role_control_unit_relation` VALUES (16,5,12,NULL,'ACTIVATED','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(2024,2023,15,NULL,'ACTIVATED','2026-02-06 08:57:34','2026-02-06 08:57:34',0,0),(2031,2030,15,NULL,'ACTIVATED','2026-02-06 09:00:56','2026-02-06 09:00:56',0,0),(3005,3004,15,NULL,'ACTIVATED','2026-03-17 11:59:22','2026-03-17 11:59:22',0,0),(3012,3011,15,NULL,'ACTIVATED','2026-03-18 14:27:30','2026-03-18 14:27:30',0,0),(3018,3017,15,NULL,'ACTIVATED','2026-03-18 14:31:38','2026-03-18 14:31:38',0,0),(3025,3024,15,NULL,'ACTIVATED','2026-03-19 00:15:49','2026-03-19 00:15:49',0,0),(3031,3030,15,NULL,'ACTIVATED','2026-03-19 00:24:40','2026-03-19 00:24:40',0,0),(4005,4004,15,NULL,'ACTIVATED','2026-03-25 14:47:08','2026-03-25 14:47:08',0,0),(4013,4012,15,NULL,'ACTIVATED','2026-03-30 06:21:18','2026-03-30 06:21:18',0,0),(4023,4022,15,NULL,'ACTIVATED','2026-04-02 12:49:30','2026-04-02 12:49:30',0,0),(4030,4029,15,NULL,'ACTIVATED','2026-04-03 00:25:03','2026-04-03 00:25:03',0,0),(4043,5,4039,4042,'ACTIVATED','2026-04-08 12:14:32','2026-04-08 12:14:32',0,0),(4064,4004,4039,4063,'ACTIVATED','2026-04-09 15:07:45','2026-04-09 15:07:45',0,0),(4066,2030,4039,4065,'ACTIVATED','2026-04-09 15:08:39','2026-04-09 15:08:39',0,0),(4068,3011,4039,4067,'ACTIVATED','2026-04-09 15:09:00','2026-04-09 15:09:00',0,0),(4081,5,4069,4080,'ACTIVATED','2026-04-11 04:18:40','2026-04-11 04:18:40',0,0),(8096,4004,8005,8095,'ACTIVATED','2026-04-19 08:16:51','2026-04-19 08:16:51',0,0),(9002,9001,15,NULL,'ACTIVATED','2026-04-19 08:54:28','2026-04-19 08:54:28',0,0),(9004,9003,15,NULL,'ACTIVATED','2026-04-19 09:08:09','2026-04-19 09:08:09',0,0);
-/*!40000 ALTER TABLE `role_control_unit_relation` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `user`
---
-
+-- =============================================
+-- 2. 用户表 (user)
+-- =============================================
 DROP TABLE IF EXISTS `user`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+
 CREATE TABLE `user` (
-  `id` bigint NOT NULL COMMENT '用户标识',
-  `passport_id` bigint NOT NULL COMMENT '账号标识',
-  `organ_id` bigint NOT NULL COMMENT '机构标识',
-  `email` varchar(128) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '邮箱地址',
-  `mobile` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT '' COMMENT '手机号码',
-  `real_name` varchar(128) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '真实姓名',
-  `admin` tinyint NOT NULL DEFAULT '0' COMMENT '管理员标记[0:否, 1:是]',
-  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `version` int NOT NULL DEFAULT '0' COMMENT '记录版本',
-  `delete_flag` tinyint NOT NULL DEFAULT '0' COMMENT '删除标识[0:未删除, 1:已删除]',
-  PRIMARY KEY (`id`),
-  KEY `idx_passport_id` (`passport_id`),
-  KEY `idx_organ_id` (`organ_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
-/*!40101 SET character_set_client = @saved_cs_client */;
+    `id` BIGINT NOT NULL COMMENT 													                    '用户标识',
+    `passport_id` BIGINT NOT NULL COMMENT 														        '账号标识',
+    `organ_id` BIGINT NOT NULL COMMENT 												                    '机构标识',
+    `email` VARCHAR(128) DEFAULT NULL COMMENT 														    '邮箱地址',
+    `mobile` VARCHAR(32) DEFAULT '' COMMENT 															'手机号码',
+    `real_name` VARCHAR(128) DEFAULT NULL COMMENT 														'真实姓名',
+    `admin` TINYINT NOT NULL DEFAULT 0 COMMENT 													        '管理员标记[0:否, 1:是]',
+    `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT                                      '创建时间',
+    `update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT          '更新时间',
+    `version` INT NOT NULL DEFAULT 0 COMMENT                                                            '记录版本',
+    `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                    '删除标识[0:未删除, 1:已删除]',
+    PRIMARY KEY (`id`),
+    INDEX `idx_passport_id` (`passport_id`),
+    INDEX `idx_organ_id` (`organ_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=                             '用户表';
 
---
--- Dumping data for table `user`
---
+-- =============================================
+-- 3. 机构表 (organ)
+-- =============================================
+DROP TABLE IF EXISTS `organ`;
 
-LOCK TABLES `user` WRITE;
-/*!40000 ALTER TABLE `user` DISABLE KEYS */;
-INSERT INTO `user` VALUES (6,1,2,NULL,NULL,'平台管理员',1,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(2025,2020,2021,'','','重案组之虎',1,'2026-02-06 08:57:34','2026-02-06 08:57:34',0,0),(2032,2020,2027,'','','代码推土机',1,'2026-02-06 09:27:25','2026-02-06 09:27:25',0,0),(3006,3001,3002,'','','管理员',1,'2026-03-17 11:59:22','2026-03-17 11:59:22',0,0),(3013,3008,3009,'','','测试租户2管理员',1,'2026-03-18 14:27:30','2026-03-18 14:27:30',0,0),(3019,3008,3015,'','','测试003',1,'2026-03-18 14:31:38','2026-03-18 14:31:38',0,0),(3026,3021,3022,'','','管理员',1,'2026-03-19 00:15:49','2026-03-19 00:15:49',0,0),(3032,3021,3028,'','','管理员',1,'2026-03-19 00:24:40','2026-03-19 00:24:40',0,0),(4006,4001,4002,'','','孙',1,'2026-03-25 14:47:09','2026-03-25 14:47:09',0,0),(4014,4009,4010,'coderxb@163.com','18600778899','小李',1,'2026-03-30 06:21:18','2026-03-30 06:21:18',0,0),(4024,4019,4020,'','','孙',1,'2026-04-02 12:49:30','2026-04-02 12:49:30',0,0),(4031,4026,4027,'','','孙豪杰',1,'2026-04-03 00:25:03','2026-04-03 00:25:03',0,0);
-/*!40000 ALTER TABLE `user` ENABLE KEYS */;
-UNLOCK TABLES;
+CREATE TABLE `organ` (
+    `id` BIGINT NOT NULL COMMENT 													                    '机构标识',
+    `organ_name` VARCHAR(128) NOT NULL COMMENT 															'机构名称',
+    `organ_type` VARCHAR(32) NOT NULL COMMENT 															'机构类型[服务商、渠道、公司、租户]',
+    `status` VARCHAR(32) NOT NULL DEFAULT 'ACTIVE' COMMENT 											    '机构状态[ACTIVE:有效, INACTIVE:无效]',
+    `admin` TINYINT NOT NULL DEFAULT 0 COMMENT 													        '运营标记[0:否, 1:是]',
+    `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT                                      '创建时间',
+    `update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT          '更新时间',
+    `version` INT NOT NULL DEFAULT 0 COMMENT                                                            '记录版本',
+    `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                    '删除标识[0:未删除, 1:已删除]',
+    PRIMARY KEY (`id`),
+    INDEX `idx_organ_name` (`organ_name`),
+    INDEX `idx_organ_type` (`organ_type`),
+    INDEX `idx_organ_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=                             '机构表';
 
---
--- Table structure for table `user_role_relation`
---
+-- =============================================
+-- 4. 机构路径关系表 (organ_closure)
+-- =============================================
+DROP TABLE IF EXISTS `organ_closure`;
 
+CREATE TABLE `organ_closure` (
+    `id` BIGINT NOT NULL COMMENT 													                    '主键标识',
+    `ancestor_id` BIGINT NOT NULL COMMENT  													            '祖先机构标识[上级]',
+    `descendant_id` BIGINT NOT NULL COMMENT   													        '后代机构标识[下级]',
+    `descendant_type` VARCHAR(32) NOT NULL COMMENT 													    '后代机构类型[服务商、渠道、公司、租户]',
+    `relation_type` VARCHAR(32) NOT NULL COMMENT                                                        '关系类型[SELF_ASSOCIATION:自身关联, DIRECT_SUBORDINATE:直属, INDIRECT_SUBORDINATE:从属]',
+    `path_count` INT NOT NULL DEFAULT 1 COMMENT                                                         '路径引用次数[用于DAG交叉挂载维护]',
+    `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT                                      '创建时间',
+    `update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT          '更新时间',
+    `version` INT NOT NULL DEFAULT 0 COMMENT                                                            '记录版本',
+    `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                    '删除标识[0:未删除, 1:已删除]',
+    PRIMARY KEY (`id`),
+    INDEX idx_ancestor_id (ancestor_id),
+    INDEX idx_descendant_id (descendant_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=                             '机构路径关系表';
+
+-- =============================================
+-- 5. 应用资源菜单表 (resource_menu)
+-- =============================================
+DROP TABLE IF EXISTS `resource_menu`;
+
+CREATE TABLE `resource_menu` (
+    `id` BIGINT NOT NULL COMMENT 													                    '菜单标识',
+    `parent_id` BIGINT DEFAULT NULL COMMENT 												            '父菜单标识',
+    `application_id` BIGINT NOT NULL COMMENT 													        '应用标识',
+    `menu_name` VARCHAR(128) NOT NULL COMMENT													        '菜单名称',
+    `menu_code` VARCHAR(64) NOT NULL COMMENT 														    '菜单编码',
+    `link_path` VARCHAR(128) DEFAULT NULL COMMENT 													    '链接路径',
+    `icon` VARCHAR(32) DEFAULT NULL COMMENT 															'展示图标',
+    `menu_sort_order` INT NOT NULL DEFAULT 0 COMMENT 												    '菜单排序',
+    `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT                                      '创建时间',
+    `update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT          '更新时间',
+    `version` INT NOT NULL DEFAULT 0 COMMENT                                                            '记录版本',
+    `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                    '删除标识[0:未删除, 1:已删除]',
+    PRIMARY KEY (`id`),
+    INDEX `idx_app_del_id` (`application_id`, `delete_flag`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=                             '应用资源菜单表';
+
+-- =============================================
+-- 6. 应用资源页面表 (resource_page)
+-- =============================================
+DROP TABLE IF EXISTS `resource_page`;
+
+CREATE TABLE `resource_page` (
+     `id` BIGINT NOT NULL COMMENT 													                    '页面标识',
+     `application_id` BIGINT NOT NULL COMMENT 													        '应用标识',
+     `page_name` VARCHAR(128) NOT NULL COMMENT												            '页面名称',
+     `page_code` VARCHAR(128) NOT NULL COMMENT												            '页面编码',
+     `link_path` VARCHAR(128) NOT NULL COMMENT 													        '链接路径',
+     `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT                                     '创建时间',
+     `update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT         '更新时间',
+     `version` INT NOT NULL DEFAULT 0 COMMENT                                                           '记录版本',
+     `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                   '删除标识[0:未删除, 1:已删除]',
+     PRIMARY KEY (`id`),
+     INDEX `idx_app_del_id` (`application_id`, `delete_flag`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=                             '应用资源页面表';
+
+-- =============================================
+-- 7. 应用资源页面元素表 (resource_page_element)
+-- =============================================
+DROP TABLE IF EXISTS `resource_page_element`;
+
+CREATE TABLE `resource_page_element` (
+    `id` BIGINT NOT NULL COMMENT 													                    '页面元素标识',
+    `application_id` BIGINT NOT NULL COMMENT 													        '应用标识',
+    `page_code` VARCHAR(128) NOT NULL COMMENT														    '页面编码',
+    `page_element_name` VARCHAR(128) NOT NULL COMMENT												    '页面元素名称',
+    `page_element_code` VARCHAR(64) NOT NULL COMMENT												    '页面元素编码',
+    `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT                                      '创建时间',
+    `update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT          '更新时间',
+    `version` INT NOT NULL DEFAULT 0 COMMENT                                                            '记录版本',
+    `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                    '删除标识[0:未删除, 1:已删除]',
+    PRIMARY KEY (`id`),
+    INDEX `idx_app_del_id` (`application_id`, `delete_flag`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=                             '应用资源页面元素表';
+
+-- =============================================
+-- 8. 服务注册表 (service_registry)
+-- =============================================
+DROP TABLE IF EXISTS `service_registry`;
+
+CREATE TABLE `service_registry` (
+   `id` BIGINT NOT NULL COMMENT 													                   '后端服务标识',
+   `service_code` VARCHAR(64) NOT NULL COMMENT                                                         '服务逻辑编码',
+   `name` VARCHAR(128) NOT NULL COMMENT                                                                '服务显示名称',
+   `endpoint` VARCHAR(256) NOT NULL COMMENT                                                            '服务目标地址',
+   `route_prefix` VARCHAR(128) NOT NULL COMMENT                                                        '网关路由前缀',
+   `description` VARCHAR(512) DEFAULT NULL COMMENT                                                     '后端服务说明',
+   `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT                                      '创建时间',
+   `update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT          '更新时间',
+   `version` INT NOT NULL DEFAULT 0 COMMENT                                                            '记录版本',
+   `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                    '删除标识[0:未删除, 1:已删除]',
+   PRIMARY KEY (`id`),
+   UNIQUE KEY `uk_service_code` (`service_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=                             '服务注册表';
+
+-- =============================================
+-- 9. 资源接口表 (resource_api)
+-- =============================================
+DROP TABLE IF EXISTS `resource_api`;
+
+CREATE TABLE `resource_api` (
+    `id` BIGINT NOT NULL COMMENT                                                                        '资源接口标识',
+    `service_code` VARCHAR(64) NOT NULL COMMENT                                                         '服务逻辑编码',
+    `api_tags` VARCHAR(128) NOT NULL COMMENT                                                            '资源接口标签',
+    `name` VARCHAR(128) NOT NULL COMMENT                                                                '资源接口名称',
+    `method` VARCHAR(32) NOT NULL COMMENT                                                               '接口请求方法',
+    `path` VARCHAR(512) NOT NULL COMMENT                                                                '接口请求路径',
+    `description` VARCHAR(512) DEFAULT NULL COMMENT                                                     '资源接口说明',
+    `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT                                      '创建时间',
+    `update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT          '更新时间',
+    `version` INT NOT NULL DEFAULT 0 COMMENT                                                            '记录版本',
+    `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                    '删除标识[0:未删除, 1:已删除]',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_service_method_path` (`service_code`,`method`,`path`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=                             '资源接口表';
+
+-- =============================================
+-- 10. 控制单元表 (control_unit)
+-- =============================================
+DROP TABLE IF EXISTS `control_unit`;
+
+CREATE TABLE `control_unit` (
+    `id` BIGINT NOT NULL COMMENT 													                    '控制单元标识',
+    `application_id` BIGINT NOT NULL COMMENT 													        '应用标识',
+    `control_unit_name` VARCHAR(128) NOT NULL COMMENT                                                   '控制单元名称',
+    `control_unit_scope` VARCHAR(32) NOT NULL COMMENT                                                   '控制单元类型[OPERATION("运营功能"), CUSTOMER("客户功能"), PERPETUAL("永久有效功能")]',
+    `landing` TINYINT NOT NULL DEFAULT 0 COMMENT                                                        '默认数据[0:否, 1:是]',
+    `status` VARCHAR(32) NOT NULL DEFAULT 'UNPUBLISHED' COMMENT 										'控制单元状态[PUBLISHED:已发布, UNPUBLISHED:未发布]',
+    `description` VARCHAR(512) DEFAULT NULL COMMENT   												    '业务说明',
+    `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT                                      '创建时间',
+    `update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT          '更新时间',
+    `version` INT NOT NULL DEFAULT 0 COMMENT                                                            '记录版本',
+    `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                    '删除标识[0:未删除, 1:已删除]',
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=                             '控制单元表';
+
+-- =============================================
+-- 11. 控制单元资源关联表 (control_unit_resource_relation)
+-- =============================================
+DROP TABLE IF EXISTS `control_unit_resource_relation`;
+
+CREATE TABLE `control_unit_resource_relation` (
+    `id` BIGINT NOT NULL COMMENT 													                    '主键标识',
+    `control_unit_id` BIGINT NOT NULL COMMENT							    					        '控制单元标识',
+    `resource_id` BIGINT NOT NULL COMMENT							    					            '资源标识',
+    `resource_type` VARCHAR(32) NOT NULL COMMENT												        '资源类型[MENU:菜单, PAGE:页面, PAGE_ELEMENT:页面元素, API_ENDPOINT:接口地址]',
+    `status`       VARCHAR(32) DEFAULT NULL COMMENT												        '激活状态[VISIBLE:显示, ENABLED:可用]',
+    `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT                                      '创建时间',
+    `update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT          '更新时间',
+    `version` INT NOT NULL DEFAULT 0 COMMENT                                                            '记录版本',
+    `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                    '删除标识[0:未删除, 1:已删除]',
+    PRIMARY KEY (`id`),
+    INDEX `idx_cu_type_del_res` (`control_unit_id`, `resource_type`, `delete_flag`, `resource_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=                             '控制单元资源关联表';
+
+-- =============================================
+-- 12. 角色表 (role)
+-- =============================================
+DROP TABLE IF EXISTS `role`;
+
+CREATE TABLE `role` (
+    `id` BIGINT NOT NULL COMMENT 													                    '角色标识',
+    `organ_id` BIGINT DEFAULT NULL COMMENT 														        '机构标识',
+    `role_name` VARCHAR(128) NOT NULL COMMENT 														    '角色名称',
+    `role_type` VARCHAR(32) NOT NULL COMMENT 													        '角色类型[ADMIN:超管角色-只读, USER:用户角色]',
+    `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT                                      '创建时间',
+    `update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT          '更新时间',
+    `version` INT NOT NULL DEFAULT 0 COMMENT                                                            '记录版本',
+    `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                    '删除标识[0:未删除, 1:已删除]',
+    PRIMARY KEY (`id`),
+    INDEX `idx_organ_id_id` (`organ_id`, `id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=                             '角色表';
+
+-- =============================================
+-- 13. 用户角色关联表 (user_role_relation)
+-- =============================================
 DROP TABLE IF EXISTS `user_role_relation`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+
 CREATE TABLE `user_role_relation` (
-  `id` bigint NOT NULL COMMENT '主键标识',
-  `user_id` bigint NOT NULL COMMENT '用户标识',
-  `role_id` bigint NOT NULL COMMENT '角色标识',
-  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `version` int NOT NULL DEFAULT '0' COMMENT '记录版本',
-  `delete_flag` tinyint NOT NULL DEFAULT '0' COMMENT '删除标识[0:未删除, 1:已删除]',
-  PRIMARY KEY (`id`),
-  KEY `idx_organ_id_id` (`user_id`,`role_id`,`delete_flag`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户角色关联表';
-/*!40101 SET character_set_client = @saved_cs_client */;
+    `id` BIGINT NOT NULL COMMENT 													                    '主键标识',
+    `user_id` BIGINT NOT NULL COMMENT 															        '用户标识',
+    `role_id` BIGINT NOT NULL COMMENT 															        '角色标识',
+    `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT                                      '创建时间',
+    `update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT          '更新时间',
+    `version` INT NOT NULL DEFAULT 0 COMMENT                                                            '记录版本',
+    `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                    '删除标识[0:未删除, 1:已删除]',
+    PRIMARY KEY (`id`),
+    INDEX `idx_organ_id_id` (`user_id`, `role_id`, `delete_flag`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=                             '用户角色关联表';
 
---
--- Dumping data for table `user_role_relation`
---
+-- =============================================
+-- 14. 角色控制单元关联表 (role_control_unit_relation)
+-- =============================================
+DROP TABLE IF EXISTS `role_control_unit_relation`;
 
-LOCK TABLES `user_role_relation` WRITE;
-/*!40000 ALTER TABLE `user_role_relation` DISABLE KEYS */;
-INSERT INTO `user_role_relation` VALUES (7,6,5,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),(2026,2025,2023,'2026-02-06 08:57:34','2026-02-06 08:57:34',0,0),(2033,2032,2030,'2026-02-06 09:28:13','2026-02-06 09:28:13',0,0),(3007,3006,3004,'2026-03-17 11:59:22','2026-03-17 11:59:22',0,0),(3014,3013,3011,'2026-03-18 14:27:30','2026-03-18 14:27:30',0,0),(3020,3019,3017,'2026-03-18 14:31:38','2026-03-18 14:31:38',0,0),(3027,3026,3024,'2026-03-19 00:15:49','2026-03-19 00:15:49',0,0),(3033,3032,3030,'2026-03-19 00:24:40','2026-03-19 00:24:40',0,0),(4007,4006,4004,'2026-03-25 14:47:09','2026-03-25 14:47:09',0,0),(4015,4014,4012,'2026-03-30 06:21:18','2026-03-30 06:21:18',0,0),(4025,4024,4022,'2026-04-02 12:49:30','2026-04-02 12:49:30',0,0),(4032,4031,4029,'2026-04-03 00:25:03','2026-04-03 00:25:03',0,0);
-/*!40000 ALTER TABLE `user_role_relation` ENABLE KEYS */;
-UNLOCK TABLES;
+CREATE TABLE `role_control_unit_relation` (
+    `id` BIGINT NOT NULL COMMENT 													                    '主键标识',
+    `role_id` BIGINT NOT NULL COMMENT 															        '角色标识',
+    `control_unit_id` BIGINT NOT NULL COMMENT 													        '控制单元标识',
+    `application_authorization_id` BIGINT DEFAULT NULL COMMENT                                          '应用授权标识',
+    `status` VARCHAR(32) NOT NULL DEFAULT 'ACTIVATED' COMMENT 											'控制单元状态[ACTIVATED:激活, DEACTIVATED:关停]',
+    `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT                                      '创建时间',
+    `update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT          '更新时间',
+    `version` INT NOT NULL DEFAULT 0 COMMENT                                                            '记录版本',
+    `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                    '删除标识[0:未删除, 1:已删除]',
+    PRIMARY KEY (`id`),
+    -- 默认索引：按角色 + 控制单元 + 状态
+    INDEX `idx_role_sts_del_cu` (`role_id`, `status`, `delete_flag`, `control_unit_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=                             '角色控制单元关联表';
 
---
--- Dumping routines for database 'g2rain_basis'
---
-/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+-- =============================================
+-- 15. 控制域表 (control_domain)
+-- =============================================
+DROP TABLE IF EXISTS `control_domain`;
 
-/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
-/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
-/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+CREATE TABLE `control_domain` (
+    `id` BIGINT NOT NULL COMMENT 													                    '控制域标识',
+    `application_id` BIGINT NOT NULL COMMENT 													        '应用标识',
+    `control_domain_name` VARCHAR(128) NOT NULL COMMENT                                                 '控制域名称',
+    `control_domain_type` VARCHAR(32) NOT NULL COMMENT                                                  '控制域类型[TRADE("交易开通"), APPLICATION("应用授权开通")]',
+    `control_domain_scope` VARCHAR(32) NOT NULL COMMENT                                                 '交付范围[CUSTOMER("客户交付"), OPERATION("平台运营")]',
+    `description` TEXT DEFAULT NULL COMMENT   												            '业务说明',
+    `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT                                      '创建时间',
+    `update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT          '更新时间',
+    `version` INT NOT NULL DEFAULT 0 COMMENT                                                            '记录版本',
+    `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                    '删除标识[0:未删除, 1:已删除]',
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=                             '控制域表';
 
--- Dump completed on 2026-04-19 21:01:37
+-- =============================================
+-- 16. 控制域控制单元关联表 (control_domain_control_unit_relation)
+-- =============================================
+DROP TABLE IF EXISTS `control_domain_control_unit_relation`;
+
+CREATE TABLE `control_domain_control_unit_relation` (
+    `id` BIGINT NOT NULL COMMENT 													                    '主键标识',
+    `control_domain_id` BIGINT NOT NULL COMMENT                                                         '控制域标识',
+    `control_unit_id` BIGINT NOT NULL COMMENT							    					        '控制单元标识',
+    `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT                                      '创建时间',
+    `update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT          '更新时间',
+    `version` INT NOT NULL DEFAULT 0 COMMENT                                                            '记录版本',
+    `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                    '删除标识[0:未删除, 1:已删除]',
+    PRIMARY KEY (`id`),
+    INDEX `idx_control_domain_unit` (`control_domain_id`, `control_unit_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=                             '控制域控制单元关联表';
+
+-- =============================================
+-- 17. 应用表 (application)
+-- =============================================
+DROP TABLE IF EXISTS `application`;
+
+CREATE TABLE `application` (
+    `id` BIGINT NOT NULL COMMENT 													                    '应用标识',
+    `organ_id` BIGINT NOT NULL COMMENT 												                    '机构标识',
+    `application_name` VARCHAR(128) NOT NULL COMMENT                                                    '应用名称',
+    `application_code` VARCHAR(64) DEFAULT NULL COMMENT                                                 '应用编码',
+    `can_integrate` TINYINT NOT NULL DEFAULT 0 COMMENT                                                  '是否具备集成功能[0:否, 1:是]',
+    `landing` TINYINT NOT NULL DEFAULT 0 COMMENT                                                        '默认数据[0:否, 1:是]',
+    `application_type` VARCHAR(32) NOT NULL COMMENT                                                     '应用类型[SUPPORT:支撑, SYSTEM:系统提供, PUBLIC:第三方提供, PRIVATE:私有]',
+    `public_key_algorithm` VARCHAR(32) DEFAULT NULL COMMENT                                             '应用公钥算法',
+    `public_key_format` VARCHAR(32)  DEFAULT NULL COMMENT                                               '应用公钥格式',
+    `public_key` TEXT DEFAULT NULL COMMENT                                                              '应用公钥内容',
+    `access_token_expires_in` INT NOT NULL COMMENT                                                      '访问令牌生存时间(秒)',
+    `refresh_token_expires_in` INT NOT NULL COMMENT                                                     '刷新访问令牌生存时间(秒)',
+    `endpoint_url` VARCHAR(512) NOT NULL COMMENT   												        '访问地址',
+    `context_path` VARCHAR(512) DEFAULT NULL COMMENT   												    '应用路径',
+    `status` VARCHAR(32) NOT NULL DEFAULT 'UNPUBLISHED' COMMENT 										'应用状态[PUBLISHED:已发布, UNPUBLISHED:未发布]',
+    `description` VARCHAR(512) DEFAULT NULL COMMENT   												    '业务说明',
+    `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT                                      '创建时间',
+    `update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT          '更新时间',
+    `version` INT NOT NULL DEFAULT 0 COMMENT                                                            '记录版本',
+    `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                    '删除标识[0:未删除, 1:已删除]',
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=                             '应用表';
+
+-- =============================================
+-- 18. 应用归类关系表 (application_suite)
+-- =============================================
+DROP TABLE IF EXISTS `application_suite`;
+
+CREATE TABLE `application_suite` (
+    `id` BIGINT NOT NULL COMMENT 													                    '主键标识',
+    `application_id` BIGINT NOT NULL COMMENT 											                '应用标识',
+    `master_application_id` BIGINT NOT NULL COMMENT                                                     '主应用标识',
+    `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT                                      '创建时间',
+    `update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT          '更新时间',
+    `version` INT NOT NULL DEFAULT 0 COMMENT                                                            '记录版本',
+    `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                    '删除标识[0:未删除, 1:已删除]',
+    PRIMARY KEY (`id`),
+    INDEX `uk_application_id` (`application_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=                             '应用归类关系表';
+
+-- =============================================
+-- 19. 应用授权记录表 (application_authorization)
+-- =============================================
+DROP TABLE IF EXISTS `application_authorization`;
+
+CREATE TABLE `application_authorization` (
+    `id` BIGINT NOT NULL COMMENT 													                    '应用授权标识',
+    `organ_id` BIGINT NOT NULL COMMENT 												                    '机构标识',
+    `application_id` BIGINT NOT NULL COMMENT 													        '应用标识',
+    `control_domain_id` BIGINT NOT NULL COMMENT                                                         '控制域标识',
+    `subscription_id` BIGINT DEFAULT NULL COMMENT                                                       '订阅标识',
+    `status` VARCHAR(32) NOT NULL DEFAULT 'ACTIVATED' COMMENT 											'应用授权状态[ACTIVATED:激活, DEACTIVATED:关停]',
+    `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT                                      '创建时间',
+    `update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT          '更新时间',
+    `version` INT NOT NULL DEFAULT 0 COMMENT                                                            '记录版本',
+    `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                    '删除标识[0:未删除, 1:已删除]',
+    PRIMARY KEY (`id`),
+    INDEX `idx_application_id` (`application_id`),
+    INDEX `idx_control_domain_id` (`control_domain_id`),
+    INDEX `idx_organ_st_del_app` (`organ_id`, `status`, `delete_flag`, `application_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=                             '应用授权记录表';
+
+-- =============================================
+-- 20. 登录信息表 (login_token)
+-- =============================================
+DROP TABLE IF EXISTS `login_token`;
+
+CREATE TABLE `login_token` (
+    `id` BIGINT NOT NULL COMMENT 													                    '主键标识',
+    `session_type` VARCHAR(32) DEFAULT NULL COMMENT 													'会话类型',
+    `organ_id` BIGINT DEFAULT NULL COMMENT 														        '机构标识',
+    `organ_type` VARCHAR(32) DEFAULT NULL COMMENT 													    '机构类型',
+    `admin_company` TINYINT NOT NULL DEFAULT 0 COMMENT 											        '运营标记[0:否, 1:是]',
+    `passport_id` BIGINT DEFAULT NULL COMMENT													        '账号标识',
+    `user_id` BIGINT DEFAULT NULL COMMENT 														        '用户标识',
+    `real_name` VARCHAR(128) DEFAULT NULL COMMENT 														'真实姓名',
+    `admin_user` TINYINT NOT NULL DEFAULT 0 COMMENT 												    '管理员标记[0:否, 1:是]',
+    `application_id` BIGINT DEFAULT NULL COMMENT 												        '应用标识',
+    `application_organ_id` BIGINT DEFAULT NULL COMMENT 											        '应用组织标识',
+    `client_id` VARCHAR(64) DEFAULT NULL COMMENT                                                        '客户端ID',
+    `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT                                      '创建时间',
+    `update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT          '更新时间',
+    `version` INT NOT NULL DEFAULT 0 COMMENT                                                            '记录版本',
+    `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                    '删除标识[0:未删除, 1:已删除]',
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=UTF8MB4 COLLATE=utf8mb4_unicode_ci COMMENT=								'登录信息表, 记录了当前登录状态的相关信息';
+
+-- =============================================
+-- 21. 审计事件表 (audit_event)
+-- =============================================
+DROP TABLE IF EXISTS `audit_event`;
+
+CREATE TABLE `audit_event` (
+    `id` BIGINT NOT NULL COMMENT 													                    '主键标识',
+    `trace_id` VARCHAR(64) DEFAULT NULL COMMENT                                                         '网关跟踪标识',
+    `client_id` VARCHAR(128) DEFAULT NULL COMMENT                                                       '客户端标识',
+    `request_id` VARCHAR(64) DEFAULT NULL COMMENT                                                       '前端请求标识',
+    `request_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT                                     '前端请求时间',
+    `accept_language` VARCHAR(32) DEFAULT NULL COMMENT                                                  '语言偏好',
+    `path` VARCHAR(512) DEFAULT NULL COMMENT                                                            '请求路径',
+    `method` VARCHAR(32) DEFAULT NULL COMMENT                                                           '请求方法',
+    `user_agent` VARCHAR(512) DEFAULT NULL COMMENT                                                      '客户端标识',
+    `host` VARCHAR(255) DEFAULT NULL COMMENT                                                            '请求主机',
+    `x_forwarded_for` VARCHAR(1024) DEFAULT NULL COMMENT                                                '代理链IP列表',
+    `x_real_ip` VARCHAR(64) DEFAULT NULL COMMENT                                                        '真实客户端IP',
+    `referer` VARCHAR(2048) DEFAULT NULL COMMENT                                                        '请求来源URL',
+    `session_type` VARCHAR(32) DEFAULT NULL COMMENT                                                     '会话类型',
+    `passport_id` BIGINT DEFAULT NULL COMMENT                                                           '账号标识',
+    `user_id` BIGINT DEFAULT NULL COMMENT                                                               '用户标识',
+    `name` VARCHAR(128) DEFAULT NULL COMMENT                                                            '真实姓名',
+    `admin_user` TINYINT DEFAULT 0 COMMENT                                                              '超级管理员',
+    `organ_id` BIGINT DEFAULT NULL COMMENT                                                              '组织标识',
+    `organ_name` VARCHAR(255) DEFAULT NULL COMMENT                                                      '组织名称',
+    `organ_type` VARCHAR(32) DEFAULT NULL COMMENT                                                       '组织类型',
+    `admin_company` TINYINT DEFAULT 0 COMMENT                                                           '平台运营组织',
+    `target_organ_id` BIGINT DEFAULT NULL COMMENT                                                       '数据操作的目标组织标识',
+    `application_id` BIGINT DEFAULT NULL COMMENT                                                        '请求来源应用标识',
+    `application_code` VARCHAR(64) DEFAULT NULL COMMENT                                                 '请求来源应用编码',
+    `application_organ_id` BIGINT DEFAULT NULL COMMENT                                                  '请求来源应用所属机构标识',
+    `payload` JSON DEFAULT NULL COMMENT                                                                 '请求/响应摘要',
+    `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT                                      '创建时间',
+    `update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT          '更新时间',
+    `version` INT NOT NULL DEFAULT 0 COMMENT                                                            '记录版本',
+    PRIMARY KEY (`id`),
+    INDEX `idx_trace_id` (`trace_id`),
+    INDEX `idx_request_id` (`request_id`),
+    INDEX `idx_client_id` (`client_id`),
+    INDEX `idx_passport_id` (`passport_id`),
+    INDEX `idx_user_id` (`user_id`),
+    INDEX `idx_organ_id` (`organ_id`),
+    INDEX `idx_application_id` (`application_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=                         '审计事件表';
+
+-- 账号
+INSERT INTO `passport`
+(`id`, `username`, `password`, `real_name`, `sex`, `birthday`, `id_no`, `mobile`, `email`, `status`, `create_time`, `update_time`, `version`, `delete_flag`)
+VALUES
+    (200, 'admin', 'PBKDF2WithHmacSHA256$65536$YSskABrEQZiuRcM3GMl6gQ==$Hl9gA9UnYmS1BoY3Ov3XY2qYQpUKF1Sl0QneYZ5zc7k=', '平台超管', 'MALE', NULL, NULL, NULL, NULL, 'NORMAL', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0);
+
+-- 机构
+INSERT INTO `organ`
+(`id`, `organ_name`, `organ_type`, `status`, `admin`, `create_time`, `update_time`, `version`, `delete_flag`)
+VALUES
+    (201, '平台机构', 'COMPANY', 'ACTIVE', 1, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0);
+
+-- 机构路径关系
+INSERT INTO `organ_closure`
+(`id`, `ancestor_id`, `descendant_id`, `descendant_type`, `relation_type`, `path_count`, `create_time`, `update_time`, `version`, `delete_flag`)
+VALUES
+    (202, 201, 201, 'COMPANY', 'SELF_ASSOCIATION', 1, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0);
+
+-- 角色
+INSERT INTO `role`
+(`id`, `organ_id`, `role_name`, `role_type`, `create_time`, `update_time`, `version`, `delete_flag`)
+VALUES
+    (203, 201, '超管角色', 'ADMIN', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0);
+
+-- 用户
+INSERT INTO `user`
+(`id`, `passport_id`, `organ_id`, `email`, `mobile`, `real_name`, `admin`, `create_time`, `update_time`, `version`, `delete_flag`)
+VALUES
+    (205, 200, 201, NULL, NULL, '平台管理员', 1, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0);
+
+-- 用户角色关联
+INSERT INTO `user_role_relation`
+(`id`, `user_id`, `role_id`, `create_time`, `update_time`, `version`, `delete_flag`)
+VALUES
+    (206, 205, 203, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0);
+
+-- 应用
+INSERT INTO `application`
+(`id`, `organ_id`, `application_name`, `application_code`, `can_integrate`, `landing`, `application_type`, `public_key_algorithm`, `public_key_format`, `public_key`, `access_token_expires_in`, `refresh_token_expires_in`, `endpoint_url`, `context_path`, `status`, `description`, `create_time`, `update_time`, `version`, `delete_flag`)
+VALUES
+    (207, 201, '综合管理平台', 'g2rain-main-shell',  1, 1, 'SUPPORT', 'EC', 'PEM', '-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEXmlg1y2fUD9KJj4WB6DrRZU+iVwA yzz60AxRoFb2yDnBvYiiK9JR1p5QUw2jkR9RPvkZez1Kx2BqxwyOoWRV/A==\n-----END PUBLIC KEY-----\n', 3600, 86400, 'http://demo.g2rain.com', '/main',    'PUBLISHED', '管理平台入口', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (208, 201, '业务支撑平台', 'g2rain-manager-app',  0, 1, 'SUPPORT', 'EC', 'PEM', '-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEXGDOn5B+GFE42lcMd5u47r6na9iE H1AzxAU49KiWBz17su0M1vPZ+s57bvMlYvbcPG2nfWcJvJzRuKUakrUhsA==\n-----END PUBLIC KEY-----\n', 3600, 86400, 'http://demo.g2rain.com', '/manager',    'PUBLISHED', '业务支撑平台', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (209, 201, '基础支撑平台', 'g2rain-infra-app', 0, 1, 'SUPPORT', 'EC', 'PEM', '-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAcmLmXDroj3aJiTFxP6oy5Q+3Tawz1LFg0BY1a5CRNynqpVvG+/wVGUhXf7KOJ7/nA2OO/H+IQaHryS+SXtnOA==\n-----END PUBLIC KEY-----\n', 3600, 86400, 'http://demo.g2rain.com', '/infra', 'PUBLISHED', '用于管理字典, 国际化, 发号器功能', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0);
+
+-- 应用归类关系
+INSERT INTO `application_suite`
+(`id`, `application_id`, `master_application_id`, `create_time`, `update_time`, `version`, `delete_flag`)
+VALUES
+    (210, 208, 207, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (211, 209, 207, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0);
+
+-- 控制单元
+INSERT INTO `control_unit`
+(`id`, `application_id`, `control_unit_name`, `control_unit_scope`, `landing`, `status`, `description`, `create_time`, `update_time`, `version`, `delete_flag`)
+VALUES
+    (212, 207, '盘古',   'PERPETUAL', 1, 'PUBLISHED', '平台准入基础能力', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (213, 208, '燧人氏', 'OPERATION', 1, 'PUBLISHED', '核心运营支撑组件', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (215, 208, '女娲',   'CUSTOMER',  1, 'PUBLISHED', '租户空间构建逻辑', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (216, 209, '后羿',   'OPERATION',  1, 'PUBLISHED', '保障平台技术能力', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0);
+
+-- 角色控制单元关联
+INSERT INTO `role_control_unit_relation`
+(`id`, `role_id`, `control_unit_id`, `application_authorization_id`, `status`, `create_time`, `update_time`, `version`, `delete_flag`)
+VALUES
+    (217, 203, 213, NULL, 'ACTIVATED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (218, 203, 216, NULL, 'ACTIVATED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0);
+
+-- 服务注册表
+INSERT INTO `service_registry`
+(`id`, `service_code`, `name`, `endpoint`, `route_prefix`, `description`, `create_time`, `update_time`, `version`, `delete_flag`)
+VALUES
+    (219, 'G2RAIN_BASIS', '业务支撑服务', 'lb://g2rain-basis', 'basis', '业务支撑服务', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (220, 'G2RAIN_INFRA', '基础支撑服务', 'lb://g2rain-infra', 'infra', '基础支撑服务', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0);
+
+-- 资源后端接口
+INSERT INTO `resource_api`
+(`id`, `service_code`, `api_tags`, `name`, `method`, `path`, `description`, `create_time`, `update_time`, `version`, `delete_flag`)
+VALUES
+    (223,'G2RAIN_INFRA','地域语言','新增或更新地域语言设置','POST','/locale_setting/save','新增或更新地域与语言偏好配置','2026-05-08 10:02:08','2026-05-08 10:02:08',0,0),
+    (225,'G2RAIN_INFRA','国际化信息','新增或更新国际化信息','POST','/i18n_message/save','新增或更新国际化文案信息','2026-05-08 10:02:08','2026-05-08 10:02:08',0,0),
+    (226,'G2RAIN_INFRA','全局唯一序列','新增或更新全局唯一 ID 记录','POST','/g2rain_raindrop/save','新增或更新全局唯一 ID 管理表数据','2026-05-08 10:02:08','2026-05-08 10:02:08',0,0),
+    (227,'G2RAIN_INFRA','字典用途','新增或更新字典用途','POST','/dictionary_usage/save','新增或更新字典用途信息','2026-05-08 10:02:08','2026-05-08 10:02:08',0,0),
+    (228,'G2RAIN_INFRA','字典明细','新增或更新字典明细','POST','/dictionary_item/save','新增或更新字典明细信息','2026-05-08 10:02:08','2026-05-08 10:02:08',0,0),
+    (231,'G2RAIN_INFRA','地域语言','分页查询地域语言设置列表','GET','/locale_setting/page','分页查询地域-语言设置列表','2026-05-08 10:02:08','2026-05-08 10:02:08',0,0),
+    (232,'G2RAIN_INFRA','地域语言','获取地域语言字典','GET','/locale_setting/locale_dict','获取地域语言字典','2026-05-08 10:02:08','2026-05-08 10:02:08',0,0),
+    (233,'G2RAIN_INFRA','地域语言','查询地域语言设置列表','GET','/locale_setting/list','根据查询条件返回地域-语言设置列表','2026-05-08 10:02:08','2026-05-08 10:02:08',0,0),
+    (235,'G2RAIN_INFRA','地域语言','获取语言地域映射','GET','/locale_setting/get_language_countries','获取语言地域映射','2026-05-08 10:02:08','2026-05-08 10:02:08',0,0),
+    (236,'G2RAIN_INFRA','地域语言','获取地域语言编码和名称映射集合','GET','/locale_setting/code_name_map','获取地域语言编码和名称映射集合','2026-05-08 10:02:08','2026-05-08 10:02:08',0,0),
+    (237,'G2RAIN_INFRA','国际化信息','分页查询国际化信息列表','GET','/i18n_message/page','分页查询国际化信息列表','2026-05-08 10:02:08','2026-05-08 10:02:08',0,0),
+    (238,'G2RAIN_INFRA','国际化信息','查询国际化信息列表','GET','/i18n_message/list','根据查询条件返回国际化信息列表','2026-05-08 10:02:08','2026-05-08 10:02:08',0,0),
+    (239,'G2RAIN_INFRA','国际化信息','获取国际化用途集合','GET','/i18n_message/i18n_message_usages','获取国际化用途集合','2026-05-08 10:02:08','2026-05-08 10:02:08',0,0),
+    (260,'G2RAIN_INFRA','全局唯一序列','分页查询全局唯一 ID 记录列表','GET','/g2rain_raindrop/page','分页查询全局唯一 ID 管理记录列表','2026-05-08 10:02:08','2026-05-08 10:02:08',0,0),
+    (261,'G2RAIN_INFRA','全局唯一序列','查询全局唯一 ID 记录列表','GET','/g2rain_raindrop/list','根据查询条件返回全局唯一 ID 管理记录列表','2026-05-08 10:02:08','2026-05-08 10:02:08',0,0),
+    (262,'G2RAIN_INFRA','全局唯一序列','查询业务标签字典集合','GET','/g2rain_raindrop/biz_tag_dict','查询业务标签字典集合','2026-05-08 10:02:08','2026-05-08 10:02:08',0,0),
+    (263,'G2RAIN_INFRA','字典用途','分页查询字典用途列表','GET','/dictionary_usage/page','分页查询字典用途列表','2026-05-08 10:02:08','2026-05-08 10:02:08',0,0),
+    (265,'G2RAIN_INFRA','字典用途','查询字典用途列表','GET','/dictionary_usage/list','根据查询条件返回字典用途列表','2026-05-08 10:02:08','2026-05-08 10:02:08',0,0),
+    (266,'G2RAIN_INFRA','字典明细','分页查询字典明细列表','GET','/dictionary_item/tree','分页查询字典明细列表','2026-05-08 10:02:08','2026-05-08 10:02:08',0,0),
+    (267,'G2RAIN_INFRA','字典明细','分页查询字典明细列表','GET','/dictionary_item/page','分页查询字典明细列表','2026-05-08 10:02:08','2026-05-08 10:02:08',0,0),
+    (268,'G2RAIN_INFRA','字典明细','查询字典明细列表','GET','/dictionary_item/list','根据查询条件返回字典明细列表','2026-05-08 10:02:08','2026-05-08 10:02:08',0,0),
+    (270,'G2RAIN_INFRA','地域语言','删除地域语言设置记录','DELETE','/locale_setting/{id}','根据主键删除地域-语言设置记录','2026-05-08 10:02:08','2026-05-08 10:02:08',0,0),
+    (271,'G2RAIN_INFRA','国际化信息','删除国际化信息记录','DELETE','/i18n_message/{id}','根据主键删除国际化信息记录','2026-05-08 10:02:08','2026-05-08 10:02:08',0,0),
+    (272,'G2RAIN_INFRA','全局唯一序列','删除全局唯一 ID 记录','DELETE','/g2rain_raindrop/{id}','根据主键删除全局唯一 ID 管理记录','2026-05-08 10:02:08','2026-05-08 10:02:08',0,0),
+    (273,'G2RAIN_INFRA','字典用途','删除字典用途记录','DELETE','/dictionary_usage/{id}','根据主键删除字典用途记录','2026-05-08 10:02:08','2026-05-08 10:02:08',0,0),
+    (275,'G2RAIN_INFRA','字典明细','删除字典明细记录','DELETE','/dictionary_item/{id}','根据主键删除字典明细记录','2026-05-08 10:02:08','2026-05-08 10:02:08',0,0),
+    (276,'G2RAIN_BASIS','用户-角色关联','新增或更新用户角色关联','POST','/user_role_relation/save','新增或更新用户角色关联记录','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (277,'G2RAIN_BASIS','用户-角色关联','为角色分配用户','POST','/user_role_relation/assign_users','批量为指定角色分配用户关联关系','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (278,'G2RAIN_BASIS','用户','新增或更新用户信息','POST','/user/save','新增或更新用户基础信息','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (279,'G2RAIN_BASIS','租户初始化','开通租户账号','POST','/tenant_provision/provision_account','为指定租户开通账号并初始化最小可用功能','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (280,'G2RAIN_BASIS','服务注册','新增或更新服务注册','POST','/service_registry/save','新增或更新服务注册信息','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (281,'G2RAIN_BASIS','角色-控制单元关联','新增角色控制单元关联','POST','/role_control_unit_relation/save','新增角色与控制单元的关联记录','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (282,'G2RAIN_BASIS','角色','新增或更新角色信息','POST','/role/save','新增或更新角色基础信息','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (283,'G2RAIN_BASIS','资源页面元素','新增或更新页面元素','POST','/resource_page_element/save','新增或更新应用资源页面元素信息','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (285,'G2RAIN_BASIS','资源页面','新增或更新资源页面','POST','/resource_page/save','新增或更新应用资源页面信息','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (286,'G2RAIN_BASIS','资源菜单','新增或更新资源菜单','POST','/resource_menu/save','新增或更新应用资源菜单信息','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (287,'G2RAIN_BASIS','资源上传','上传应用资源文件','POST','/resource/{applicationId}/upload','上传并解析指定应用的资源文件内容','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (288,'G2RAIN_BASIS','账号','更新账号状态','POST','/passport/{id}/status','根据主键更新账号启用状态','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (289,'G2RAIN_BASIS','账号','更新账号密码','POST','/passport/{id}/password','根据主键更新账号登录密码','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (290,'G2RAIN_BASIS','账号','新增或更新账号','POST','/passport/save','新增或更新账号信息','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (291,'G2RAIN_BASIS','机构','更新机构状态','POST','/organ/{id}/status','根据主键更新机构启用状态','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (292,'G2RAIN_BASIS','机构','调整机构层级关系','POST','/organ/{descendantId}/hierarchy','对指定机构执行挂载、迁移或卸载等层级调整操作','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (293,'G2RAIN_BASIS','机构','新增或更新机构信息','POST','/organ/save','新增或更新机构基础信息','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (295,'G2RAIN_BASIS','权限点资源关联','新增控制单元资源关联','POST','/control_unit_resource_relation/save','批量新增控制单元与资源关联记录','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (296,'G2RAIN_BASIS','控制单元','更新控制单元状态','POST','/control_unit/{id}/status','根据主键更新控制单元启用状态','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (297,'G2RAIN_BASIS','控制单元','新增或更新控制单元','POST','/control_unit/save','新增或更新控制单元基础信息','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (298,'G2RAIN_BASIS','控制域-控制单元关联','新增控制域控制单元关联','POST','/control_domain_control_unit_relation/save','批量新增控制域与控制单元关联记录','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (299,'G2RAIN_BASIS','控制域','新增或更新控制域信息','POST','/control_domain/save','新增或更新控制域基础信息','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (300,'G2RAIN_BASIS','应用归类关系','新增或更新应用归类关系','POST','/application_suite/save','新增或更新应用与归类的关联关系','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (301,'G2RAIN_BASIS','应用授权','修改应用授权记录状态','POST','/application_authorization/{id}/status','修改应用授权记录状态','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (302,'G2RAIN_BASIS','应用授权','新增或更新应用授权记录','POST','/application_authorization/save','新增或更新应用授权记录','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (303,'G2RAIN_BASIS','应用','更新应用状态','POST','/application/{id}/status','根据主键更新应用启用状态','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (305,'G2RAIN_BASIS','应用','下载应用公钥','GET','/application/{id}/public_key','下载指定应用的 PEM 或 DER 格式公钥文件','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (306,'G2RAIN_BASIS','应用','上传或更新应用公钥','POST','/application/{id}/public_key','上传 PEM/DER 公钥文件并更新应用公钥配置','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (307,'G2RAIN_BASIS','应用','新增或更新应用信息','POST','/application/save','新增或更新应用基础信息','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (308,'G2RAIN_BASIS','用户-角色关联','分页查询用户-角色关联列表','GET','/user_role_relation/page','分页查询用户角色关联列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (309,'G2RAIN_BASIS','用户-角色关联','查询用户-角色关联列表','GET','/user_role_relation/list','根据查询条件返回用户角色关联列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (310,'G2RAIN_BASIS','用户','获取用户下拉选项','GET','/user/user_options','返回用于下拉选择的用户简要信息集合','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (311,'G2RAIN_BASIS','用户','按角色查询用户列表','GET','/user/role/{roleId}','根据角色主键查询已关联用户列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (312,'G2RAIN_BASIS','用户','分页查询用户列表','GET','/user/page','分页查询用户列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (313,'G2RAIN_BASIS','用户','查询用户列表','GET','/user/list','根据查询条件返回用户列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (315,'G2RAIN_BASIS','服务注册','分页查询服务注册列表','GET','/service_registry/page','分页查询服务注册列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (316,'G2RAIN_BASIS','服务注册','查询服务注册列表','GET','/service_registry/list','根据查询条件返回服务注册列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (317,'G2RAIN_BASIS','角色-控制单元关联','按角色查询控制单元关联','GET','/role_control_unit_relation/role/{roleId}','根据角色主键查询角色控制单元关联列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (318,'G2RAIN_BASIS','角色-控制单元关联','分页查询角色-控制单元关联列表','GET','/role_control_unit_relation/page','分页查询角色控制单元关联列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (319,'G2RAIN_BASIS','角色-控制单元关联','查询角色-控制单元关联列表','GET','/role_control_unit_relation/list','根据查询条件返回角色控制单元关联列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (320,'G2RAIN_BASIS','角色','分页查询角色列表','GET','/role/page','分页查询角色列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (321,'G2RAIN_BASIS','角色','查询角色列表','GET','/role/list','根据查询条件返回角色列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (322,'G2RAIN_BASIS','资源页面元素','分页查询资源页面元素列表','GET','/resource_page_element/page','分页查询资源页面元素列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (323,'G2RAIN_BASIS','资源页面元素','查询资源页面元素列表','GET','/resource_page_element/list','根据查询条件返回资源页面元素列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (325,'G2RAIN_BASIS','资源页面','分页查询资源页面列表','GET','/resource_page/page','分页查询资源页面列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (326,'G2RAIN_BASIS','资源页面','查询资源页面列表','GET','/resource_page/list','根据查询条件返回资源页面列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (327,'G2RAIN_BASIS','资源菜单','分页查询资源菜单列表','GET','/resource_menu/page','分页查询资源菜单列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (328,'G2RAIN_BASIS','资源菜单','查询资源菜单列表','GET','/resource_menu/list','根据查询条件返回资源菜单列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (329,'G2RAIN_BASIS','资源接口','分页查询资源接口列表','GET','/resource_api/page','分页查询资源接口列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (330,'G2RAIN_BASIS','资源接口','查询资源接口列表','GET','/resource_api/list','根据查询条件返回资源接口列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (331,'G2RAIN_BASIS','账号','分页查询账号列表','GET','/passport/page','分页查询账号列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (332,'G2RAIN_BASIS','账号','查询账号列表','GET','/passport/list','根据查询条件返回账号列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (333,'G2RAIN_BASIS','机构','搜索机构','GET','/organ/search','根据机构名称关键字模糊查询机构列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (335,'G2RAIN_BASIS','机构','分页查询机构列表','GET','/organ/page','分页查询机构列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (336,'G2RAIN_BASIS','机构','查询机构列表','GET','/organ/list','根据查询条件返回机构列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (337,'G2RAIN_BASIS','机构','获取机构层级关系','GET','/organ/hierarchy','查询机构及其子机构的树形层级结构','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (338,'G2RAIN_BASIS','登录令牌','分页查询登录令牌列表','GET','/login_token/page','分页查询登录令牌列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (339,'G2RAIN_BASIS','登录令牌','查询登录令牌列表','GET','/login_token/list','根据查询条件返回登录令牌列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (350,'G2RAIN_BASIS','权限点资源关联','分页查询权限点资源关联列表','GET','/control_unit_resource_relation/page','分页查询权限点资源关联列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (351,'G2RAIN_BASIS','权限点资源关联','查询权限点资源关联列表','GET','/control_unit_resource_relation/list','根据查询条件返回权限点资源关联列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (352,'G2RAIN_BASIS','控制单元','分页查询控制单元列表','GET','/control_unit/page','分页查询控制单元列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (353,'G2RAIN_BASIS','控制单元','查询控制单元列表','GET','/control_unit/list','根据查询条件返回控制单元列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (355,'G2RAIN_BASIS','控制域-控制单元关联','分页查询控制域-控制单元关联列表','GET','/control_domain_control_unit_relation/page','分页查询控制域控制单元关联列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (356,'G2RAIN_BASIS','控制域-控制单元关联','查询控制域-控制单元关联列表','GET','/control_domain_control_unit_relation/list','根据查询条件返回控制域控制单元关联列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (357,'G2RAIN_BASIS','控制域','分页查询控制域列表','GET','/control_domain/page','分页查询控制域列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (358,'G2RAIN_BASIS','控制域','查询控制域列表','GET','/control_domain/list','根据查询条件返回控制域列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (359,'G2RAIN_BASIS','资源授权','查询当前用户信息','GET','/authority/user','查询当前登录用户的权限相关用户信息','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (360,'G2RAIN_BASIS','资源授权','查询资源权限信息','GET','/authority/resources','查询当前用户的资源访问权限信息','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (361,'G2RAIN_BASIS','资源授权','查询菜单权限列表','GET','/authority/menus','查询当前用户可访问的菜单权限列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (362,'G2RAIN_BASIS','审计事件','分页查询审计事件','GET','/audit_event/page','按条件筛选审计事件并分页，含总数与当前页数据','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (363,'G2RAIN_BASIS','审计事件','查询审计事件列表','GET','/audit_event/list','按条件筛选审计事件，不分页返回列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (365,'G2RAIN_BASIS','应用归类关系','分页查询应用归类关系列表','GET','/application_suite/page','分页查询应用归类关系列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (366,'G2RAIN_BASIS','应用归类关系','查询应用归类关系列表','GET','/application_suite/list','根据查询条件返回应用归类关系列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (367,'G2RAIN_BASIS','应用授权','分页查询应用授权记录列表','GET','/application_authorization/page','分页查询应用授权记录列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (368,'G2RAIN_BASIS','应用授权','查询应用授权记录列表','GET','/application_authorization/list','根据查询条件返回应用授权记录列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (369,'G2RAIN_BASIS','应用','检查应用公钥是否存在','GET','/application/{id}/has_public_key','检查指定应用是否已配置公钥','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (370,'G2RAIN_BASIS','应用','分页查询应用列表','GET','/application/page','分页查询应用列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (371,'G2RAIN_BASIS','应用','查询应用列表','GET','/application/list','根据查询条件返回应用列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (372,'G2RAIN_BASIS','应用','查询应用名称映射','GET','/application/id_name_map','根据查询条件获取应用 ID 与名称映射列表','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (373,'G2RAIN_BASIS','用户','删除用户记录','DELETE','/user/{id}','根据主键删除用户记录','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (375,'G2RAIN_BASIS','服务注册','删除服务注册','DELETE','/service_registry/{id}','根据主键删除服务注册记录','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (376,'G2RAIN_BASIS','角色','删除角色记录','DELETE','/role/{id}','根据主键删除角色记录','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (377,'G2RAIN_BASIS','资源页面元素','删除页面元素记录','DELETE','/resource_page_element/{id}','根据主键删除应用资源页面元素记录','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (378,'G2RAIN_BASIS','资源页面','删除资源页面记录','DELETE','/resource_page/{id}','根据主键删除应用资源页面记录','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (379,'G2RAIN_BASIS','资源菜单','删除资源菜单记录','DELETE','/resource_menu/{id}','根据主键删除应用资源菜单记录','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (380,'G2RAIN_BASIS','资源接口','根据主键删除资源接口记录','DELETE','/resource_api/{id}','根据主键删除资源接口记录','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (381,'G2RAIN_BASIS','账号','删除账号记录','DELETE','/passport/{id}','根据主键删除账号记录','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (382,'G2RAIN_BASIS','机构','删除机构记录','DELETE','/organ/{id}','根据主键删除机构记录','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (383,'G2RAIN_BASIS','控制单元','删除控制单元记录','DELETE','/control_unit/{id}','根据主键删除控制单元记录','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (385,'G2RAIN_BASIS','控制域','删除控制域记录','DELETE','/control_domain/{id}','根据主键删除控制域记录','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (386,'G2RAIN_BASIS','应用授权','根据主键删除应用授权记录','DELETE','/application_authorization/{id}','根据主键删除应用授权记录','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (387,'G2RAIN_BASIS','应用','删除应用记录','DELETE','/application/{id}','根据主键删除应用记录','2026-05-08 10:03:52','2026-05-08 10:03:52',0,0),
+    (388,'G2RAIN_BASIS','资源接口','批量导入资源接口','POST','/resource_api/{serviceCode}/import','批量导入资源接口信息','2026-04-28 02:14:24','2026-04-28 02:14:24',0,0),
+    (389,'G2RAIN_BASIS','资源接口','新增或更新资源接口','POST','/resource_api/save','新增或更新资源接口信息','2026-04-28 02:14:24','2026-04-28 02:14:24',0,0);
+
+-- 应用资源菜单
+INSERT INTO `resource_menu`
+(`id`, `parent_id`, `application_id`, `menu_name`, `menu_code`, `link_path`, `icon`, `menu_sort_order`, `create_time`, `update_time`, `version`, `delete_flag`)
+VALUES
+    (390,NULL,208,'系统管理','system_management_menu','','',10000,'2026-02-01 01:12:28','2026-04-19 08:02:38',1,0),
+    (391,390,208,'机构管理','organ_management_menu','/organ','',1,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (392,390,208,'用户管理','user_management_menu','/user','',2,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (393,390,208,'角色管理','role_management_menu','/role','',3,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (395,NULL,208,'应用管理','application_management_menu','','',10001,'2026-02-01 01:12:28','2026-04-19 08:02:44',1,0),
+    (396,395,208,'应用配置','application_config_menu','/application','',1,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (397,395,208,'资源配置','resource_settings_menu','/resource_settings','',2,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (398,395,208,'资源菜单','resource_menu_menu','/resource_menu','',3,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (399,395,208,'资源页面','resource_page_menu','/resource_page','',5,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (500,395,208,'功能权限','control_unit_menu','/control_unit','',6,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (501,395,208,'业务能力','control_domain_menu','/control_domain','',7,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (502,395,208,'授权记录','application_authorization_menu','/application_authorization','',8,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (503,NULL,208,'平台配置','platform_settings_menu','','',10002,'2026-02-01 01:12:28','2026-04-19 08:02:50',1,0),
+    (505,503,208,'服务注册','service_registry_menu','/service_registry','',1,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (506,503,208,'服务接口','resource_api_menu','/resource_api','',2,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (507,NULL,208,'平台运营','platform_operations_menu','','',10003,'2026-02-01 01:12:28','2026-04-19 08:02:56',1,0),
+    (508,507,208,'账号管理','passport_management_menu','/passport','',1,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (509,507,208,'登陆日志','login_token_menu','/login_token','',1,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (510,507,208,'审计事件','audit_event_menu','/audit_event','',1,'2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (511,NULL,209,'平台技术','infra_menu','','',10004,'2026-04-11 04:06:57','2026-04-19 08:03:01',2,0),
+    (512,511,209,'序列号段调控','g2rain_raindrop_menu','/g2rain_raindrop','',1,'2026-04-11 04:15:29','2026-04-11 04:15:29',0,0),
+    (513,511,209,'字典用途设置','dictionary_usage_menu','/dictionary_usage','',2,'2026-04-11 04:10:42','2026-04-11 04:12:57',3,0),
+    (515,511,209,'地区语言设置','locale_setting_menu','/locale_setting','',3,'2026-04-11 04:15:06','2026-04-11 04:15:06',0,0),
+    (516,511,209,'多语言文案库','i18n_message_menu','/i18n_message','',5,'2026-04-11 04:13:38','2026-04-11 04:14:39',1,0);
+
+-- 应用资源页面
+INSERT INTO `resource_page`
+(`id`, `application_id`, `page_name`, `page_code`, `link_path`, `create_time`, `update_time`, `version`, `delete_flag`)
+VALUES
+    (517,208,'机构管理界面','organ','/organ','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (518,208,'用户管理界面','user','/user','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (519,208,'角色管理界面','role','/role','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (520,208,'应用配置界面','application','/application','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (521,208,'资源配置界面','resource_settings','/resource_settings','2026-02-01 01:12:28','2026-05-05 13:08:53',0,0),
+    (522,208,'资源菜单界面','resource_menu','/resource_menu','2026-02-01 01:12:28','2026-05-05 13:08:53',0,0),
+    (523,208,'资源页面界面','resource_page','/resource_page','2026-02-01 01:12:28','2026-05-05 13:08:53',0,0),
+    (525,208,'功能权限界面','control_unit','/control_unit','2026-02-01 01:12:28','2026-05-05 13:08:53',0,0),
+    (526,208,'业务能力界面','control_domain','/control_domain','2026-02-01 01:12:28','2026-05-05 13:08:53',0,0),
+    (527,208,'授权记录界面','application_authorization','/application_authorization','2026-02-01 01:12:28','2026-05-05 13:08:53',0,0),
+    (528,208,'服务注册界面','service_registry','/service_registry','2026-02-01 01:12:28','2026-05-05 13:08:53',0,0),
+    (529,208,'服务接口界面','resource_api','/resource_api','2026-02-01 01:12:28','2026-05-05 13:08:53',0,0),
+    (530,208,'账号管理界面','passport','/passport','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (531,208,'登陆日志界面','login_token','/login_token','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (532,208,'审计事件界面','audit_event','/audit_event','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (533,209,'序列号段调控','g2rain_raindrop','/g2rain_raindrop','2026-04-11 07:23:17','2026-04-11 07:23:17',0,0),
+    (535,209,'字典用途设置','dictionary_usage','/dictionary_usage','2026-04-11 07:22:01','2026-04-11 07:22:01',0,0),
+    (536,209,'地区语言设置','locale_setting','/locale_setting','2026-04-11 07:23:02','2026-04-11 07:23:02',0,0),
+    (537,209,'多语言文案库','i18n_message','/i18n_message','2026-04-11 07:22:16','2026-04-11 07:22:31',1,0);
+
+-- 应用页面元素
+INSERT INTO `resource_page_element`
+(`id`, `application_id`, `page_code`, `page_element_name`, `page_element_code`, `create_time`, `update_time`, `version`, `delete_flag`)
+VALUES
+    (538,208,'organ','新增按钮','organ:add','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (539,208,'organ','修改按钮','organ:edit','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (550,208,'organ','调整归属','organ:reassign','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (551,208,'organ','修改状态','organ:status_update','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (552,208,'organ','删除按钮','organ:delete','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (553,208,'user','新增按钮','user:add','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (555,208,'user','修改按钮','user:edit','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (556,208,'user','删除按钮','user:delete','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (557,208,'role','新增按钮','role:add','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (558,208,'role','修改按钮','role:edit','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (559,208,'role','分配用户','role:users_assign','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (560,208,'role','分配权限','role:control_utils_assign','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (561,208,'role','删除按钮','role:delete','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (562,208,'application','新增按钮','application:add','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (563,208,'application','修改按钮','application:edit','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (565,208,'application','关联应用','application:integrate','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (566,208,'application','公钥配置','application:public_key_config','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (567,208,'application','修改状态','application:status_update','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (568,208,'application','删除按钮','application:delete','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (569,208,'resource_settings','导入按钮','resource_settings:upload','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (570,208,'resource_menu','新增按钮','resource_menu:add','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (571,208,'resource_menu','修改按钮','resource_menu:edit','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (572,208,'resource_menu','删除按钮','resource_menu:delete','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (573,208,'resource_page','新增按钮','resource_page:add','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (575,208,'resource_page','修改按钮','resource_page:edit','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (576,208,'resource_page','页面元素','resource_page:page_element_mgmt','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (577,208,'resource_page','删除按钮','resource_page:delete','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (578,208,'control_unit','新增按钮','control_unit:add','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (579,208,'control_unit','修改按钮','control_unit:edit','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (580,208,'control_unit','配置资源','control_unit:resources_config','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (581,208,'control_unit','修改状态','control_unit:status_update','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (582,208,'control_unit','删除按钮','control_unit:delete','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (583,208,'control_domain','新增按钮','control_domain:add','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (585,208,'control_domain','修改按钮','control_domain:edit','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (586,208,'control_domain','关联权限','control_domain:control_utils_associate','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (587,208,'control_domain','开通功能','control_domain:features_activate','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (588,208,'control_domain','删除按钮','control_domain:delete','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (589,208,'application_authorization','修改状态','application_authorization:status_update','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (590,208,'application_authorization','同步能力','application_authorization:control_utils_sync','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (591,208,'service_registry','新增按钮','service_registry:add','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (592,208,'service_registry','修改按钮','service_registry:edit','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (593,208,'service_registry','删除按钮','service_registry:delete','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (595,208,'resource_api','新增按钮','resource_api:add','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (596,208,'resource_api','修改按钮','resource_api:edit','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (597,208,'resource_api','导入按钮','resource_api:import','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (598,208,'resource_api','删除按钮','resource_api:delete','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (599,208,'passport','新增按钮','passport:add','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (600,208,'passport','修改按钮','passport:edit','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (601,208,'passport','修改状态','passport:status_update','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (602,208,'passport','删除按钮','passport:delete','2026-02-01 01:12:28','2026-02-01 01:12:28',0,0),
+    (603,209,'g2rain_raindrop','新增按钮','g2rain_raindrop:add','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),
+    (605,209,'g2rain_raindrop','编辑按钮','g2rain_raindrop:edit','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),
+    (606,209,'g2rain_raindrop','删除按钮','g2rain_raindrop:delete','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),
+    (607,209,'dictionary_usage','新增按钮','dictionary_usage:add','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),
+    (608,209,'dictionary_usage','修改按钮','dictionary_usage:edit','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),
+    (609,209,'dictionary_usage','删除按钮','dictionary_usage:delete','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),
+    (610,209,'dictionary_usage','打开明细','dictionary_usage:items','2026-04-12 13:58:31','2026-04-12 14:12:10',1,0),
+    (611,209,'dictionary_usage','新增字典','dictionary_item:add','2026-04-12 14:07:40','2026-04-12 14:11:45',1,0),
+    (612,209,'dictionary_usage','删除字典','dictionary_item:delete','2026-04-12 14:07:40','2026-04-12 14:11:55',1,0),
+    (613,209,'dictionary_usage','修改字典','dictionary_item:edit','2026-04-12 14:07:40','2026-04-12 14:12:01',1,0),
+    (615,209,'locale_setting','新增按钮','locale_setting:add','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),
+    (616,209,'locale_setting','修改按钮','locale_setting:edit','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),
+    (617,209,'locale_setting','删除按钮','locale_setting:delete','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),
+    (618,209,'i18n_message','新增按钮','i18n_message:add','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),
+    (619,209,'i18n_message','修改按钮','i18n_message:edit','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0),
+    (620,209,'i18n_message','删除按钮','i18n_message:delete','2026-04-11 14:20:20','2026-04-11 14:20:20',0,0);
+
+-- 控制单元资源关联
+INSERT INTO `control_unit_resource_relation`
+(`id`, `control_unit_id`, `resource_id`, `resource_type`, `status`, `create_time`, `update_time`, `version`, `delete_flag`)
+VALUES
+    (621, 213, 390, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (622, 213, 391, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (623, 213, 392, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (625, 213, 393, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (626, 213, 395, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (627, 213, 396, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (628, 213, 397, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (629, 213, 398, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (630, 213, 399, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (631, 213, 500, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (632, 213, 501, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (633, 213, 502, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (635, 213, 503, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (636, 213, 505, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (637, 213, 506, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (638, 213, 507, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (639, 213, 508, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (650, 213, 509, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (651, 213, 510, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (652, 215, 390, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (653, 215, 391, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (655, 215, 392, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (656, 215, 393, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (657, 215, 395, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (658, 215, 396, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (659, 215, 502, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (660, 216, 511, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (661, 216, 512, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (662, 216, 513, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (663, 216, 515, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (665, 216, 516, 'MENU', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (666, 213, 517, 'PAGE', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (667, 213, 518, 'PAGE', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (668, 213, 519, 'PAGE', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (669, 213, 520, 'PAGE', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (670, 213, 521, 'PAGE', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (671, 213, 522, 'PAGE', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (672, 213, 523, 'PAGE', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (673, 213, 525, 'PAGE', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (675, 213, 526, 'PAGE', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (676, 213, 527, 'PAGE', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (677, 213, 528, 'PAGE', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (678, 213, 529, 'PAGE', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (679, 213, 530, 'PAGE', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (680, 213, 531, 'PAGE', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (681, 213, 532, 'PAGE', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (682, 215, 517, 'PAGE', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (683, 215, 518, 'PAGE', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (685, 215, 519, 'PAGE', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (686, 215, 520, 'PAGE', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (687, 215, 527, 'PAGE', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (688, 216, 533, 'PAGE', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (689, 216, 535, 'PAGE', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (690, 216, 536, 'PAGE', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (691, 216, 537, 'PAGE', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (692, 213, 538, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (693, 213, 539, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (695, 213, 550, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (696, 213, 551, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (697, 213, 552, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (698, 213, 553, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (699, 213, 555, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (700, 213, 556, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (701, 213, 557, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (702, 213, 558, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (703, 213, 559, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (705, 213, 560, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (706, 213, 561, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (707, 213, 562, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (708, 213, 563, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (709, 213, 565, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (710, 213, 566, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (711, 213, 567, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (712, 213, 568, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (713, 213, 569, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (715, 213, 570, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (716, 213, 571, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (717, 213, 572, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (718, 213, 573, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (719, 213, 575, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (720, 213, 576, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (721, 213, 577, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (722, 213, 578, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (723, 213, 579, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (725, 213, 580, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (726, 213, 581, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (727, 213, 582, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (728, 213, 583, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (729, 213, 585, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (730, 213, 586, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (731, 213, 587, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (732, 213, 588, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (733, 213, 589, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (735, 213, 590, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (736, 213, 591, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (737, 213, 592, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (738, 213, 593, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (739, 213, 595, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (750, 213, 596, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (751, 213, 597, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (752, 213, 598, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (753, 213, 599, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (755, 213, 600, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (756, 213, 601, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (757, 213, 602, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (758, 215, 538, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (759, 215, 539, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (760, 215, 550, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (761, 215, 551, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (762, 215, 552, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (763, 215, 553, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (765, 215, 555, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (766, 215, 556, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (767, 215, 557, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (768, 215, 558, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (769, 215, 559, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (770, 215, 560, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (771, 215, 561, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (772, 215, 590, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (773, 216, 603, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (775, 216, 605, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (776, 216, 606, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (777, 216, 607, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (778, 216, 608, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (779, 216, 609, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (780, 216, 610, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (781, 216, 611, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (782, 216, 612, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (783, 216, 613, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (785, 216, 615, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (786, 216, 616, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (787, 216, 617, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (788, 216, 618, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (789, 216, 619, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (790, 216, 620, 'PAGE_ELEMENT', 'ENABLED', '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (791, 212, 236, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (792, 212, 238, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (793, 212, 268, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (795, 212, 279, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (796, 212, 289, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (797, 212, 290, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (798, 212, 359, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (799, 212, 360, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (800, 212, 361, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (801, 213, 238, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (802, 213, 268, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (803, 213, 276, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (805, 213, 277, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (806, 213, 278, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (807, 213, 279, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (808, 213, 280, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (809, 213, 281, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (810, 213, 282, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (811, 213, 283, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (812, 213, 285, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (813, 213, 286, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (815, 213, 287, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (816, 213, 288, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (817, 213, 289, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (818, 213, 290, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (819, 213, 291, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (820, 213, 292, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (821, 213, 293, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (822, 213, 295, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (823, 213, 296, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (825, 213, 297, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (826, 213, 298, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (827, 213, 299, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (828, 213, 300, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (829, 213, 301, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (830, 213, 302, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (831, 213, 303, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (832, 213, 305, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (833, 213, 306, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (835, 213, 307, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (836, 213, 308, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (837, 213, 309, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (838, 213, 310, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (839, 213, 311, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (850, 213, 312, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (851, 213, 313, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (852, 213, 315, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (853, 213, 316, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (855, 213, 317, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (856, 213, 318, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (857, 213, 319, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (858, 213, 320, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (859, 213, 321, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (860, 213, 322, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (861, 213, 323, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (862, 213, 325, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (863, 213, 326, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (865, 213, 327, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (866, 213, 328, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (867, 213, 329, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (868, 213, 330, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (869, 213, 331, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (870, 213, 332, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (871, 213, 333, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (872, 213, 335, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (873, 213, 336, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (875, 213, 337, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (876, 213, 338, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (877, 213, 339, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (878, 213, 350, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (879, 213, 351, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (880, 213, 352, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (881, 213, 353, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (882, 213, 355, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (883, 213, 356, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (885, 213, 357, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (886, 213, 358, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (887, 213, 359, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (888, 213, 360, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (889, 213, 361, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (890, 213, 362, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (891, 213, 363, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (892, 213, 365, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (893, 213, 366, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (895, 213, 367, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (896, 213, 368, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (897, 213, 369, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (898, 213, 370, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (899, 213, 371, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (900, 213, 372, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (901, 213, 373, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (902, 213, 375, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (903, 213, 376, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (905, 213, 377, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (906, 213, 378, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (907, 213, 379, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (908, 213, 380, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (909, 213, 381, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (910, 213, 382, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (911, 213, 383, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (912, 213, 385, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (913, 213, 386, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (915, 213, 387, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (916, 213, 388, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (917, 213, 389, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (918, 215, 238, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (919, 215, 268, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (920, 215, 276, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (921, 215, 277, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (922, 215, 278, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (923, 215, 281, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (925, 215, 282, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (926, 215, 291, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (927, 215, 292, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (928, 215, 293, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (929, 215, 308, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (930, 215, 309, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (931, 215, 310, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (932, 215, 311, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (933, 215, 312, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (935, 215, 313, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (936, 215, 317, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (937, 215, 318, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (938, 215, 319, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (939, 215, 320, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (950, 215, 321, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (951, 215, 333, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (952, 215, 335, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (953, 215, 336, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (955, 215, 337, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (956, 215, 360, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (957, 215, 361, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (958, 215, 367, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (959, 215, 368, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (960, 215, 370, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (961, 215, 371, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (962, 215, 372, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (963, 215, 373, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (965, 215, 376, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (966, 215, 382, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (967, 216, 360, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (968, 216, 361, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (969, 216, 223, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (970, 216, 225, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (971, 216, 226, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (972, 216, 227, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (973, 216, 228, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (975, 216, 231, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (976, 216, 232, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (977, 216, 233, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (978, 216, 235, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (979, 216, 236, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (980, 216, 237, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (981, 216, 238, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (982, 216, 239, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (983, 216, 260, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (985, 216, 261, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (986, 216, 262, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (987, 216, 263, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (988, 216, 265, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (989, 216, 266, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (990, 216, 267, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (991, 216, 268, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (992, 216, 270, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (993, 216, 271, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (995, 216, 272, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (996, 216, 273, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0),
+    (997, 216, 275, 'API_ENDPOINT', NULL, '2026-02-01 09:12:28', '2026-02-01 09:12:28', 0, 0);
