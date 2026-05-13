@@ -244,13 +244,13 @@ check_images_exist() {
     log_info "检查Docker镜像是否存在..."
     
     # 方法1: 尝试使用 docker-compose config --images (适用于较新版本)
-    local images=$(docker-compose config --images 2>/dev/null)
+    local images=$(dc config --images 2>/dev/null)
     local exit_code=$?
     
     # 方法2: 如果方法1失败，从docker-compose config输出中提取镜像
     if [ -z "$images" ] || [ $exit_code -ne 0 ]; then
         log_info "尝试从docker-compose配置中提取镜像列表..."
-        local config_output=$(docker-compose config 2>&1)
+        local config_output=$(dc config 2>&1)
         local config_exit_code=$?
         
         if [ $config_exit_code -eq 0 ] && [ -n "$config_output" ]; then
@@ -260,12 +260,18 @@ check_images_exist() {
         fi
     fi
     
-    # 方法3: 如果方法2也失败，直接从docker-compose.yml文件解析
+    # 方法3: 从主 compose 与 business.d 片段解析镜像行
     if [ -z "$images" ]; then
-        log_info "尝试从docker-compose.yml文件中解析镜像列表..."
-        if [ -f "docker-compose.yml" ]; then
-            images=$(grep -E "^\s+image:" docker-compose.yml | sed 's/.*image:\s*//' | sed 's/\${[^}]*}//g' | sed 's/:-[^}]*}//g' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//' | sort -u)
-        fi
+        local frag strip
+        strip='s/.*image:\s*//;s/\${[^}]*}//g;s/:-[^}]*}//g;s/^[[:space:]]*//;s/[[:space:]]*$//'
+        log_info "尝试从 compose 文件解析镜像列表..."
+        images=""
+        while IFS= read -r frag || [ -n "$frag" ]; do
+            [ -z "$frag" ] && continue
+            [ -f "$frag" ] || continue
+            images=$(printf '%s\n%s\n' "$images" "$(grep -E "^\s+image:" "$frag" | sed "$strip")")
+        done < <(g2rain_compose_all_yml_fragments)
+        images=$(echo "$images" | sed '/^$/d' | sort -u)
     fi
     
     if [ -z "$images" ]; then
@@ -323,7 +329,7 @@ pull_images() {
     if [ -n "$service_name" ]; then
         if [ "$force_pull" = "true" ]; then
             log_info "强制拉取服务 $service_name 的最新镜像..."
-            docker-compose pull "$service_name"
+            dc pull "$service_name"
             log_success "服务 $service_name 的镜像拉取完成"
         else
             log_info "更新指定服务 $service_name，跳过镜像拉取（假设使用本地构建的镜像）"
@@ -334,7 +340,7 @@ pull_images() {
     # 更新所有服务时，检查所有镜像是否存在
     if ! check_images_exist; then
         log_info "发现缺失的镜像，开始拉取..."
-        docker-compose pull
+        dc pull
         log_success "缺失镜像拉取完成"
         return 0
     fi
@@ -342,7 +348,7 @@ pull_images() {
     # 如果所有镜像都存在
     if [ "$force_pull" = "true" ]; then
         log_info "强制拉取最新Docker镜像..."
-        docker-compose pull
+        dc pull
         log_success "镜像拉取完成"
     else
         log_info "所有镜像已存在，跳过拉取（使用 --force-pull 强制拉取最新版本）"
@@ -355,10 +361,10 @@ update_services() {
     
     if [ -n "$service" ]; then
         log_info "更新服务: $service"
-        docker-compose up -d --no-deps "$service"
+        dc up -d --no-deps "$service"
     else
         log_info "更新所有服务..."
-        docker-compose up -d
+        dc up -d
     fi
     
     log_success "服务更新完成"
@@ -393,7 +399,7 @@ check_services() {
     local all_healthy=true
     
     for service in "${services[@]}"; do
-        if docker-compose ps | grep -q "$service.*Up"; then
+        if dc ps | grep -q "$service.*Up"; then
             log_success "$service 服务运行正常"
         else
             log_warning "$service 服务可能存在问题"
@@ -409,7 +415,7 @@ check_services() {
     
     # 显示服务状态
     log_info "当前服务状态:"
-    docker-compose ps
+    dc ps
 }
 
 # 显示更新信息
@@ -418,8 +424,8 @@ show_update_info() {
     echo ""
     echo "更新信息:"
     echo "  备份目录: backup/"
-    echo "  服务状态: docker-compose ps"
-    echo "  查看日志: docker-compose logs -f"
+    echo "  服务状态: $(g2rain_compose_cli_hint) ps"
+    echo "  查看日志: $(g2rain_compose_cli_hint) logs -f"
     echo ""
     echo "如果遇到问题，可以回滚到备份:"
     echo "  ./stop.sh --cleanup"
@@ -439,6 +445,7 @@ show_help() {
     echo "  ./update.sh --force-pull      强制拉取最新镜像并更新所有服务"
     echo "  ./update.sh --cleanup-all     更新并清理所有未使用镜像"
     echo "  ./update.sh --help            显示帮助信息"
+    echo "  ./update.sh --business <名>   仅合并指定 business.d 片段（可重复，同 start.sh）"
     echo ""
     echo "示例:"
     echo "  ./update.sh g2rain-manager-app   只更新指定服务（使用本地镜像）"
@@ -452,53 +459,81 @@ show_help() {
     echo "选项:"
     echo "  --force-pull    强制拉取最新镜像（更新所有服务时拉取所有镜像，更新指定服务时只拉取该服务镜像）"
     echo "  --cleanup-all    清理所有未使用的Docker镜像"
+    echo "  --business        与 business.d/README 说明一致"
     echo "  --help           显示此帮助信息"
     echo ""
     echo "注意:"
     echo "  更新指定服务时，默认使用本地已构建的镜像，不会检查或拉取其他服务的镜像"
     echo "  如需拉取指定服务的最新镜像，请使用 --force-pull 选项"
+    echo "  business.d/*.yml 与主 compose 合并；与 ./start.sh、./stop.sh 使用相同 -f 链（见 business.d/README）"
     echo ""
 }
 
 # 主函数
 main() {
-    echo "=========================================="
-    echo "    G2Rain Docker Compose 更新脚本"
-    echo "=========================================="
-    echo ""
-    
+    G2RAIN_BUSINESS_NAMES=""
     local force_pull=false
     local service_name=""
     local cleanup_all=false
-    
-    # 处理命令行参数
-    for arg in "$@"; do
-        case "$arg" in
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
             --help)
                 show_help
                 exit 0
                 ;;
             --force-pull)
                 force_pull=true
-                log_info "将强制拉取最新镜像"
+                shift
                 ;;
             --cleanup-all)
                 cleanup_all=true
-                log_warning "将执行完整清理操作"
+                shift
+                ;;
+            --business)
+                if [ -z "${2:-}" ]; then
+                    log_error "--business 需要指定片段名（见 business.d/README）"
+                    exit 1
+                fi
+                G2RAIN_BUSINESS_NAMES="${G2RAIN_BUSINESS_NAMES}${G2RAIN_BUSINESS_NAMES:+ }${2}"
+                shift 2
                 ;;
             *)
-                if [ -z "$service_name" ] && [ "$arg" != "--force-pull" ] && [ "$arg" != "--cleanup-all" ]; then
-                    service_name="$arg"
+                if [ -z "$service_name" ]; then
+                    service_name="$1"
                     log_info "将更新服务: $service_name"
                 fi
+                shift
                 ;;
         esac
     done
-    
+
+    cd "$ROOT" || exit 1
+    COMPOSE_DEPLOY_ROOT="$ROOT"
+    USE_COMPOSE_V2=0
+    # shellcheck disable=SC1091
+    source "${ROOT}/compose-merge.inc"
+    dc() { g2rain_dc "$@"; }
+
+    echo "=========================================="
+    echo "    G2Rain Docker Compose 更新脚本"
+    echo "=========================================="
+    echo ""
+
+    if g2rain_has_business_compose; then
+        log_info "已检测到 business.d 业务片段，将使用与 start/stop 相同的合并配置更新"
+    fi
+
+    if [ "$force_pull" = true ]; then
+        log_info "将强制拉取最新镜像"
+    fi
+    if [ "$cleanup_all" = true ]; then
+        log_warning "将执行完整清理操作"
+    fi
     if [ -z "$service_name" ] && [ "$force_pull" = false ] && [ "$cleanup_all" = false ]; then
         log_info "将更新所有服务"
     fi
-    
+
     check_dependencies
     backup_data
     if [ "$force_pull" = false ]; then
