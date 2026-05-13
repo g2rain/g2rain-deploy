@@ -72,14 +72,7 @@ compose_file_for_stack() {
     fi
 }
 
-# 统一调用：V1 为 docker-compose（工作目录为仓库根），V2 为 docker compose -f compose-v2/compose.yaml --project-directory .
-dc() {
-    if [ "${USE_COMPOSE_V2:-0}" = 1 ]; then
-        docker compose -f "${SCRIPT_DIR}/compose-v2/compose.yaml" --project-directory "${SCRIPT_DIR}" "$@"
-    else
-        docker-compose "$@"
-    fi
-}
+# 统一调用由 main() 中 source compose-merge.inc 后定义的 dc() 转发至 g2rain_dc（主 compose + business.d/*.yml）
 
 # 检查Docker和Docker Compose是否安装
 check_dependencies() {
@@ -245,10 +238,24 @@ generate_ssl_certificate() {
     return $?
 }
 
-# 从 compose 文件读取某服务的 image 行（不含变量展开）
+# 从合并后的 compose 配置读取某服务的 image 行（优先 dc config，失败则回退主 compose 文件）
 compose_image_for_service() {
     local svc="$1"
-    local yml
+    local merged yml
+    merged="$(dc config 2>/dev/null || true)"
+    if [[ -n "$merged" ]]; then
+        echo "$merged" | awk -v s="$svc" '
+            $0 ~ "^  " s ":" { found=1; next }
+            found && /^  [a-zA-Z0-9_-]+:/ { exit }
+            found && /^    image:/ {
+                sub(/^    image:[[:space:]]*/, "");
+                gsub(/\r/, "");
+                print;
+                exit
+            }
+        '
+        return 0
+    fi
     yml="$(compose_file_for_stack)"
     if [[ ! -f "$yml" ]]; then
         echo ""
@@ -352,14 +359,18 @@ check_images_exist() {
         fi
     fi
     
-    # 方法3: 如果方法2也失败，直接从 compose 文件解析
+    # 方法3: 若 config 不可用，从主 compose 与 business.d 下各片段解析 image 行
     if [ -z "$images" ]; then
-        local yml
-        yml="$(compose_file_for_stack)"
-        log_info "尝试从 $(basename "$yml") 文件中解析镜像列表..."
-        if [ -f "$yml" ]; then
-            images=$(grep -E "^\s+image:" "$yml" | sed 's/.*image:\s*//' | sed 's/\${[^}]*}//g' | sed 's/:-[^}]*}//g' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//' | sort -u)
-        fi
+        local frag strip
+        strip='s/.*image:\s*//;s/\${[^}]*}//g;s/:-[^}]*}//g;s/^[[:space:]]*//;s/[[:space:]]*$//'
+        log_info "尝试从 compose 文件解析镜像列表..."
+        images=""
+        while IFS= read -r frag || [ -n "$frag" ]; do
+            [ -z "$frag" ] && continue
+            [ -f "$frag" ] || continue
+            images=$(printf '%s\n%s\n' "$images" "$(grep -E "^\s+image:" "$frag" | sed "$strip")")
+        done < <(g2rain_compose_all_yml_fragments)
+        images=$(echo "$images" | sed '/^$/d' | sort -u)
     fi
     
     if [ -z "$images" ]; then
@@ -411,7 +422,10 @@ check_images_exist() {
 # 启动服务
 start_services() {
     log_info "启动G2Rain服务..."
-    
+    if g2rain_has_business_compose; then
+        log_info "已启用业务叠加: business.d 下 compose 片段（与主 compose 合并）"
+    fi
+
     if ! check_images_exist; then
         build_missing_from_services_conf
     fi
@@ -504,15 +518,17 @@ show_access_info() {
     echo "  Kafka端口: ${KAFKA_PORT:-9092}（宿主机映射，容器内 bootstrap: kafka:9092）"
     echo ""
     echo "管理命令:"
+    local _hint
+    _hint="$(g2rain_compose_cli_hint)"
     if [ "${USE_COMPOSE_V2:-0}" = 1 ]; then
-        echo "  查看日志: docker compose -f compose-v2/compose.yaml --project-directory . logs -f"
-        echo "  停止栈:   docker compose -f compose-v2/compose.yaml --project-directory . down"
-        echo "  重启服务: docker compose -f compose-v2/compose.yaml --project-directory . restart"
-        echo "  （./stop.sh 默认使用根目录 docker-compose.yml；V2 栈请用上面的 down）"
+        echo "  查看日志: ${_hint} logs -f"
+        echo "  停止栈:   ${_hint} down"
+        echo "  重启服务: ${_hint} restart"
+        echo "  （./stop.sh 与根目录 docker-compose.yml 及 business 叠加层对齐；纯 V2 栈亦可手动使用上表命令）"
     else
-        echo "  查看日志: docker-compose logs -f"
+        echo "  查看日志: ${_hint} logs -f"
         echo "  停止服务: ./stop.sh"
-        echo "  重启服务: docker-compose restart"
+        echo "  重启服务: ${_hint} restart"
     fi
     echo "  更新服务: ./update.sh"
     echo ""
@@ -523,13 +539,22 @@ main() {
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     USE_COMPOSE_V2=0
 
-    # 先剥离 --compose-v2，便于与 --host/--port 等任意顺序组合
+    # 先剥离 --compose-v2、--business <名>，便于与 --host/--port 等任意顺序组合
+    G2RAIN_BUSINESS_NAMES=""
     local stripped=()
     while [ $# -gt 0 ]; do
         case "$1" in
             --compose-v2)
                 USE_COMPOSE_V2=1
                 shift
+                ;;
+            --business)
+                if [ -z "${2:-}" ]; then
+                    log_error "--business 需要指定片段名（见 business.d/README）"
+                    exit 1
+                fi
+                G2RAIN_BUSINESS_NAMES="${G2RAIN_BUSINESS_NAMES}${G2RAIN_BUSINESS_NAMES:+ }${2}"
+                shift 2
                 ;;
             *)
                 stripped+=("$1")
@@ -538,6 +563,11 @@ main() {
         esac
     done
     set -- "${stripped[@]}"
+
+    COMPOSE_DEPLOY_ROOT="$SCRIPT_DIR"
+    # shellcheck disable=SC1091
+    source "${SCRIPT_DIR}/compose-merge.inc"
+    dc() { g2rain_dc "$@"; }
 
     echo "=========================================="
     echo "    G2Rain Docker Compose 启动脚本"
@@ -566,6 +596,7 @@ main() {
             echo "  $0                   启动所有服务（docker-compose + 根目录 docker-compose.yml）"
             echo "  $0 kafka             仅启动 Kafka（不校验 SSL，不启动其它服务；需默认 compose 含 kafka 服务）"
             echo "  $0 --compose-v2      使用 Docker Compose V2 插件与 compose-v2/compose.yaml"
+            echo "  $0 --business <名>  仅合并 business.d/<名>.yml（可重复）；默认合并该目录下全部 .yml"
             echo "  $0 --host <HOST> --port <PORT>  启动服务并在首次生成 .env 时写入平台地址"
             echo "  $0 --generate-ssl <IP地址>  生成SSL证书"
             echo "  $0 --help            显示帮助信息"
@@ -576,6 +607,8 @@ main() {
             echo "  $0 --generate-ssl 192.168.1.100  生成包含指定IP的SSL证书"
             echo "  $0 kafka              仅拉起 Kafka 容器（联调常用，不要求 SSL）"
             echo ""
+            echo "可选: 在 business.d/ 放置 *.yml 业务片段，与主 compose 合并（与 ./stop.sh、./update.sh 使用相同 -f 链，见 business.d/README）。"
+            echo ""
             exit 0
             ;;
         kafka)
@@ -584,12 +617,29 @@ main() {
             check_env_file
             create_directories
             set_permissions
-            local compose_yml
-            compose_yml="$(compose_file_for_stack)"
-            if ! grep -qE '^[[:space:]]+kafka:' "$compose_yml" 2>/dev/null; then
-                log_error "当前 Compose 文件未定义 kafka 服务: $compose_yml"
-                log_info "默认 docker-compose.yml 含 kafka；若使用 --compose-v2，请先在 compose-v2 中增加 kafka 或与根目录 compose 对齐后再试"
-                exit 1
+            if dc config --services 2>/dev/null | grep -qx 'kafka'; then
+                :
+            else
+                local compose_yml frag found_kafka=1
+                compose_yml="$(compose_file_for_stack)"
+                if grep -qE '^[[:space:]]+kafka:' "$compose_yml" 2>/dev/null; then
+                    found_kafka=0
+                fi
+                if [ "$found_kafka" -ne 0 ]; then
+                    while IFS= read -r frag || [ -n "$frag" ]; do
+                        [ -z "$frag" ] && continue
+                        [ -f "$frag" ] || continue
+                        if grep -qE '^[[:space:]]+kafka:' "$frag" 2>/dev/null; then
+                            found_kafka=0
+                            break
+                        fi
+                    done < <(g2rain_business_yml_paths 2>/dev/null) || true
+                fi
+                if [ "$found_kafka" -ne 0 ]; then
+                    log_error "当前合并后的 Compose 未定义 kafka 服务"
+                    log_info "请确认 docker-compose.yml、compose-v2/compose.yaml 或 business.d/*.yml 中含 kafka"
+                    exit 1
+                fi
             fi
             log_info "仅启动中间件: kafka（不校验 SSL，不启动其它服务）"
             log_info "拉取 kafka 服务镜像（若已存在则较快返回）..."
