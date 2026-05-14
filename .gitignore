@@ -50,6 +50,7 @@ config/*
 !config/redis/**
 !config/generate_key.sh
 !config/generate-ssl.sh
+!config/compose-cli.env.example
 !config/g2rain-cms-app/
 !config/g2rain-infra-app/
 !config/g2rain-main-shell/

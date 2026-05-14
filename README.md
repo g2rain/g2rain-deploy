@@ -105,8 +105,15 @@ G2RAIN_GIT_BASE=https://github.com/your-org ./init-once.sh
 ```
 g2rain-deploy/
 ├── docker-compose.yml          # Docker Compose 配置（v1 独立命令 docker-compose 与脚本默认使用）
+├── docker-compose.fragment.gateway-webmvc.yml  # 网关改用 WebMVC 的合并片段模板（可复制到 business.d/，见下文）
+├── business.d/                 # 与主 compose 合并的片段（见 business.d/README.md；默认含 CMS）
+│   ├── g2rain-cms.yml          # g2rain-cms、g2rain-cms-app（已从主 compose 拆出）
+│   └── README.md
 ├── compose-v2/
 │   └── compose.yaml            # Compose Specification / Docker Compose V2 插件用（无 version 键，含 name）
+├── compose-cli-preference.inc  # 解析 config/compose-cli.env 与命令行 --compose-v2/--compose-v1
+├── scripts/
+│   └── write-compose-cli-preference.sh  # 探测本机 docker compose / docker-compose 并写入 config/compose-cli.env
 ├── env.example                 # 环境变量模板（复制为 .env）
 ├── services.conf               # 克隆目录与 compose 服务、build 命令映射（Bash 源文件）
 ├── init-once.sh                # 一次性安装：.env / SQL 占位符 / 克隆 codes / 默认 build
@@ -116,6 +123,7 @@ g2rain-deploy/
 ├── codes/                      # 克隆的业务仓库根目录（.gitignore，由 init-once 创建）
 ├── .g2rain-deploy-install.done # 安装完成标记（.gitignore，存在则 init-once 默认跳过）
 ├── config/
+│   ├── compose-cli.env.example # Compose CLI 偏好示例（复制或运行 write-compose-cli 脚本生成 compose-cli.env）
 │   ├── generate-ssl.sh         # SSL 证书生成
 │   ├── generate_key.sh         # 前端 ES256 密钥生成
 │   ├── mysql/                  # MySQL 配置与初始化 SQL（含 g2rain-basis.sql 平台占位符）
@@ -158,6 +166,20 @@ g2rain-deploy/
 
 各业务容器对外端口由 **`docker-compose.yml`** 与 **`.env`** 共同决定（例如网关、IAM 等映射到宿主机的端口）；容器内 Spring 服务常见监听 **8080**。镜像名多为 `g2rain/...:latest`，本地开发可通过 **`init-once.sh`** / **`update.sh`** 在 **`codes/`** 中构建。各服务日志目录见 **`logs/<服务名>/`**。
 
+### 网关 WebMVC 与 `business.d` 合并片段
+
+默认 **`docker-compose.yml`** 中的 **`g2rain-gateway`** 使用 WebFlux 网关镜像。若需改为 **WebMVC 网关**（服务名仍为 `g2rain-gateway`，与 Nacos 注册名一致）：
+
+1. 将仓库根目录的 **`docker-compose.fragment.gateway-webmvc.yml`** 复制到 **`business.d/`** 下并保留 `.yml` 后缀（文件名可自定，例如 `gateway-webmvc.yml`）。**`./start.sh`**、**`./stop.sh`**、**`./update.sh`** 会把主 compose 与该目录下的片段按相同 `-f` 链合并（约定见 **`business.d/README.md`**）。
+2. 片段内默认镜像为 **`g2rain/g2rain-gateway-webmvc:latest`**；可通过环境变量 **`GATEWAY_IMAGE`** 覆盖。
+3. 若不使用 `business.d/`，也可在手动执行 compose 时追加 **`-f docker-compose.fragment.gateway-webmvc.yml`**，效果与合并片段相同。
+
+使用 **`--compose-v2`** 时，主文件为 **`compose-v2/compose.yaml`**；若需 WebMVC 网关，请在 **`business.d/`** 中放置等价片段（覆盖 `g2rain-gateway` 的 `image`），或自行维护与 **`compose-v2/compose.yaml`** 头部注释一致的叠加文件。
+
+### `business.d` 中的 CMS 服务
+
+**`g2rain-cms`** 与 **`g2rain-cms-app`** 的定义位于 **`business.d/g2rain-cms.yml`**，不再写在主 **`docker-compose.yml`** / **`compose-v2/compose.yaml`** 中。**`./start.sh`**、**`./stop.sh`**、**`./update.sh`** 会按 `compose-merge.inc` 约定自动追加该文件。若不经脚本、直接执行 **`docker-compose`** / **`docker compose`**，须手动带上 **`-f business.d/g2rain-cms.yml`**（并与主 `-f`、`--project-directory` 用法与仓库文档一致），否则栈内不会出现 CMS 相关容器。
+
 
 ## 📋 管理命令
 
@@ -172,10 +194,17 @@ g2rain-deploy/
 ```bash
 ./start.sh
 ./start.sh --host <HOST> --port <PORT>
-./start.sh --compose-v2                    # 使用 V2 插件 + compose-v2/compose.yaml（可与 --host/--port 同用）
+./start.sh --compose-v2                    # 强制 V2 主文件（覆盖 config/compose-cli.env）
+./start.sh --compose-v1                    # 强制 v1 主文件（覆盖配置文件）
 ./start.sh --generate-ssl <IP或域名>
 ./start.sh --help
 ```
+
+### Compose CLI 偏好（`config/compose-cli.env`）
+
+- 模板：**`config/compose-cli.env.example`**。实际文件 **`config/compose-cli.env`**（默认不提交，由脚本生成）含 **`G2RAIN_USE_COMPOSE_V2=0|1`**，供 **`start.sh` / `stop.sh` / `update.sh`** 在未传 **`--compose-v2` / `--compose-v1`** 时决定使用 **`docker-compose`** 还是 **`docker compose`**。
+- **`./scripts/write-compose-cli-preference.sh`**：默认 **`--write`** 探测本机并写入；**`--dry-run`** 仅打印；**`--print-export`** 输出一行 **`export`**。**`init-once.sh`** 在 Docker/Compose 检测通过后会默认执行写入。
+- 命令行 **`--compose-v2`** / **`--compose-v1`** 始终**覆盖**配置文件。
 
 ### Docker Compose V2 启动（`compose-v2/compose.yaml`）
 
@@ -201,11 +230,11 @@ docker compose -f compose-v2/compose.yaml --project-directory . logs -f
 docker compose -f compose-v2/compose.yaml --project-directory . down
 ```
 
-也可用 **`./start.sh --compose-v2`**（与 **`--host` / `--port`** 任意顺序组合），分阶段拉起逻辑与默认方式相同，底层改为 **`docker compose -f compose-v2/compose.yaml --project-directory .`**。
+也可用 **`./start.sh --compose-v2`**（与 **`--host` / `--port`** 任意顺序组合），分阶段拉起逻辑与默认方式相同，底层改为 **`docker compose -f compose-v2/compose.yaml --project-directory .`**。若已通过 **`./scripts/write-compose-cli-preference.sh`** 或 **`init-once.sh`** 生成 **`config/compose-cli.env`** 且其中为 V2，则可直接 **`./start.sh`** 而无需每次带 **`--compose-v2`**（**`./stop.sh`**、**`./update.sh`** 同样会读取该文件）。
 
 说明：
 
-- **`./start.sh` 加 `--compose-v2`** 时使用 V2 与 **`compose-v2/compose.yaml`**；**`./stop.sh` / `./update.sh` 仍默认根目录 `docker-compose.yml`**。停止 V2 栈可用 `docker compose -f compose-v2/compose.yaml --project-directory . down`，或继续用根目录配置 + `docker compose -f docker-compose.yml --project-directory .`（根目录文件仍含 `version`，部分版本会提示忽略）。
+- **`./start.sh`、`./stop.sh`、`./update.sh`** 均会读取 **`config/compose-cli.env`**（若存在），并与 **`--compose-v2` / `--compose-v1`** 组合使用；三者应使用同一套 CLI，避免「用 V2 启动、用 v1 停止」导致项目上下文不一致。
 - 修改 **`docker-compose.yml`** 后，请同步更新 **`compose-v2/compose.yaml`**（可对照提交或按文件头注释从根文件生成），避免两套配置漂移。
 
 ### 停止服务（`stop.sh`）
@@ -214,16 +243,14 @@ docker compose -f compose-v2/compose.yaml --project-directory . down
 
 | 模式 | 命令 | 行为说明 |
 |------|------|----------|
-| **不清理容器** | `./stop.sh` | 执行 `docker-compose stop`：进程停止，**容器记录仍保留**，`docker ps -a` 中多为 `Exited`。数据卷（如 `data/mysql`、`data/redis`）与绑定目录**不删除**，下次 `./start.sh` 可快速拉起。 |
-| **清理容器** | `./stop.sh --cleanup` | 在停止后执行 `docker-compose down`：**删除**本 `docker-compose.yml` 所管理的服务容器及默认网络，并执行 `docker image prune -f` 清理悬空镜像。数据卷目录一般仍保留在宿主机（除非 compose 中定义为命名卷且被一并移除，本仓库以 bind mount 为主）。 |
+| **不清理容器** | `./stop.sh` 或 `./stop.sh --compose-v2` | 执行 **`stop`**：进程停止，**容器记录仍保留**。下次用与启动一致的 CLI 执行 **`./start.sh`**。 |
+| **清理容器** | `./stop.sh --cleanup` 等 | 在停止后执行 **`down`**：**删除**当前合并配置所管理的服务容器及默认网络，并 **`docker image prune -f`**。 |
 
 ```bash
-# 仅停止：保留 Exited 容器，便于排查或再次 start
 ./stop.sh
-
-# 停止并清理：删除本项目容器与网络，并 prune 悬空镜像
+./stop.sh --compose-v2
 ./stop.sh --cleanup
-
+./stop.sh --compose-v2 --cleanup
 ./stop.sh --help
 ```
 
@@ -333,7 +360,7 @@ location /test/ {
 
 ### 更新服务
 
-`update.sh` 会读取 **`services.conf`**：默认先对有关仓库 **`git pull`** 并执行 **`build.sh`**，再 **`docker-compose pull` / `up`**（细节以 **`./update.sh --help`** 为准）。
+`update.sh` 会读取 **`services.conf`**：默认先对有关仓库 **`git pull`** 并执行 **`build.sh`**，再经脚本内 **`dc`** 执行 **`pull` / `up`**（默认 **`docker-compose`**；若 **`config/compose-cli.env`** 或 **`--compose-v2`** 则为 **`docker compose`**，细节以 **`./update.sh --help`** 为准）。
 
 **快捷方案：** 全量更新所有服务。
 
@@ -343,14 +370,12 @@ location /test/ {
 # 更新所有服务
 ./update.sh
 
+# 与 config/compose-cli.env 中 V2 一致时，可直接（或显式）：
+./update.sh --compose-v2
+
 # 更新指定服务
 ./update.sh g2rain-gateway
-./update.sh g2rain-iam
-./update.sh g2rain-main-shell
-./update.sh mysql
-./update.sh redis
-./update.sh nacos
-./update.sh nginx
+./update.sh --compose-v2 g2rain-iam
 
 # 强制拉取最新镜像并更新
 ./update.sh --force-pull

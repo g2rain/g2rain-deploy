@@ -186,13 +186,30 @@ build_from_source() {
     log_success "全量源码构建完成"
 }
 
-# 检查Docker Compose是否安装
+# 检查 Docker / Compose（与 start.sh 对齐：默认 docker-compose；--compose-v2 时使用 docker compose）
 check_dependencies() {
     log_info "检查依赖环境..."
-    
-    if ! command -v docker-compose &> /dev/null; then
-        log_error "Docker Compose未安装"
+
+    if ! command -v docker &> /dev/null; then
+        log_error "Docker 未安装，请先安装 Docker"
         exit 1
+    fi
+
+    if [ "${USE_COMPOSE_V2:-0}" = 1 ]; then
+        if ! docker compose version &> /dev/null; then
+            log_error "未检测到 Docker Compose V2 插件（docker compose）；请安装、或修改 config/compose-cli.env、或去掉 --compose-v2 / 使用 --compose-v1"
+            exit 1
+        fi
+        if [ ! -f "${ROOT}/compose-v2/compose.yaml" ]; then
+            log_error "未找到 ${ROOT}/compose-v2/compose.yaml"
+            exit 1
+        fi
+        log_info "使用 Compose V2: compose-v2/compose.yaml"
+    else
+        if ! command -v docker-compose &> /dev/null; then
+            log_error "Docker Compose 未安装（未找到 docker-compose）；请安装、或运行 ./scripts/write-compose-cli-preference.sh、或 ./update.sh --compose-v2"
+            exit 1
+        fi
     fi
 
     if [ -f "$CONFIG" ]; then
@@ -201,7 +218,7 @@ check_dependencies() {
             exit 1
         fi
     fi
-    
+
     log_success "依赖环境检查通过"
 }
 
@@ -428,9 +445,17 @@ show_update_info() {
     echo "  查看日志: $(g2rain_compose_cli_hint) logs -f"
     echo ""
     echo "如果遇到问题，可以回滚到备份:"
-    echo "  ./stop.sh --cleanup"
+    if [ "${USE_COMPOSE_V2:-0}" = 1 ]; then
+        echo "  ./stop.sh --compose-v2 --cleanup"
+    else
+        echo "  ./stop.sh --cleanup"
+    fi
     echo "  cp -r backup/[备份目录]/* ."
-    echo "  ./start.sh"
+    if [ "${USE_COMPOSE_V2:-0}" = 1 ]; then
+        echo "  ./start.sh --compose-v2"
+    else
+        echo "  ./start.sh"
+    fi
     echo ""
 }
 
@@ -444,10 +469,14 @@ show_help() {
     echo "  ./update.sh [服务名] --force-pull  更新指定服务并强制拉取该服务镜像（会跳过源码构建）"
     echo "  ./update.sh --force-pull      强制拉取最新镜像并更新所有服务"
     echo "  ./update.sh --cleanup-all     更新并清理所有未使用镜像"
+    echo "  ./update.sh --compose-v2     强制使用 Docker Compose V2 插件与 compose-v2/compose.yaml（与 ./start.sh --compose-v2 一致）"
+    echo "  ./update.sh --compose-v1     强制使用 docker-compose 与 docker-compose.yml（覆盖 config/compose-cli.env）"
     echo "  ./update.sh --help            显示帮助信息"
     echo "  ./update.sh --business <名>   仅合并指定 business.d 片段（可重复，同 start.sh）"
     echo ""
     echo "示例:"
+    echo "  ./update.sh --compose-v2                    使用 V2 主文件更新全部服务"
+    echo "  ./update.sh --compose-v2 g2rain-manager-app  使用 V2 主文件只更新指定服务"
     echo "  ./update.sh g2rain-manager-app   只更新指定服务（使用本地镜像）"
     echo "  ./update.sh g2rain-health-app    只更新健康管理H5服务（使用本地镜像）"
     echo "  ./update.sh mysql                 只更新MySQL服务"
@@ -457,21 +486,56 @@ show_help() {
     echo "  ./update.sh --force-pull        强制拉取所有服务的最新镜像"
     echo ""
     echo "选项:"
-    echo "  --force-pull    强制拉取最新镜像（更新所有服务时拉取所有镜像，更新指定服务时只拉取该服务镜像）"
-    echo "  --cleanup-all    清理所有未使用的Docker镜像"
-    echo "  --business        与 business.d/README 说明一致"
+    echo "  --force-pull     强制拉取最新镜像（更新所有服务时拉取所有镜像，更新指定服务时只拉取该服务镜像）"
+    echo "  --cleanup-all    清理所有未使用的 Docker 镜像"
+    echo "  --compose-v2     使用 docker compose + compose-v2/compose.yaml"
+    echo "  --compose-v1     使用 docker-compose + docker-compose.yml（覆盖配置文件）"
+    echo "  --business       与 business.d/README 说明一致"
     echo "  --help           显示此帮助信息"
     echo ""
     echo "注意:"
     echo "  更新指定服务时，默认使用本地已构建的镜像，不会检查或拉取其他服务的镜像"
     echo "  如需拉取指定服务的最新镜像，请使用 --force-pull 选项"
-    echo "  business.d/*.yml 与主 compose 合并；与 ./start.sh、./stop.sh 使用相同 -f 链（见 business.d/README）"
+    echo "  business.d/*.yml 与主 compose 合并；默认 CLI 见 config/compose-cli.env（见 scripts/write-compose-cli-preference.sh）。"
     echo ""
 }
 
 # 主函数
 main() {
+    # shellcheck disable=SC1091
+    source "${ROOT}/compose-cli-preference.inc"
+
+    USE_COMPOSE_V2=0
+    local _compose_cli_override=""
     G2RAIN_BUSINESS_NAMES=""
+    local stripped=()
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --compose-v2)
+                _compose_cli_override="v2"
+                shift
+                ;;
+            --compose-v1)
+                _compose_cli_override="v1"
+                shift
+                ;;
+            --business)
+                if [ -z "${2:-}" ]; then
+                    log_error "--business 需要指定片段名（见 business.d/README）"
+                    exit 1
+                fi
+                G2RAIN_BUSINESS_NAMES="${G2RAIN_BUSINESS_NAMES}${G2RAIN_BUSINESS_NAMES:+ }${2}"
+                shift 2
+                ;;
+            *)
+                stripped+=("$1")
+                shift
+                ;;
+        esac
+    done
+    set -- "${stripped[@]}"
+
     local force_pull=false
     local service_name=""
     local cleanup_all=false
@@ -490,14 +554,6 @@ main() {
                 cleanup_all=true
                 shift
                 ;;
-            --business)
-                if [ -z "${2:-}" ]; then
-                    log_error "--business 需要指定片段名（见 business.d/README）"
-                    exit 1
-                fi
-                G2RAIN_BUSINESS_NAMES="${G2RAIN_BUSINESS_NAMES}${G2RAIN_BUSINESS_NAMES:+ }${2}"
-                shift 2
-                ;;
             *)
                 if [ -z "$service_name" ]; then
                     service_name="$1"
@@ -509,8 +565,8 @@ main() {
     done
 
     cd "$ROOT" || exit 1
+    g2rain_resolve_use_compose_v2 "$ROOT" "$_compose_cli_override"
     COMPOSE_DEPLOY_ROOT="$ROOT"
-    USE_COMPOSE_V2=0
     # shellcheck disable=SC1091
     source "${ROOT}/compose-merge.inc"
     dc() { g2rain_dc "$@"; }

@@ -85,7 +85,7 @@ check_dependencies() {
 
     if [ "${USE_COMPOSE_V2:-0}" = 1 ]; then
         if ! docker compose version &> /dev/null; then
-            log_error "未检测到 Docker Compose V2 插件（docker compose），请安装或使用默认方式（去掉 --compose-v2）"
+            log_error "未检测到 Docker Compose V2 插件（docker compose），请安装、或改用 config/compose-cli.env 设为 0、或传入 --compose-v1"
             exit 1
         fi
         if [ ! -f "${SCRIPT_DIR}/compose-v2/compose.yaml" ]; then
@@ -95,7 +95,7 @@ check_dependencies() {
         log_info "使用 Compose V2: compose-v2/compose.yaml"
     else
         if ! command -v docker-compose &> /dev/null; then
-            log_error "Docker Compose未安装，请先安装Docker Compose"
+            log_error "Docker Compose 未安装（未找到 docker-compose）；请安装、或运行 ./scripts/write-compose-cli-preference.sh 写入 V2、或传入 --compose-v2"
             exit 1
         fi
     fi
@@ -537,15 +537,23 @@ show_access_info() {
 # 主函数
 main() {
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    USE_COMPOSE_V2=0
+    # shellcheck disable=SC1091
+    source "${SCRIPT_DIR}/compose-cli-preference.inc"
 
-    # 先剥离 --compose-v2、--business <名>，便于与 --host/--port 等任意顺序组合
+    USE_COMPOSE_V2=0
+    local _compose_cli_override=""
+
+    # 先剥离 --compose-v2、--compose-v1、--business <名>，便于与 --host/--port 等任意顺序组合
     G2RAIN_BUSINESS_NAMES=""
     local stripped=()
     while [ $# -gt 0 ]; do
         case "$1" in
             --compose-v2)
-                USE_COMPOSE_V2=1
+                _compose_cli_override="v2"
+                shift
+                ;;
+            --compose-v1)
+                _compose_cli_override="v1"
                 shift
                 ;;
             --business)
@@ -563,6 +571,8 @@ main() {
         esac
     done
     set -- "${stripped[@]}"
+
+    g2rain_resolve_use_compose_v2 "$SCRIPT_DIR" "$_compose_cli_override"
 
     COMPOSE_DEPLOY_ROOT="$SCRIPT_DIR"
     # shellcheck disable=SC1091
@@ -593,9 +603,10 @@ main() {
             echo "G2Rain部署启动脚本使用说明:"
             echo ""
             echo "用法:"
-            echo "  $0                   启动所有服务（docker-compose + 根目录 docker-compose.yml）"
+            echo "  $0                   启动所有服务（docker-compose + 根目录 docker-compose.yml，或由 config/compose-cli.env 指定）"
             echo "  $0 kafka             仅启动 Kafka（不校验 SSL，不启动其它服务；需默认 compose 含 kafka 服务）"
-            echo "  $0 --compose-v2      使用 Docker Compose V2 插件与 compose-v2/compose.yaml"
+            echo "  $0 --compose-v2      强制使用 Docker Compose V2 插件与 compose-v2/compose.yaml"
+            echo "  $0 --compose-v1      强制使用 docker-compose 与 docker-compose.yml（覆盖 config/compose-cli.env）"
             echo "  $0 --business <名>  仅合并 business.d/<名>.yml（可重复）；默认合并该目录下全部 .yml"
             echo "  $0 --host <HOST> --port <PORT>  启动服务并在首次生成 .env 时写入平台地址"
             echo "  $0 --generate-ssl <IP地址>  生成SSL证书"
@@ -607,6 +618,7 @@ main() {
             echo "  $0 --generate-ssl 192.168.1.100  生成包含指定IP的SSL证书"
             echo "  $0 kafka              仅拉起 Kafka 容器（联调常用，不要求 SSL）"
             echo ""
+            echo "可选: config/compose-cli.env 控制默认 CLI（见 config/compose-cli.env.example）；./scripts/write-compose-cli-preference.sh 可探测并写入。"
             echo "可选: 在 business.d/ 放置 *.yml 业务片段，与主 compose 合并（与 ./stop.sh、./update.sh 使用相同 -f 链，见 business.d/README）。"
             echo ""
             exit 0
