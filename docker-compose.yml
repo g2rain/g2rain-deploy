@@ -1,5 +1,14 @@
 version: '3.8'
 
+# 命名卷声明放在 services 之前，避免部分解析/合并场景下末尾 volumes 未被识别（如 kafka_data 未定义）。
+volumes:
+  mysql-data:
+    driver: local
+  redis-data:
+    driver: local
+  kafka_data:
+    driver: local
+
 services:
         
     # 应用服务 测试子应用
@@ -221,8 +230,8 @@ services:
       - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
       - SPRING_CLOUD_NACOS_DISCOVERY_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
       - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
-      - IAM_BASE_URL=${IAM_BASE_URL}
-      - PLATFORM_BASE_URL=${PLATFORM_BASE_URL}
+      - IAM_BASE_URL=${IAM_BASE_URL:-${PLATFORM_BASE_URL:-}}
+      - PLATFORM_BASE_URL=${PLATFORM_BASE_URL:-}
     networks:
       - g2rain-network
     depends_on:
@@ -408,11 +417,3 @@ networks:
     ipam:
       config:
         - subnet: 172.20.0.0/16
-
-volumes:
-  mysql-data:
-    driver: local
-  redis-data:
-    driver: local
-  kafka_data:
-    driver: local
