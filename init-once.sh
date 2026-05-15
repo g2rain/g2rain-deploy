@@ -49,9 +49,10 @@ usage() {
   cat <<'EOF'
 用法:
   ./init-once.sh [--host HOST] [--port PORT] [--skip-build] [--ssl-ip IP] [--force]
+  ./init-once.sh [--service <名> ...] [--host HOST] [--port PORT] ...
 
 说明:
-  - 依据 services.conf 克隆/更新 GitHub 仓库到 CODES_DIR（默认同目录下 codes/）。
+  - 依据 services.conf（及 service_config.d 片段）克隆/更新 GitHub 仓库到 CODES_DIR（默认同目录下 codes/）。
   - 默认在克隆后依次执行各仓的 build 脚本（默认同配置中的 build_cmd）；耗时与重试见脚本头部注释。
   - 从 .env 读取 PLATFORM_HOST / PLATFORM_PORT，将 config/mysql/g2rain-basis.sql 中的
     __PLATFORM_HOST__、__PLATFORM_PORT__ 替换后再由 MySQL 首次初始化导入（须在空数据卷前完成）。
@@ -60,6 +61,7 @@ usage() {
 
 选项:
   --host / --port   若尚无 .env，从 env.example 创建后可写入平台地址（与 start.sh 行为一致）。
+  --service <名>    仅加载 service_config.d/<名>.conf（可重复）；默认扫描该目录下全部 .conf。
   --skip-build      跳过各仓镜像构建（克隆仍会执行）。
   --ssl-ip IP       调用 config/generate-ssl.sh 生成 ssl/ 证书（需 openssl）。
   --force           忽略完成标记重新执行安装流程。
@@ -154,12 +156,6 @@ run_ssl_if_requested() {
 }
 
 list_config_services() {
-  if [[ ! -f "$CONFIG" ]]; then
-    log_err "未找到配置文件: $CONFIG"
-    exit 1
-  fi
-  # shellcheck disable=SC1090
-  source "$CONFIG"
   for entry in "${SERVICES[@]}"; do
     IFS='|' read -r repo dir compose_service build_cmd <<<"$entry"
     repo="${repo:-}"
@@ -231,6 +227,7 @@ SKIP_BUILD=false
 PLATFORM_HOST_ARG=""
 PLATFORM_PORT_ARG=""
 SSL_IP=""
+G2RAIN_SERVICE_CONFIG_NAMES=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -245,6 +242,11 @@ while [[ $# -gt 0 ]]; do
     --skip-build)
       SKIP_BUILD=true
       shift
+      ;;
+    --service)
+      if [[ -z "${2:-}" ]]; then log_err "--service 需要参数"; exit 1; fi
+      G2RAIN_SERVICE_CONFIG_NAMES="${G2RAIN_SERVICE_CONFIG_NAMES}${G2RAIN_SERVICE_CONFIG_NAMES:+ }${2}"
+      shift 2
       ;;
     --host)
       PLATFORM_HOST_ARG="${2:-}"
@@ -332,8 +334,13 @@ if [[ ! -f "$CONFIG" ]]; then
   log_err "未找到 $CONFIG"
   exit 1
 fi
-# shellcheck disable=SC1090
-source "$CONFIG"
+G2RAIN_DEPLOY_ROOT="$ROOT"
+# shellcheck disable=SC1091
+source "${ROOT}/services-merge.inc"
+g2rain_load_services_config || exit 1
+if g2rain_has_extra_service_config; then
+  log_info "已合并 service_config.d 中的额外服务映射"
+fi
 _rel="${CODES_DIR:-./codes}"
 if [[ "$_rel" == ./* ]]; then
   CODES="${ROOT}/${_rel#./}"

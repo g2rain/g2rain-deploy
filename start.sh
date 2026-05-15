@@ -290,8 +290,10 @@ build_missing_from_services_conf() {
     if [[ ! -f "$conf" ]]; then
         return 0
     fi
-    # shellcheck disable=SC1090
-    source "$conf"
+    G2RAIN_DEPLOY_ROOT="$SCRIPT_DIR"
+    # shellcheck disable=SC1091
+    source "${SCRIPT_DIR}/services-merge.inc"
+    g2rain_load_services_config || return 0
     local codes_dir="${CODES_DIR:-./codes}"
     local codes_abs
     if [[ "$codes_dir" == ./* ]]; then
@@ -543,8 +545,9 @@ main() {
     USE_COMPOSE_V2=0
     local _compose_cli_override=""
 
-    # 先剥离 --compose-v2、--compose-v1、--business <名>，便于与 --host/--port 等任意顺序组合
+    # 先剥离 --compose-v2、--compose-v1、--business <名>、--service <名>，便于与 --host/--port 等任意顺序组合
     G2RAIN_BUSINESS_NAMES=""
+    G2RAIN_SERVICE_CONFIG_NAMES=""
     local stripped=()
     while [ $# -gt 0 ]; do
         case "$1" in
@@ -562,6 +565,14 @@ main() {
                     exit 1
                 fi
                 G2RAIN_BUSINESS_NAMES="${G2RAIN_BUSINESS_NAMES}${G2RAIN_BUSINESS_NAMES:+ }${2}"
+                shift 2
+                ;;
+            --service)
+                if [ -z "${2:-}" ]; then
+                    log_error "--service 需要指定片段名（见 service_config.d/README）"
+                    exit 1
+                fi
+                G2RAIN_SERVICE_CONFIG_NAMES="${G2RAIN_SERVICE_CONFIG_NAMES}${G2RAIN_SERVICE_CONFIG_NAMES:+ }${2}"
                 shift 2
                 ;;
             *)
@@ -608,6 +619,7 @@ main() {
             echo "  $0 --compose-v2      强制使用 Docker Compose V2 插件与 compose-v2/compose.yaml"
             echo "  $0 --compose-v1      强制使用 docker-compose 与 docker-compose.yml（覆盖 config/compose-cli.env）"
             echo "  $0 --business <名>  仅合并 business.d/<名>.yml（可重复）；默认合并该目录下全部 .yml"
+            echo "  $0 --service <名>   仅加载 service_config.d/<名>.conf（可重复）；默认扫描该目录下全部 .conf"
             echo "  $0 --host <HOST> --port <PORT>  启动服务并在首次生成 .env 时写入平台地址"
             echo "  $0 --generate-ssl <IP地址>  生成SSL证书"
             echo "  $0 --help            显示帮助信息"
