@@ -38,8 +38,6 @@ list_config_services() {
     if [ ! -f "$CONFIG" ]; then
         return 0
     fi
-    # shellcheck disable=SC1090
-    source "$CONFIG"
     local codes_dir="${CODES_DIR:-./codes}"
     while IFS= read -r entry; do
         IFS='|' read -r repo dir compose_service build_cmd <<<"$entry"
@@ -59,8 +57,6 @@ get_service_by_compose_name() {
     if [ ! -f "$CONFIG" ]; then
         return 1
     fi
-    # shellcheck disable=SC1090
-    source "$CONFIG"
     local codes_dir="${CODES_DIR:-./codes}"
     for entry in "${SERVICES[@]:-}"; do
         IFS='|' read -r repo dir svc build_cmd <<<"$entry"
@@ -83,8 +79,6 @@ pull_and_build_repo() {
     local codes_dir="$4"
 
     local target="${codes_dir}/${dir}"
-    # shellcheck disable=SC1090
-    source "$CONFIG" 2>/dev/null || true
     local git_base="${G2RAIN_GIT_BASE:-${GIT_BASE_DEFAULT:-https://github.com/g2rain}}"
     local url="${git_base}/${repo}.git"
 
@@ -126,8 +120,6 @@ sync_repo_only() {
     local codes_dir="$3"
 
     local target="${codes_dir}/${dir}"
-    # shellcheck disable=SC1090
-    source "$CONFIG" 2>/dev/null || true
     local git_base="${G2RAIN_GIT_BASE:-${GIT_BASE_DEFAULT:-https://github.com/g2rain}}"
     local url="${git_base}/${repo}.git"
 
@@ -473,6 +465,7 @@ show_help() {
     echo "  ./update.sh --compose-v1     强制使用 docker-compose 与 docker-compose.yml（覆盖 config/compose-cli.env）"
     echo "  ./update.sh --help            显示帮助信息"
     echo "  ./update.sh --business <名>   仅合并指定 business.d 片段（可重复，同 start.sh）"
+    echo "  ./update.sh --service <名>    仅加载指定 service_config.d 片段（可重复，同 start.sh）"
     echo ""
     echo "示例:"
     echo "  ./update.sh --compose-v2                    使用 V2 主文件更新全部服务"
@@ -491,6 +484,7 @@ show_help() {
     echo "  --compose-v2     使用 docker compose + compose-v2/compose.yaml"
     echo "  --compose-v1     使用 docker-compose + docker-compose.yml（覆盖配置文件）"
     echo "  --business       与 business.d/README 说明一致"
+    echo "  --service        与 service_config.d/README 说明一致"
     echo "  --help           显示此帮助信息"
     echo ""
     echo "注意:"
@@ -508,6 +502,7 @@ main() {
     USE_COMPOSE_V2=0
     local _compose_cli_override=""
     G2RAIN_BUSINESS_NAMES=""
+    G2RAIN_SERVICE_CONFIG_NAMES=""
     local stripped=()
 
     while [ $# -gt 0 ]; do
@@ -526,6 +521,14 @@ main() {
                     exit 1
                 fi
                 G2RAIN_BUSINESS_NAMES="${G2RAIN_BUSINESS_NAMES}${G2RAIN_BUSINESS_NAMES:+ }${2}"
+                shift 2
+                ;;
+            --service)
+                if [ -z "${2:-}" ]; then
+                    log_error "--service 需要指定片段名（见 service_config.d/README）"
+                    exit 1
+                fi
+                G2RAIN_SERVICE_CONFIG_NAMES="${G2RAIN_SERVICE_CONFIG_NAMES}${G2RAIN_SERVICE_CONFIG_NAMES:+ }${2}"
                 shift 2
                 ;;
             *)
@@ -567,9 +570,19 @@ main() {
     cd "$ROOT" || exit 1
     g2rain_resolve_use_compose_v2 "$ROOT" "$_compose_cli_override"
     COMPOSE_DEPLOY_ROOT="$ROOT"
+    G2RAIN_DEPLOY_ROOT="$ROOT"
     # shellcheck disable=SC1091
     source "${ROOT}/compose-merge.inc"
+    # shellcheck disable=SC1091
+    source "${ROOT}/services-merge.inc"
     dc() { g2rain_dc "$@"; }
+
+    if [ -f "$CONFIG" ]; then
+        g2rain_load_services_config || exit 1
+        if g2rain_has_extra_service_config; then
+            log_info "已合并 service_config.d 中的额外服务映射"
+        fi
+    fi
 
     echo "=========================================="
     echo "    G2Rain Docker Compose 更新脚本"
