@@ -14,6 +14,10 @@
 # 使用前必须设置：
 #   COMPOSE_DEPLOY_ROOT — g2rain-deploy 目录绝对路径
 #   USE_COMPOSE_V2      — 0：docker-compose + docker-compose.yml；1：docker compose + compose-v2/compose.yaml
+#                       （通常由 start/stop/update 在 source 本文件前调用 compose-cli-preference.inc 解析）
+#
+# 可选持久化：config/compose-cli.env 中 G2RAIN_USE_COMPOSE_V2=0|1（见 config/compose-cli.env.example
+#   与 scripts/write-compose-cli-preference.sh）；命令行 --compose-v2 / --compose-v1 优先。
 #
 # 提供：g2rain_compose_base_file、g2rain_business_yml_paths、g2rain_compose_all_yml_fragments、
 #       g2rain_dc、g2rain_has_business_compose、g2rain_compose_cli_hint

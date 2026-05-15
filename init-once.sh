@@ -294,6 +294,14 @@ else
   exit 1
 fi
 
+if [[ -f "${ROOT}/scripts/write-compose-cli-preference.sh" ]]; then
+  if bash "${ROOT}/scripts/write-compose-cli-preference.sh" --write; then
+    log_ok "已写入 Compose CLI 偏好: config/compose-cli.env（可用该脚本 --dry-run 预览）"
+  else
+    log_warn "未能写入 config/compose-cli.env，可稍后手动执行: ./scripts/write-compose-cli-preference.sh"
+  fi
+fi
+
 if ! command -v git >/dev/null 2>&1; then
   log_err "未检测到 git，请先安装。"
   exit 1
@@ -315,7 +323,7 @@ if ! java -version >/dev/null 2>&1; then
 fi
 
 if ! command -v docker-compose >/dev/null 2>&1; then
-  log_warn "未找到 docker-compose 可执行文件；本仓库的 start.sh/stop.sh/update.sh 仍要求该命令。"
+  log_warn "未找到 docker-compose 可执行文件；若已生成 config/compose-cli.env 且为 V2，则 start/stop/update 将使用 docker compose；亦可手动 ./scripts/write-compose-cli-preference.sh"
 fi
 
 log_ok "依赖检查通过（docker / compose / git / mvn / jdk）"

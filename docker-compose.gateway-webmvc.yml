@@ -1,9 +1,0 @@
-# 使用 g2rain-gateway-webmvc 替代默认的 g2rain-gateway-webflux。
-# 启动示例：
-#   docker compose -f docker-compose.yml -f docker-compose.gateway-webmvc.yml up -d
-# 或仅指定镜像（不改文件）：
-#   set GATEWAY_IMAGE=g2rain/g2rain-gateway-webmvc:latest
-#   docker compose up -d
-services:
-  g2rain-gateway:
-    image: ${GATEWAY_IMAGE:-g2rain/g2rain-gateway-webmvc:latest}

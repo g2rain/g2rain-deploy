@@ -1,5 +1,6 @@
 # Compose V2：本文件符合 Compose Specification，不使用已废弃的 compose file version 键。
-# 网关使用 WebMVC 实现时叠加：compose-v2/compose.gateway-webmvc.yaml（见该文件内命令示例）。
+# 网关改用 WebMVC 实现时：在 business.d/ 放置覆盖 g2rain-gateway 的 image 的片段（可与根目录 docker-compose.fragment.gateway-webmvc.yml 内容等价），或维护 compose-v2 专用叠加文件（见仓库 compose.yaml 同主题说明）。
+# CMS：`g2rain-cms`、`g2rain-cms-app` 在 business.d/g2rain-cms.yml，与主文件合并加载。
 # 务必在仓库根目录指定项目目录，使 ./config、./data、./ssl、./logs 指向正确：
 #   docker compose -f compose-v2/compose.yaml --project-directory . up -d
 # 等待全部服务健康（需插件较新版本，可选）：
@@ -22,35 +23,6 @@ services:
       - TZ=${TZ:-Asia/Shanghai}
       - SERVER_PORT=8080
       - CONTEXT_PATH=/manager
-      - SSO_BASE_URL=${PLATFORM_BASE_URL}
-      - GATEWAY_HOST=g2rain-gateway
-      - GATEWAY_PORT=8080
-      - IAM_HOST=g2rain-iam
-      - IAM_PORT=8080
-    networks:
-      - g2rain-network
-    depends_on:
-      g2rain-gateway:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/ 2>/dev/null || nc -z 127.0.0.1 8080 || exit 1"]
-      interval: 15s
-      timeout: 10s
-      retries: 20
-      start_period: 120s
-
-  # 应用服务 CMS 子应用
-  g2rain-cms-app:
-    image: g2rain/g2rain-cms-app:latest
-    container_name: g2rain-cms-app
-    restart: unless-stopped
-    volumes:
-      - ./logs/g2rain-cms-app:/logs
-      - ./config/g2rain-cms-app/keys:/usr/local/openresty/nginx/lua/keys:ro
-    environment:
-      - TZ=${TZ:-Asia/Shanghai}
-      - SERVER_PORT=8080
-      - CONTEXT_PATH=/cms
       - SSO_BASE_URL=${PLATFORM_BASE_URL}
       - GATEWAY_HOST=g2rain-gateway
       - GATEWAY_PORT=8080
@@ -196,40 +168,6 @@ services:
       retries: 15
       start_period: 180s
 
-  # 后端服务 cms
-  g2rain-cms:
-    image: ${CMS_IMAGE:-g2rain/g2rain-cms:latest}
-    container_name: g2rain-cms
-    restart: unless-stopped
-    volumes:
-      - ./logs/g2rain-cms:/logs
-    environment:
-      - TZ=${TZ:-Asia/Shanghai}
-      - SERVER_PORT=8080
-      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-test}
-      - NACOS_SERVER_ADDR=${NACOS_SERVER_ADDR:-nacos:8848}
-      - SPRING_CLOUD_NACOS_CONFIG_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
-      - SPRING_CLOUD_NACOS_CONFIG_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
-      - SPRING_CLOUD_NACOS_CONFIG_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
-      - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
-      - SPRING_CLOUD_NACOS_DISCOVERY_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
-      - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
-    networks:
-      - g2rain-network
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      nacos:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "nc -z localhost 8080 || timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080' || exit 1"]
-      interval: 15s
-      timeout: 15s
-      retries: 15
-      start_period: 180s
-
   # 后端服务 infra认证
   g2rain-infra:
     image: g2rain/g2rain-infra:latest
@@ -284,6 +222,8 @@ services:
       - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
       - SPRING_CLOUD_NACOS_DISCOVERY_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
       - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
+      - IAM_BASE_URL=${IAM_BASE_URL}
+      - PLATFORM_BASE_URL=${PLATFORM_BASE_URL}
     networks:
       - g2rain-network
     depends_on:
