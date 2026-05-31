@@ -11,7 +11,7 @@ volumes:
 
 services:
         
-    # 应用服务 测试子应用
+  # 应用服务 业务支撑应用
   g2rain-manager-app:
     image: g2rain/g2rain-manager-app:latest
     container_name: g2rain-manager-app
@@ -23,6 +23,35 @@ services:
       - TZ=${TZ:-Asia/Shanghai}
       - SERVER_PORT=8080
       - CONTEXT_PATH=/manager
+      - SSO_BASE_URL=${PLATFORM_BASE_URL}
+      - GATEWAY_HOST=g2rain-gateway
+      - GATEWAY_PORT=8080
+      - IAM_HOST=g2rain-iam
+      - IAM_PORT=8080
+    networks:
+      - g2rain-network
+    depends_on:
+      g2rain-gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/ 2>/dev/null || nc -z 127.0.0.1 8080 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
+ 
+  # 应用服务 部门应用服务 
+  g2rain-department-app:
+    image: ${DEPARTMENT_APP_IMAGE:-g2rain/g2rain-department-app:latest}
+    container_name: g2rain-department-app
+    restart: unless-stopped
+    volumes:
+      - ./logs/g2rain-department-app:/logs
+      - ./config/g2rain-department-app/keys:/usr/local/openresty/nginx/lua/keys:ro
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - SERVER_PORT=8080
+      - CONTEXT_PATH=/department
       - SSO_BASE_URL=${PLATFORM_BASE_URL}
       - GATEWAY_HOST=g2rain-gateway
       - GATEWAY_PORT=8080
