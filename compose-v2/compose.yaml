@@ -282,6 +282,40 @@ services:
       retries: 15
       start_period: 180s
 
+  # 后端服务 部门管理
+  g2rain-department:
+    image: g2rain-department:latest
+    container_name: g2rain-department
+    restart: unless-stopped
+    volumes:
+      - ./logs/g2rain-department:/logs
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - SERVER_PORT=8080
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-test}
+      - NACOS_SERVER_ADDR=${NACOS_SERVER_ADDR:-nacos:8848}
+      - SPRING_CLOUD_NACOS_CONFIG_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
+      - SPRING_CLOUD_NACOS_CONFIG_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
+      - SPRING_CLOUD_NACOS_CONFIG_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
+      - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
+      - SPRING_CLOUD_NACOS_DISCOVERY_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
+      - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
+    networks:
+      - g2rain-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8080 || timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080' || exit 1"]
+      interval: 15s
+      timeout: 15s
+      retries: 15
+      start_period: 180s
+
   # MySQL数据库服务
   mysql:
     image: mysql:8.0
@@ -303,6 +337,7 @@ services:
       - ./config/mysql/g2rain-infra.sql:/docker-entrypoint-initdb.d/g2rain-infra.sql
       - ./config/mysql/g2rain-basis.sql:/docker-entrypoint-initdb.d/g2rain-basis.sql
       - ./config/mysql/g2rain-cms.sql:/docker-entrypoint-initdb.d/g2rain-cms.sql
+      - ./config/mysql/g2rain-department.sql:/docker-entrypoint-initdb.d/g2rain-department.sql
       - ./logs/mysql:/var/log/mysql
     networks:
       - g2rain-network
