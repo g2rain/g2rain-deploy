@@ -279,7 +279,7 @@ services:
 
   # 后端服务 部门管理
   g2rain-department:
-    image: g2rain-department:latest
+    image: ${DEPARTMENT_IMAGE:-g2rain/g2rain-department:latest}
     container_name: g2rain-department
     restart: unless-stopped
     volumes:
