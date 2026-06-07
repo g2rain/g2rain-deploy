@@ -1,4 +1,6 @@
 # Compose V2：本文件符合 Compose Specification，不使用已废弃的 compose file version 键。
+# 网关改用 WebMVC 实现时：在 business.d/ 放置覆盖 g2rain-gateway 的 image 的片段（可与根目录 docker-compose.fragment.gateway-webmvc.yml 内容等价），或维护 compose-v2 专用叠加文件（见仓库 compose.yaml 同主题说明）。
+# CMS：`g2rain-cms`、`g2rain-cms-app` 在 business.d/g2rain-cms.yml，与主文件合并加载。
 # 务必在仓库根目录指定项目目录，使 ./config、./data、./ssl、./logs 指向正确：
 #   docker compose -f compose-v2/compose.yaml --project-directory . up -d
 # 等待全部服务健康（需插件较新版本，可选）：
@@ -7,9 +9,18 @@
 
 name: g2rain-deploy
 
+# 命名卷声明放在 services 之前，避免部分解析/合并场景下末尾 volumes 未被识别（如 kafka_data 未定义）。
+volumes:
+  mysql-data:
+    driver: local
+  redis-data:
+    driver: local
+  kafka_data:
+    driver: local
+
 services:
-        
-    # 应用服务 测试子应用
+
+  # 应用服务 业务支撑应用
   g2rain-manager-app:
     image: g2rain/g2rain-manager-app:latest
     container_name: g2rain-manager-app
@@ -38,18 +49,18 @@ services:
       retries: 20
       start_period: 120s
 
-  # 应用服务 CMS 子应用
-  g2rain-cms-app:
-    image: g2rain/g2rain-cms-app:latest
-    container_name: g2rain-cms-app
+  # 应用服务 部门应用服务
+  g2rain-department-app:
+    image: ${DEPARTMENT_APP_IMAGE:-g2rain/g2rain-department-app:latest}
+    container_name: g2rain-department-app
     restart: unless-stopped
     volumes:
-      - ./logs/g2rain-cms-app:/logs
-      - ./config/g2rain-cms-app/keys:/usr/local/openresty/nginx/lua/keys:ro
+      - ./logs/g2rain-department-app:/logs
+      - ./config/g2rain-department-app/keys:/usr/local/openresty/nginx/lua/keys:ro
     environment:
       - TZ=${TZ:-Asia/Shanghai}
       - SERVER_PORT=8080
-      - CONTEXT_PATH=/cms
+      - CONTEXT_PATH=/department
       - SSO_BASE_URL=${PLATFORM_BASE_URL}
       - GATEWAY_HOST=g2rain-gateway
       - GATEWAY_PORT=8080
@@ -61,7 +72,7 @@ services:
       g2rain-gateway:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/ 2>/dev/null || nc -z 127.0.0.1 8080 || exit 1"]
+      test: [ "CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/ 2>/dev/null || nc -z 127.0.0.1 8080 || exit 1" ]
       interval: 15s
       timeout: 10s
       retries: 20
@@ -154,6 +165,8 @@ services:
         condition: service_healthy
       nacos:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "nc -z localhost 8080 || timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080' || exit 1"]
       interval: 15s
@@ -188,39 +201,7 @@ services:
         condition: service_healthy
       nacos:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "nc -z localhost 8080 || timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080' || exit 1"]
-      interval: 15s
-      timeout: 15s
-      retries: 15
-      start_period: 180s
-
-  # 后端服务 cms
-  g2rain-cms:
-    image: ${CMS_IMAGE:-g2rain/g2rain-cms:latest}
-    container_name: g2rain-cms
-    restart: unless-stopped
-    volumes:
-      - ./logs/g2rain-cms:/logs
-    environment:
-      - TZ=${TZ:-Asia/Shanghai}
-      - SERVER_PORT=8080
-      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-test}
-      - NACOS_SERVER_ADDR=${NACOS_SERVER_ADDR:-nacos:8848}
-      - SPRING_CLOUD_NACOS_CONFIG_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
-      - SPRING_CLOUD_NACOS_CONFIG_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
-      - SPRING_CLOUD_NACOS_CONFIG_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
-      - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
-      - SPRING_CLOUD_NACOS_DISCOVERY_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
-      - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
-    networks:
-      - g2rain-network
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      nacos:
+      kafka:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "nc -z localhost 8080 || timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080' || exit 1"]
@@ -283,6 +264,42 @@ services:
       - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
       - SPRING_CLOUD_NACOS_DISCOVERY_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
       - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
+      - IAM_BASE_URL=${IAM_BASE_URL:-${PLATFORM_BASE_URL:-}}
+      - PLATFORM_BASE_URL=${PLATFORM_BASE_URL:-}
+    networks:
+      - g2rain-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8080 || timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080' || exit 1"]
+      interval: 15s
+      timeout: 15s
+      retries: 15
+      start_period: 180s
+
+  # 后端服务 部门管理
+  g2rain-department:
+    image: ${DEPARTMENT_IMAGE:-g2rain/g2rain-department:latest}
+    container_name: g2rain-department
+    restart: unless-stopped
+    volumes:
+      - ./logs/g2rain-department:/logs
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - SERVER_PORT=8080
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-test}
+      - NACOS_SERVER_ADDR=${NACOS_SERVER_ADDR:-nacos:8848}
+      - SPRING_CLOUD_NACOS_CONFIG_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
+      - SPRING_CLOUD_NACOS_CONFIG_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
+      - SPRING_CLOUD_NACOS_CONFIG_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
+      - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
+      - SPRING_CLOUD_NACOS_DISCOVERY_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
+      - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
     networks:
       - g2rain-network
     depends_on:
@@ -320,6 +337,7 @@ services:
       - ./config/mysql/g2rain-infra.sql:/docker-entrypoint-initdb.d/g2rain-infra.sql
       - ./config/mysql/g2rain-basis.sql:/docker-entrypoint-initdb.d/g2rain-basis.sql
       - ./config/mysql/g2rain-cms.sql:/docker-entrypoint-initdb.d/g2rain-cms.sql
+      - ./config/mysql/g2rain-department.sql:/docker-entrypoint-initdb.d/g2rain-department.sql
       - ./logs/mysql:/var/log/mysql
     networks:
       - g2rain-network
@@ -426,15 +444,45 @@ services:
       retries: 10
       start_period: 40s
 
+  # Kafka（单节点 KRaft，无 ZooKeeper，供联调）
+  # 容器内地址：kafka:9092，例如 spring.kafka.bootstrap-servers=kafka:9092
+  # 数据使用命名卷 kafka_data：避免 ./data/kafka 绑定挂载导致宿主目录属主与容器内 UID 1001 不一致而出现 Permission denied
+  kafka:
+    image: bitnami/kafka:3.7
+    container_name: kafka
+    restart: unless-stopped
+    hostname: kafka
+    ports:
+      - "${KAFKA_PORT:-9092}:9092"
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_KRAFT_CLUSTER_ID=abcdefghijklmnopqrstuv
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_CFG_MESSAGE_MAX_BYTES=10485760
+      - KAFKA_CFG_REPLICA_FETCH_MAX_BYTES=10485760
+      - KAFKA_HEAP_OPTS=-Xms256m -Xmx256m
+    volumes:
+      - kafka_data:/bitnami/kafka
+    networks:
+      - g2rain-network
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/bitnami/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server 127.0.0.1:9092 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 12
+      start_period: 90s
+
 networks:
   g2rain-network:
     driver: bridge
     ipam:
       config:
         - subnet: 172.20.0.0/16
-
-volumes:
-  mysql-data:
-    driver: local
-  redis-data:
-    driver: local

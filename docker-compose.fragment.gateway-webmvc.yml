@@ -1,0 +1,10 @@
+# 合并片段：将 g2rain-gateway 切换为 WebMVC 实现镜像（g2rain-gateway-webmvc），替代主 compose 中的默认网关。
+# 推荐：复制本文件到 business.d/ 下任意名称的 .yml（如 gateway-webmvc.yml），与主 compose 合并后随 ./start.sh 自动加载。
+# 手动追加 compose 文件时：
+#   docker compose -f docker-compose.yml -f docker-compose.fragment.gateway-webmvc.yml up -d
+# 或仅覆盖镜像（不改本片段）：
+#   set GATEWAY_IMAGE=g2rain/g2rain-gateway-webmvc:latest
+#   docker-compose up -d
+services:
+  g2rain-gateway:
+    image: ${GATEWAY_IMAGE:-g2rain/g2rain-gateway-webmvc:latest}

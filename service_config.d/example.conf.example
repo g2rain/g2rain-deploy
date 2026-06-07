@@ -1,0 +1,4 @@
+# 复制为 *.conf 后按需修改；仅示例，默认不会被加载（扩展名为 .example）
+SERVICES=(
+  # "my-repo|my-repo|my-compose-service|./build.sh"
+)
