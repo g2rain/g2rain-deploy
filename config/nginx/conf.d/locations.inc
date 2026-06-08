@@ -1,9 +1,9 @@
 # 共享的 location 配置
 # 此文件被 HTTP 和 HTTPS server 块共同使用
 
-# 默认页面配置 - 根路径重定向到/main/index.html
+# 默认页面配置 - 根路径重定向到/main/home
 location = / {
-    return 302 /main/index.html;
+    return 302 /main/home;
 }
 
 # API代理
