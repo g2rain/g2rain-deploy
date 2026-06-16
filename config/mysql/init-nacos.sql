@@ -6,7 +6,8 @@ ALTER USER 'nacos'@'%' IDENTIFIED WITH mysql_native_password BY 'g2rain_nacos';
 GRANT ALL PRIVILEGES ON `nacos`.* TO 'nacos'@'%';
 FLUSH PRIVILEGES;
 
-USE `nacos`;
+USE
+`nacos`;
 -- MySQL dump 10.13  Distrib 8.0.41, for macos15 (arm64)
 --
 -- Host: 43.138.13.145    Database: nacos
