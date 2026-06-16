@@ -4314,4 +4314,4 @@ VALUES
        (4199, 'UI_MESSAGE', 'MAIN_SHELL', 'ja', 'JP', 'cms_space', '記事スペース', null, '2026-06-04 16:00:00', '2026-06-04 16:00:00'),
        (4200, 'UI_MESSAGE', 'MAIN_SHELL', 'ja', 'JP', 'cms_tag', 'コンテンツタグ', null, '2026-06-04 16:00:00', '2026-06-04 16:00:00'),
        (4201, 'UI_MESSAGE', 'MAIN_SHELL', 'ja', 'JP', 'cms_web_site', 'サイト設定', null, '2026-06-04 16:00:00', '2026-06-04 16:00:00'),
-       (4202, 'UI_MESSAGE', 'MAIN_SHELL', 'ja', 'JP', 'cms_channel', 'サイトチャンネル', null, '2026-06-04 16:00:00', '2026-06-04 16:00:00'););
+       (4202, 'UI_MESSAGE', 'MAIN_SHELL', 'ja', 'JP', 'cms_channel', 'サイトチャンネル', null, '2026-06-04 16:00:00', '2026-06-04 16:00:00');
