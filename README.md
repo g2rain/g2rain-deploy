@@ -1,4 +1,4 @@
-# g2rain-deploy
+﻿# g2rain-deploy
 
 ## 1. 徽标与状态标识
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
