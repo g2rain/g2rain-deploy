@@ -1,15 +1,10 @@
-CREATE
-DATABASE  IF NOT EXISTS `nacos` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+CREATE DATABASE  IF NOT EXISTS `nacos` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
 
 -- Ensure Nacos DB user exists and is compatible with MySQL 8 auth (avoid: Public Key Retrieval is not allowed)
-CREATE
-USER IF NOT EXISTS 'nacos'@'%' IDENTIFIED BY 'g2rain_nacos';
-ALTER
-USER 'nacos'@'%' IDENTIFIED WITH mysql_native_password BY 'g2rain_nacos';
-GRANT ALL PRIVILEGES ON `nacos`.* TO
-'nacos'@'%';
-FLUSH
-PRIVILEGES;
+CREATE USER IF NOT EXISTS 'nacos'@'%' IDENTIFIED BY 'g2rain_nacos';
+ALTER USER 'nacos'@'%' IDENTIFIED WITH mysql_native_password BY 'g2rain_nacos';
+GRANT ALL PRIVILEGES ON `nacos`.* TO 'nacos'@'%';
+FLUSH PRIVILEGES;
 
 USE
 `nacos`;
