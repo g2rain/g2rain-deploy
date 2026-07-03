@@ -284,16 +284,81 @@ expand_compose_image() {
     echo "$s" | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
 }
 
-# 若本地缺少镜像且存在 services.conf 与源码目录，则尝试执行对应 build.sh
-build_missing_from_services_conf() {
+# 加载 services.conf（及 service_config.d 合并结果）到 SERVICES 数组
+load_services_config_for_start() {
     local conf="${SCRIPT_DIR}/services.conf"
     if [[ ! -f "$conf" ]]; then
+        SERVICES=()
         return 0
     fi
     G2RAIN_DEPLOY_ROOT="$SCRIPT_DIR"
     # shellcheck disable=SC1091
     source "${SCRIPT_DIR}/services-merge.inc"
-    g2rain_load_services_config || return 0
+    g2rain_load_services_config || SERVICES=()
+}
+
+# compose 服务名是否在 services.conf 中登记为本地构建业务
+is_business_compose_service() {
+    local svc="$1"
+    local entry compose_service
+    for entry in "${SERVICES[@]:-}"; do
+        IFS='|' read -r _ _ compose_service _ <<<"$entry"
+        compose_service="${compose_service:-}"
+        if [[ "$compose_service" == "$svc" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# 仅拉取第三方基础镜像：不在 services.conf 中的 compose 服务；且跳过 g2rain/* 镜像名
+pull_missing_infra_images() {
+    load_services_config_for_start
+
+    local services svc img_raw img
+    local -a to_pull=()
+    services="$(dc config --services 2>/dev/null || true)"
+    if [[ -z "$services" ]]; then
+        log_warning "无法获取 compose 服务列表，跳过基础镜像拉取"
+        return 0
+    fi
+
+    while IFS= read -r svc; do
+        [[ -z "$svc" ]] && continue
+        if is_business_compose_service "$svc"; then
+            continue
+        fi
+        img_raw="$(compose_image_for_service "$svc")"
+        img="$(expand_compose_image "$img_raw")"
+        [[ -z "$img" ]] && continue
+        if [[ "$img" == g2rain/* ]]; then
+            log_info "跳过 pull（g2rain 业务镜像，应本地构建）: $svc ($img)"
+            continue
+        fi
+        if docker image inspect "$img" &>/dev/null; then
+            continue
+        fi
+        log_info "第三方基础镜像缺失: $svc ($img)"
+        to_pull+=("$svc")
+    done <<< "$services"
+
+    if ((${#to_pull[@]} == 0)); then
+        log_info "第三方基础镜像均已存在，跳过拉取"
+        return 0
+    fi
+
+    log_info "拉取第三方基础镜像: ${to_pull[*]}"
+    if ! dc pull "${to_pull[@]}"; then
+        log_warning "部分基础镜像拉取未成功，将继续尝试启动"
+    fi
+}
+
+# 若本地缺少镜像且存在 services.conf 与源码目录，则尝试执行对应 build.sh
+build_missing_from_services_conf() {
+    load_services_config_for_start
+    if ((${#SERVICES[@]} == 0)); then
+        return 0
+    fi
     local codes_dir="${CODES_DIR:-./codes}"
     local codes_abs
     if [[ "$codes_dir" == ./* ]]; then
@@ -335,7 +400,7 @@ build_missing_from_services_conf() {
         if (cd "${codes_abs}/${dir}" && bash -lc "$build_cmd"); then
             log_success "源码构建完成: $compose_service"
         else
-            log_warning "源码构建失败: $compose_service（将仍可能尝试 pull）"
+            log_warning "源码构建失败: $compose_service（请检查构建日志或手动重试 build.sh）"
         fi
     done
 }
@@ -416,7 +481,7 @@ check_images_exist() {
         log_success "所有镜像已存在（共 $total_images 个），跳过拉取"
         return 0
     else
-        log_info "发现 $missing_images/$total_images 个镜像不存在，需要拉取"
+        log_info "发现 $missing_images/$total_images 个镜像不存在（业务镜像将尝试本地构建，基础镜像将单独拉取）"
         return 1
     fi
 }
@@ -431,9 +496,9 @@ start_services() {
     if ! check_images_exist; then
         build_missing_from_services_conf
     fi
+    pull_missing_infra_images
     if ! check_images_exist; then
-        log_info "拉取Docker镜像..."
-        dc pull
+        log_warning "仍有镜像缺失，部分服务可能启动失败（业务镜像请确认 init-once / codes 下 build.sh 已成功）"
     fi
     
     log_info "先启动核心依赖服务: mysql redis"
