@@ -1,4 +1,4 @@
-﻿<p align="center">
+<p align="center">
   <img src="https://github.com/g2rain.png" alt="G2Rain" width="180" />
 </p>
 
