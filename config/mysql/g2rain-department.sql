@@ -166,3 +166,23 @@ CREATE TABLE `data_permission_other` (
     PRIMARY KEY (`id`),
     INDEX `idx_meta_group_status_del_mode` (`meta_id`, `group_id`, `status`, `delete_flag`, `permission_mode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT=                             '数据权限Other规则表';
+
+-- =============================================
+-- 9. IdP 部门映射表 (department_idp_mapping)
+-- =============================================
+DROP TABLE IF EXISTS `department_idp_mapping`;
+
+CREATE TABLE `department_idp_mapping` (
+    `id` BIGINT NOT NULL COMMENT                                                                        '主键标识',
+    `organ_id` BIGINT NOT NULL COMMENT                                                                  '机构标识',
+    `idp_type` VARCHAR(32) NOT NULL COMMENT                                                             '身份源类型',
+    `idp_dept_id` VARCHAR(64) NOT NULL COMMENT                                                          'IdP 侧部门标识',
+    `department_id` BIGINT NOT NULL COMMENT                                                             '平台部门标识',
+    `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT                                      '创建时间',
+    `update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT          '更新时间',
+    `version` INT NOT NULL DEFAULT 0 COMMENT                                                            '记录版本',
+    `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                    '删除标识[0:未删除, 1:已删除]',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_organ_idp_dept` (`organ_id`, `idp_type`, `idp_dept_id`, `delete_flag`),
+    INDEX `idx_organ_dept` (`organ_id`, `department_id`, `delete_flag`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT=                             'IdP 部门映射表';

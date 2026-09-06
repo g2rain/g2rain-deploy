@@ -45,6 +45,7 @@ CREATE TABLE `passport_idp_binding` (
     `idp_subject` VARCHAR(128) NOT NULL COMMENT                                                         'IdP 侧稳定主体标识，建议存钉钉 unionId',
     `corp_id` VARCHAR(64) DEFAULT NULL COMMENT                                                          '钉钉企业 corpId；企业内部模式可由 IAM 写入默认 corp',
     `idp_user_id` VARCHAR(128) DEFAULT NULL COMMENT                                                     '钉钉 userid（corp 内），可选，便于审计与运营排查',
+    `idp_open_id` VARCHAR(128) DEFAULT NULL COMMENT                                                     'IdP 开放平台 openId，可选',
     `idp_application_code` VARCHAR(128) NOT NULL DEFAULT '' COMMENT                                     '三方应用在 IdP 侧的应用标识（如钉钉 OAuth clientId），与 application_idp_provision.idp_application_code 对齐',
     `bind_mode` VARCHAR(32) DEFAULT NULL COMMENT                                                        '接入形态[IdpBindMode: INTERNAL企业内部应用|THIRD_PARTY第三方应用；与钉钉换票链路对应，非OAuth两跳]',
     `raw_profile` JSON DEFAULT NULL COMMENT                                                             'IdP 返回的原始用户信息快照（可选）',
@@ -843,7 +844,9 @@ VALUES
     (209, 'G2RAIN_DEPARTMENT', '数据权限 Other 规则表', '删除数据权限 Other 规则表记录', 'DELETE', '/data_permission_other/{id}', '根据主键删除数据权限 Other 规则表记录', '2026-06-03 02:28:25', '2026-06-03 02:28:25'),
     (210, 'G2RAIN_DEPARTMENT', '数据权限 Other 规则表', '修改规则配置状态', 'POST', '/data_permission_other/{id}/status', '修改规则配置状态', '2026-06-03 02:28:25', '2026-06-03 02:28:25'),
     (211, 'G2RAIN_DEPARTMENT', '数据权限 Other 规则表', '分页查询数据权限 Other 规则表列表', 'GET', '/data_permission_other/page', '分页查询数据权限 Other 规则表列表', '2026-06-03 02:28:25', '2026-06-03 02:28:25'),
-    (212, 'G2RAIN_DEPARTMENT', '数据权限 Other 规则表', '查询数据权限 Other 规则表列表', 'GET', '/data_permission_other/list', '根据查询条件返回数据权限 Other 规则表列表', '2026-06-03 02:28:25', '2026-06-03 02:28:25');
+    (212, 'G2RAIN_DEPARTMENT', '数据权限 Other 规则表', '查询数据权限 Other 规则表列表', 'GET', '/data_permission_other/list', '根据查询条件返回数据权限 Other 规则表列表', '2026-06-03 02:28:25', '2026-06-03 02:28:25'),
+    (213, 'G2RAIN_BASIS', '租户 IdP 同步', '同步租户成员与部门', 'POST', '/tenant_idp_sync/sync', '从 IdP 拉取通讯录，创建/更新平台成员、部门及部门关系', '2026-07-16 15:00:00', '2026-07-16 15:00:00'),
+    (214, 'G2RAIN_DEPARTMENT', '部门 IdP 同步', '同步 IdP 部门与成员关系', 'POST', '/department_idp_sync/sync', '按 IdP 部门树 upsert 平台部门并批量关联成员，仅供服务间调用', '2026-07-16 15:00:00', '2026-07-16 15:00:00');
 
 -- 应用资源菜单
 INSERT INTO `resource_menu`
