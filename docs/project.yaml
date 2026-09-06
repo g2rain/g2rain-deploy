@@ -1,0 +1,54 @@
+schemaVersion: 1
+project:
+  name: g2rain-deploy
+  family: shared-component
+  implementationType: docker-compose-deployment
+  description: G2rain 平台 Docker Compose 环境初始化、生命周期管理与业务扩展编排。
+  repositoryPath: D:\\github\\g2rain-deploy
+  ownership: G2rain platform delivery and operations
+  baseline:
+    name: g2rain-compose-deployment
+    version: 1.0.0-local
+    status: local
+    centralProfileAvailable: false
+    centralCatalogStatus: not-registered
+  runtimes:
+    shell: Bash
+    container: Docker
+    compose:
+      - Docker Compose V1
+      - Docker Compose V2
+  entrypoints:
+    initialize: ./init-once.sh
+    start: ./start.sh
+    stop: ./stop.sh
+    update: ./update.sh
+  configuration:
+    environmentTemplate: env.example
+    serviceMap: services.conf
+    serviceExtensions: service_config.d/*.conf
+    businessExtensions: business.d/*.yml
+    composeV1: docker-compose.yml
+    composeV2: compose-v2/compose.yaml
+  validation:
+    observedAt: 2026-09-06
+    shellSyntax:
+      status: passed
+      filesChecked: 10
+    composeV1:
+      baseStatus: passed
+      mergedStatus: passed
+      baseServices: 14
+      mergedServices: 16
+    composeV2:
+      baseStatus: passed
+      mergedStatus: passed
+      baseServices: 14
+      mergedServices: 16
+    runtimeDeployment: not-run
+  documentation:
+    entry: docs/index.md
+    topology: docs/architecture/topology.md
+    commands: docs/operations/commands.md
+    security: docs/security/secrets-and-data.md
+    deviations: docs/architecture/deviations.md
