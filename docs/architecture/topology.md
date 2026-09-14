@@ -2,11 +2,11 @@
 
 ## 基础主编排
 
-V1 与 V2 主配置静态解析后均包含 14 个服务：MySQL、Redis、Nacos、Kafka、Nginx、Gateway，以及 Infra、Basis、IAM、Department 四个后端和 Main Shell、Infra App、Manager App、Department App 四个前端应用。
+V1 与 V2 主配置静态解析后均包含 15 个服务：MySQL、Redis、Nacos、Kafka、Nginx、Gateway，以及 Infra、Basis、IAM、Department、Member 五个后端和 Main Shell、Infra App、Manager App、Department App 四个前端应用。
 
 ## 默认业务扩展
 
-`business.d/g2rain-cms.yml` 增加 `g2rain-cms` 与 `g2rain-cms-app`。主配置与该片段合并后共 16 个服务。其他 `business.d/*.yml` 可继续扩展，但不得重复定义服务名，除非明确接受 Compose 覆盖语义。
+`business.d/g2rain-cms.yml` 增加 `g2rain-cms` 与 `g2rain-cms-app`。主配置与该片段合并后共 17 个服务。其他 `business.d/*.yml` 可继续扩展，但不得重复定义服务名，除非明确接受 Compose 覆盖语义。
 
 ## 依赖顺序
 

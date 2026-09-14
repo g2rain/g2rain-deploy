@@ -656,7 +656,8 @@ INSERT INTO `service_registry`
 VALUES
     (27, 'G2RAIN_INFRA', '基础支撑服务', 'lb://g2rain-infra', 'infra', '字典、国际化、地域语言与全局序列等基础支撑 API', '2026-02-01 09:12:28', '2026-02-01 09:12:28'),
     (28, 'G2RAIN_BASIS', '平台基础服务', 'lb://g2rain-basis', 'basis', '账号、机构、应用、角色、权限与控制域等平台基础能力 API', '2026-02-01 09:12:28', '2026-02-01 09:12:28'),
-    (29, 'G2RAIN_DEPARTMENT', '部门管理服务', 'lb://g2rain-department', 'department', '部门组织与权限模型等领域 API', '2026-02-01 09:12:28', '2026-02-01 09:12:28');
+    (29, 'G2RAIN_DEPARTMENT', '部门管理服务', 'lb://g2rain-department', 'department', '部门组织与权限模型等领域 API', '2026-02-01 09:12:28', '2026-02-01 09:12:28'),
+    (30, 'G2RAIN_MEMBER', '会员主数据服务', 'lb://g2rain-member', 'member', '会员主数据与外部身份绑定等领域 API', '2026-09-14 12:00:00', '2026-09-14 12:00:00');
 
 -- 资源后端接口
 INSERT INTO `resource_api`

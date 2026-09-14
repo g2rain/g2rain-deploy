@@ -38,13 +38,13 @@ project:
     composeV1:
       baseStatus: passed
       mergedStatus: passed
-      baseServices: 14
-      mergedServices: 16
+      baseServices: 15
+      mergedServices: 17
     composeV2:
       baseStatus: passed
       mergedStatus: passed
-      baseServices: 14
-      mergedServices: 16
+      baseServices: 15
+      mergedServices: 17
     runtimeDeployment: not-run
   documentation:
     entry: docs/index.md
