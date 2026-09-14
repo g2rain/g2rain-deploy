@@ -52,14 +52,14 @@ G2rain 平台标准化部署与环境编排仓库，负责基础设施、后端�
 
 ## 部署拓扑
 
-主编排包含 14 个服务：
+主编排包含 15 个服务：
 
 - 基础设施：MySQL、Redis、Nacos、Kafka、Nginx
 - 平台入口：`g2rain-gateway`
-- 平台后端：`g2rain-infra`、`g2rain-basis`、`g2rain-iam`、`g2rain-department`
+- 平台后端：`g2rain-infra`、`g2rain-basis`、`g2rain-iam`、`g2rain-department`、`g2rain-member`
 - 前端：`g2rain-main-shell`、`g2rain-infra-app`、`g2rain-manager-app`、`g2rain-department-app`
 
-默认业务片段 `business.d/g2rain-cms.yml` 增加 `g2rain-cms` 和 `g2rain-cms-app`，合并后共 16 个服务。
+默认业务片段 `business.d/g2rain-cms.yml` 增加 `g2rain-cms` 和 `g2rain-cms-app`，合并后共 17 个服务。
 
 ```mermaid
 flowchart TD
