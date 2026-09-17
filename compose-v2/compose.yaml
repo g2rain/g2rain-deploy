@@ -326,7 +326,8 @@ services:
     environment:
       - TZ=${TZ:-Asia/Shanghai}
       - SERVER_PORT=8080
-      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-test}
+      # member 的 spring.config.import 在 application-nacos.yml，需叠加 nacos profile
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-test},nacos
       - NACOS_SERVER_ADDR=${NACOS_SERVER_ADDR:-nacos:8848}
       - SPRING_CLOUD_NACOS_CONFIG_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
       - SPRING_CLOUD_NACOS_CONFIG_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
@@ -372,7 +373,6 @@ services:
       - ./config/mysql/g2rain-basis.sql:/docker-entrypoint-initdb.d/g2rain-basis.sql
       - ./config/mysql/g2rain-cms.sql:/docker-entrypoint-initdb.d/g2rain-cms.sql
       - ./config/mysql/g2rain-department.sql:/docker-entrypoint-initdb.d/g2rain-department.sql
-      - ./config/mysql/g2rain-member.sql:/docker-entrypoint-initdb.d/g2rain-member.sql
       - ./logs/mysql:/var/log/mysql
     networks:
       - g2rain-network
