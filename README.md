@@ -1,641 +1,293 @@
-# G2Rain Docker Compose 部署项目
+<p align="center">
+  <img src="https://github.com/g2rain.png" alt="G2Rain" width="180" />
+</p>
 
-这是一个基于 Docker Compose 的 G2Rain 开源 SaaS 平台部署配置项目：推荐先通过 **`init-once.sh`** 完成环境、SQL 占位符、源码克隆与默认镜像构建，再通过 **`start.sh`** 启动栈，日常迭代使用 **`update.sh`**。
+# g2rain-deploy
 
-## 🚀 快速开始
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![Docker Compose](https://img.shields.io/badge/deploy-Docker%20Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
+[![Shell](https://img.shields.io/badge/scripts-Bash-4EAA25?logo=gnubash&logoColor=white)](https://www.gnu.org/software/bash/)
 
-### 环境要求
+> 下一代AI软件开发范式，AI原生Agent平台，开源的企业级SaaS底座。
 
-**运行 `start.sh` / Compose 栈：**
+G2rain 平台标准化部署与环境编排仓库，负责基础设施、后端服务、前端应用和业务扩展的初始化、启动、停止、源码镜像构建与持续更新。
 
-- Docker 20.10+
-- 可执行的 `docker-compose` 命令（与仓库内脚本一致；同时兼容 `docker compose` 插件用于部分检查）
-- 至少 4GB 可用内存；建议预留 **10GB+** 磁盘（含镜像、`data/`、`codes/`）
+[工程文档](docs/index.md) · [官网](https://www.g2rain.com) · [Issues](https://github.com/g2rain/g2rain/issues) · [Discussions](https://github.com/g2rain/g2rain/discussions)
 
-**首次执行 `./init-once.sh`（克隆源码并默认构建本地镜像）还需：**
+## 目录
 
-- Git、JDK、Maven（`java`、`mvn` 在 `PATH` 中）
-- 能访问克隆源（默认 `https://github.com/g2rain`，可通过环境变量 `G2RAIN_GIT_BASE` 改为镜像站或私有前缀）
+- [项目简介](#项目简介)
+- [功能概览](#功能概览)
+- [部署拓扑](#部署拓扑)
+- [环境要求](#环境要求)
+- [快速开始](#快速开始)
+- [配置与扩展](#配置与扩展)
+- [部署命令](#部署命令)
+- [验证](#验证)
+- [安全说明](#安全说明)
+- [模块说明](#模块说明)
+- [职责边界](#职责边界)
+- [常见问题](#常见问题)
+- [关联仓库](#关联仓库)
+- [参与贡献](#参与贡献)
+- [许可证](#许可证)
 
-### 职责划分（推荐心智模型）
+## 项目简介
 
-| 脚本 | 作用 |
-|------|------|
-| **`init-once.sh`** | 一次性安装：若无则生成 `.env`、按 `.env` 替换 `config/mysql/g2rain-basis.sql` 中的 `__PLATFORM_HOST__` / `__PLATFORM_PORT__`、可选生成 SSL、按 **`services.conf`** 克隆到 **`codes/`**、**默认**在各仓库执行 **`build.sh`**（可配置重试）、成功后写入 **`.g2rain-deploy-install.done`**。不执行 `docker compose up`。 |
-| **`start.sh`** | 可重复启动：检查依赖与证书、缺镜像时尝试从 `codes/` 构建再 `pull`、`docker-compose up -d`。 |
-| **`update.sh`** | 日常更新：按 `services.conf` 拉代码、构建、滚动容器等。 |
+本仓库位于 G2rain 平台交付与运维层，以 Bash 和 Docker Compose 组装 MySQL、Redis、Nacos、Kafka、Nginx、平台后端、微前端主应用及子应用。它同时维护 Compose V1/V2 两套主编排，并允许通过独立片段扩展业务服务和源码构建映射。
 
-**MySQL：** 业务初始化 SQL 仅在 **`data/mysql` 为空**、MySQL 首次执行 `docker-entrypoint-initdb.d` 时导入。若数据卷已有数据，事后修改 `g2rain-basis.sql` 或 `.env` **不会**自动更新库内旧行，需自行迁移或清空数据卷后重装。
+本仓库不实现各服务的业务逻辑，也不替代生产级 Secret 管理、备份恢复、集群调度与高可用方案。
 
----
+## 功能概览
 
-### `init-once.sh`：快捷方案与全参数
+| 能力 | 说明 |
+| --- | --- |
+| 首次初始化 | `init-once.sh` 准备 `.env`、可选证书、数据库初始化配置、源码目录和服务镜像。 |
+| 生命周期管理 | `start.sh`、`stop.sh` 统一处理 Compose 选择、配置合并、依赖检查、健康等待与服务启停。 |
+| 服务更新 | `update.sh` 支持全量或按 Compose 服务名同步源码、执行构建或拉取镜像并重建容器。 |
+| 双 Compose 栈 | 支持 `docker-compose` + `docker-compose.yml`，以及 `docker compose` + `compose-v2/compose.yaml`。 |
+| 业务扩展 | `business.d/*.yml` 在主 Compose 后合并，可增加 CMS 或其他业务模块。 |
+| 服务映射扩展 | `service_config.d/*.conf` 可追加或按 Compose 服务名覆盖 `services.conf` 中的源码构建映射。 |
+| 交付配置 | `config/` 管理 MySQL 初始化、Redis、Nacos、Nginx、SSL 和前端应用密钥材料。 |
 
-**快捷方案（最少命令）** — 一次写入平台地址、HTTPS 端口、生成证书并完成安装，再启动栈：
+## 部署拓扑
 
-```bash
-./init-once.sh --host <服务器IP或域名> --port <HTTPS端口> --ssl-ip <服务器IP或域名>
-./start.sh
+主编排包含 14 个服务：
+
+- 基础设施：MySQL、Redis、Nacos、Kafka、Nginx
+- 平台入口：`g2rain-gateway`
+- 平台后端：`g2rain-infra`、`g2rain-basis`、`g2rain-iam`、`g2rain-department`
+- 前端：`g2rain-main-shell`、`g2rain-infra-app`、`g2rain-manager-app`、`g2rain-department-app`
+
+默认业务片段 `business.d/g2rain-cms.yml` 增加 `g2rain-cms` 和 `g2rain-cms-app`，合并后共 16 个服务。
+
+```mermaid
+flowchart TD
+  O[运维人员] --> I[init-once.sh]
+  I --> E[环境、证书、源码与镜像]
+  E --> S[start.sh]
+  S --> C[主 Compose]
+  S --> B[business.d 业务片段]
+  C --> F[MySQL / Redis / Nacos / Kafka]
+  F --> P[Gateway / 平台后端]
+  P --> A[Main Shell / 前端子应用]
+  B --> P
+  B --> A
+  O --> U[update.sh]
+  U --> P
+  U --> A
 ```
 
-说明：`init-once.sh` 若发现没有 `.env`，会从 `env.example` 复制一份，并用 `--host` / `--port` 写入 `PLATFORM_HOST`、`PLATFORM_PORT`、`NGINX_HTTPS_PORT` 等；`--ssl-ip` 会在安装阶段调用 `config/generate-ssl.sh` 生成 **`ssl/server.crt`** 与 **`ssl/server.key`**（无 `--ssl-ip` 时需自行执行 `generate-ssl.sh` 后再 `./start.sh`）。克隆后**默认**会依次执行各仓 **`build.sh`**，整段构建常见 **约 20～60 分钟**（视机器与网络而定）。
+## 环境要求
 
-**全参数方案** — 适合自动化或一次写清平台地址与证书：
+- Linux 或兼容 Bash 的执行环境
+- Git
+- Docker Engine
+- Docker Compose V1 或 V2
+- JDK 与 Maven（初始化脚本会检查，源码镜像构建需要）
+- OpenSSL（仅生成 SSL/应用密钥时需要）
+- 足够的磁盘空间、内存、开放端口和持久化目录
 
-```bash
-# 创建 .env 时写入 PLATFORM_HOST / PLATFORM_PORT；安装阶段生成 ssl/；忽略已完成标记重装
-./init-once.sh --host 43.138.13.145 --port 443 --ssl-ip 43.138.13.145 --force
+## 快速开始
 
-# 仅克隆与 SQL/.env，暂不构建镜像（网络差或先配环境）
-./init-once.sh --skip-build
+### 1. 准备环境配置
 
-# 调整每仓 build 失败重试（默认 3 次、间隔 15 秒）
-G2RAIN_BUILD_RETRIES=5 G2RAIN_BUILD_RETRY_SLEEP=30 ./init-once.sh
-
-# 使用其他 Git 组织或镜像前缀
-G2RAIN_GIT_BASE=https://github.com/your-org ./init-once.sh
-```
-
-常用选项：`--host` / `--port`（**仅当尚不存在 `.env` 时**与从模板创建联动）、`--skip-build`、`--ssl-ip`、`--force`；环境变量 `G2RAIN_DEPLOY_INIT_FORCE=1` 等同 `--force`。完整说明：`./init-once.sh --help`。
-
----
-
-### `start.sh`：快捷方案与全参数
-
-**快捷方案：**
-
-```bash
-./start.sh
-```
-
-**全参数方案：**
-
-```bash
-# 若尚无 .env，从 env.example 创建并写入平台 host/port（与手动改 .env 等价）
-./start.sh --host 43.138.13.145 --port 443
-
-# 使用 Docker Compose V2 插件与 compose-v2/compose.yaml（需 docker compose）
-./start.sh --compose-v2
-./start.sh --compose-v2 --host 43.138.13.145 --port 443
-
-# 仅生成 SSL（完成后需再执行 ./start.sh 正常启动）
-./start.sh --generate-ssl 192.168.1.100
-
-./start.sh --help
-```
-
-未检测到 **`.g2rain-deploy-install.done`** 时，`start.sh` 会提示先执行 **`./init-once.sh`**（不强制退出）。若缺少业务镜像且存在 **`codes/<目录>`**，会按 **`services.conf`** 尝试对应 **`build.sh`**，仍缺再执行 **`docker-compose pull`**（使用 **`--compose-v2`** 时则为 **`docker compose … pull`**）。
-
-**注意：**
-
-- SSL 证书仅用于集群总入口 **nginx**；其他后端服务不依赖该证书文件。
-- 证书不存在时 **`start.sh` 会阻止启动**；请使用服务器公网 IP、内网 IP 或域名生成（与 `generate-ssl.sh` 说明一致）。
-- 重新生成证书：删除 `ssl/server.crt`、`ssl/server.key` 后重新执行 `./config/generate-ssl.sh` 或 `./start.sh --generate-ssl <地址>`。
-
-### 服务访问
-
-端口以 **`.env`** 为准（参见 `env.example` 中的 `NGINX_HTTP_PORT`、`NGINX_HTTPS_PORT`、`MYSQL_PORT`、`REDIS_PORT`）。默认示例常为：
-
-- **HTTP：** `http://localhost:10080`（若你未改 `NGINX_HTTP_PORT`）
-- **HTTPS：** `https://localhost:10443`（自签名证书时浏览器会提示风险）
-- **MySQL / Redis：** 默认映射端口见 `.env`（如 `MYSQL_PORT=3306`）
-
-## 📁 项目结构
-
-```
-g2rain-deploy/
-├── docker-compose.yml          # Docker Compose 配置（v1 独立命令 docker-compose 与脚本默认使用）
-├── docker-compose.fragment.gateway-webmvc.yml  # 网关改用 WebMVC 的合并片段模板（可复制到 business.d/，见下文）
-├── business.d/                 # 与主 compose 合并的片段（见 business.d/README.md；默认含 CMS）
-│   ├── g2rain-cms.yml          # g2rain-cms、g2rain-cms-app（已从主 compose 拆出）
-│   └── README.md
-├── compose-v2/
-│   └── compose.yaml            # Compose Specification / Docker Compose V2 插件用（无 version 键，含 name）
-├── compose-cli-preference.inc  # 解析 config/compose-cli.env 与命令行 --compose-v2/--compose-v1
-├── scripts/
-│   └── write-compose-cli-preference.sh  # 探测本机 docker compose / docker-compose 并写入 config/compose-cli.env
-├── env.example                 # 环境变量模板（复制为 .env）
-├── services.conf               # 克隆目录与 compose 服务、build 命令映射（Bash 源文件）
-├── init-once.sh                # 一次性安装：.env / SQL 占位符 / 克隆 codes / 默认 build
-├── start.sh                    # 启动栈（缺镜像时可从 codes/ 构建）
-├── stop.sh                     # 停止脚本
-├── update.sh                   # 更新：拉代码、构建、更新容器
-├── codes/                      # 克隆的业务仓库根目录（.gitignore，由 init-once 创建）
-├── .g2rain-deploy-install.done # 安装完成标记（.gitignore，存在则 init-once 默认跳过）
-├── config/
-│   ├── compose-cli.env.example # Compose CLI 偏好示例（复制或运行 write-compose-cli 脚本生成 compose-cli.env）
-│   ├── generate-ssl.sh         # SSL 证书生成
-│   ├── generate_key.sh         # 前端 ES256 密钥生成
-│   ├── mysql/                  # MySQL 配置与初始化 SQL（含 g2rain-basis.sql 平台占位符）
-│   ├── redis/
-│   ├── nginx/
-│   └── nacos/
-├── data/                       # 持久化数据（.gitignore）
-│   ├── mysql/
-│   └── redis/
-├── logs/                       # 日志（.gitignore）
-└── ssl/                        # 入口证书（私钥勿提交）
-    ├── server.crt
-    └── server.key
-```
-
-### `services.conf` 与 `codes/`
-
-`services.conf` 为 Bash 片段，定义数组 **`SERVICES`**：每一项为 **`repo|dir|compose_service|build_cmd`**（GitHub 仓库名、检出到 `codes/` 下的目录名、`docker-compose.yml` 中的服务名、构建命令，默认 `./build.sh`）。**`init-once.sh`**、**`update.sh`**、**`start.sh`**（缺镜像时）均依赖该映射。克隆根目录由其中的 **`CODES_DIR`** 控制（默认同级 **`codes/`**）。
-
-## 🛠️ 服务组件
-
-### MySQL 8.0
-- **端口**: 3306
-- **数据持久化**: `data/mysql`
-- **配置文件**: `config/mysql/my.cnf`
-- **日志目录**: `logs/mysql`
-
-### Redis 7
-- **端口**: 6379
-- **数据持久化**: `data/redis`
-- **配置文件**: `config/redis/redis.conf`
-
-### Nginx
-- **HTTP / HTTPS 端口**：由 `.env` 中 `NGINX_HTTP_PORT`、`NGINX_HTTPS_PORT` 配置（默认见 `env.example`，如 `10080` / `10443`）
-- **配置文件**: `config/nginx/`
-- **日志目录**: `logs/nginx`
-- **SSL证书**: `ssl/server.crt` 和 `ssl/server.key`
-
-### 应用与中间件容器
-
-各业务容器对外端口由 **`docker-compose.yml`** 与 **`.env`** 共同决定（例如网关、IAM 等映射到宿主机的端口）；容器内 Spring 服务常见监听 **8080**。镜像名多为 `g2rain/...:latest`，本地开发可通过 **`init-once.sh`** / **`update.sh`** 在 **`codes/`** 中构建。各服务日志目录见 **`logs/<服务名>/`**。
-
-### 网关 WebMVC 与 `business.d` 合并片段
-
-默认 **`docker-compose.yml`** 中的 **`g2rain-gateway`** 使用 WebFlux 网关镜像。若需改为 **WebMVC 网关**（服务名仍为 `g2rain-gateway`，与 Nacos 注册名一致）：
-
-1. 将仓库根目录的 **`docker-compose.fragment.gateway-webmvc.yml`** 复制到 **`business.d/`** 下并保留 `.yml` 后缀（文件名可自定，例如 `gateway-webmvc.yml`）。**`./start.sh`**、**`./stop.sh`**、**`./update.sh`** 会把主 compose 与该目录下的片段按相同 `-f` 链合并（约定见 **`business.d/README.md`**）。
-2. 片段内默认镜像为 **`g2rain/g2rain-gateway-webmvc:latest`**；可通过环境变量 **`GATEWAY_IMAGE`** 覆盖。
-3. 若不使用 `business.d/`，也可在手动执行 compose 时追加 **`-f docker-compose.fragment.gateway-webmvc.yml`**，效果与合并片段相同。
-
-使用 **`--compose-v2`** 时，主文件为 **`compose-v2/compose.yaml`**；若需 WebMVC 网关，请在 **`business.d/`** 中放置等价片段（覆盖 `g2rain-gateway` 的 `image`），或自行维护与 **`compose-v2/compose.yaml`** 头部注释一致的叠加文件。
-
-### `business.d` 中的 CMS 服务
-
-**`g2rain-cms`** 与 **`g2rain-cms-app`** 的定义位于 **`business.d/g2rain-cms.yml`**，不再写在主 **`docker-compose.yml`** / **`compose-v2/compose.yaml`** 中。**`./start.sh`**、**`./stop.sh`**、**`./update.sh`** 会按 `compose-merge.inc` 约定自动追加该文件。若不经脚本、直接执行 **`docker-compose`** / **`docker compose`**，须手动带上 **`-f business.d/g2rain-cms.yml`**（并与主 `-f`、`--project-directory` 用法与仓库文档一致），否则栈内不会出现 CMS 相关容器。
-
-
-## 📋 管理命令
-
-### 首次安装（init-once）
-
-与上文 **「`init-once.sh`：快捷方案与全参数」** 一致。完成后执行 `./start.sh` 拉起栈。日常代码与镜像更新请用 **`./update.sh`**。
-
-### 启动服务（start）
-
-与上文 **「`start.sh`：快捷方案与全参数」** 一致。简要对照：
-
-```bash
-./start.sh
-./start.sh --host <HOST> --port <PORT>
-./start.sh --compose-v2                    # 强制 V2 主文件（覆盖 config/compose-cli.env）
-./start.sh --compose-v1                    # 强制 v1 主文件（覆盖配置文件）
-./start.sh --generate-ssl <IP或域名>
-./start.sh --help
-```
-
-### Compose CLI 偏好（`config/compose-cli.env`）
-
-- 模板：**`config/compose-cli.env.example`**。实际文件 **`config/compose-cli.env`**（默认不提交，由脚本生成）含 **`G2RAIN_USE_COMPOSE_V2=0|1`**，供 **`start.sh` / `stop.sh` / `update.sh`** 在未传 **`--compose-v2` / `--compose-v1`** 时决定使用 **`docker-compose`** 还是 **`docker compose`**。
-- **`./scripts/write-compose-cli-preference.sh`**：默认 **`--write`** 探测本机并写入；**`--dry-run`** 仅打印；**`--print-export`** 输出一行 **`export`**。**`init-once.sh`** 在 Docker/Compose 检测通过后会默认执行写入。
-- 命令行 **`--compose-v2`** / **`--compose-v1`** 始终**覆盖**配置文件。
-
-### Docker Compose V2 启动（`compose-v2/compose.yaml`）
-
-适用于已安装 **Docker Compose 插件**（命令为 `docker compose`，非旧版 `docker-compose`）的环境。`compose-v2/compose.yaml` 与根目录 `docker-compose.yml` **服务定义一致**，但采用 Compose Specification：**无废弃的 `version` 键**，并声明 **`name: g2rain-deploy`**。
-
-**必须在仓库根目录**执行，并显式指定 **项目目录**为当前目录，这样文件中的 `./config`、`./data`、`./ssl`、`.env` 等路径才会解析正确：
-
-```bash
-cd /path/to/g2rain-deploy
-
-# 校验配置
-docker compose -f compose-v2/compose.yaml --project-directory . config
-
-# 后台启动全栈（与根目录 compose 使用同一套数据与配置）
-docker compose -f compose-v2/compose.yaml --project-directory . up -d
-
-# 可选：启动并等待服务就绪（需插件版本支持，如 v2.20+）
-docker compose -f compose-v2/compose.yaml --project-directory . up -d --wait
-
-# 常用运维
-docker compose -f compose-v2/compose.yaml --project-directory . ps
-docker compose -f compose-v2/compose.yaml --project-directory . logs -f
-docker compose -f compose-v2/compose.yaml --project-directory . down
-```
-
-也可用 **`./start.sh --compose-v2`**（与 **`--host` / `--port`** 任意顺序组合），分阶段拉起逻辑与默认方式相同，底层改为 **`docker compose -f compose-v2/compose.yaml --project-directory .`**。若已通过 **`./scripts/write-compose-cli-preference.sh`** 或 **`init-once.sh`** 生成 **`config/compose-cli.env`** 且其中为 V2，则可直接 **`./start.sh`** 而无需每次带 **`--compose-v2`**（**`./stop.sh`**、**`./update.sh`** 同样会读取该文件）。
-
-说明：
-
-- **`./start.sh`、`./stop.sh`、`./update.sh`** 均会读取 **`config/compose-cli.env`**（若存在），并与 **`--compose-v2` / `--compose-v1`** 组合使用；三者应使用同一套 CLI，避免「用 V2 启动、用 v1 停止」导致项目上下文不一致。
-- 修改 **`docker-compose.yml`** 后，请同步更新 **`compose-v2/compose.yaml`**（可对照提交或按文件头注释从根文件生成），避免两套配置漂移。
-
-### 停止服务（`stop.sh`）
-
-`stop.sh` 提供两种模式，对应是否删除本 Compose 项目下的容器（含已停止、状态为 `Exited` 的实例）：
-
-| 模式 | 命令 | 行为说明 |
-|------|------|----------|
-| **不清理容器** | `./stop.sh` 或 `./stop.sh --compose-v2` | 执行 **`stop`**：进程停止，**容器记录仍保留**。下次用与启动一致的 CLI 执行 **`./start.sh`**。 |
-| **清理容器** | `./stop.sh --cleanup` 等 | 在停止后执行 **`down`**：**删除**当前合并配置所管理的服务容器及默认网络，并 **`docker image prune -f`**。 |
-
-```bash
-./stop.sh
-./stop.sh --compose-v2
-./stop.sh --cleanup
-./stop.sh --compose-v2 --cleanup
-./stop.sh --help
-```
-
-说明：若只想删除**全局**已退出容器、与本脚本无关，可使用 `docker container prune -f`（慎用，会影响所有已停止容器）。完整行为以 `stop.sh` 内实现为准。
-
-### 生成SSL证书
-```bash
-# 方式1：使用独立脚本（推荐）
-./config/generate-ssl.sh <服务器IP地址>
-
-# 方式2：使用 start.sh 参数
-./start.sh --generate-ssl <服务器IP地址>
-
-# 示例
-./config/generate-ssl.sh 192.168.1.100
-
-# 重新生成证书（会提示是否覆盖）
-./config/generate-ssl.sh 192.168.1.100
-```
-
-**SSL证书说明**：
-- **仅用于集群总入口 nginx**：SSL证书仅用于 docker-compose.yml 中配置的 nginx 服务（集群总入口），其他服务（gateway、iam、basis、infra、test-app、main-shell 等）均不需要证书
-- 证书包含指定的IP地址和 localhost
-- 自签名证书，浏览器会显示安全警告，需要手动信任
-- 证书有效期：365天
-- 证书文件位置：`ssl/server.crt` 和 `ssl/server.key`
-
-### 生成前端项目密钥
-
-`generate_key.sh` 用于生成前端项目所需的 ES256 (P-256) 公私钥对，支持 PEM 和 DER 两种格式。
-
-```bash
-# 基本用法
-./config/generate_key.sh <目标目录> [密钥名称]
-
-# 示例1：生成默认名称的密钥（生成 private-key.pem, public-key.pem 等）
-./config/generate_key.sh config/g2rain-main-shell/keys
-
-# 示例2：生成指定名称的密钥（生成 iam-private-key.pem, iam-public-key.pem 等）
-./config/generate_key.sh config/g2rain-main-shell/keys iam
-
-# 示例3：为其他应用生成密钥
-./config/generate_key.sh config/g2rain-test-app/keys test
-```
-
-**输出文件**：
-- `private-key.pem` / `<name>-private-key.pem` - 私钥（PEM格式，PKCS#8）
-- `public-key.pem` / `<name>-public-key.pem` - 公钥（PEM格式）
-- `private-key.der` / `<name>-private-key.der` - 私钥（DER格式）
-- `public-key.der` / `<name>-public-key.der` - 公钥（DER格式）
-
-**密钥说明**：
-- 使用 ES256 算法（P-256 椭圆曲线）
-- 私钥格式为 PKCS#8，兼容 lua-resty-openssl
-- 同时生成 PEM 和 DER 两种格式，满足不同场景需求
-- 文件权限自动设置为 644（只读）
-
-**IAM 模块配置**：
-
-前端项目还需要在 `config/<项目名>/keys` 目录下添加以下两个文件，用于获取 IAM 模块的公钥和公钥 ID：
-
-- `iam-public-key` - IAM 模块的公钥文件
-- `iam-key-id` - IAM 模块的公钥 ID 文件
-
-这两个文件需要从 IAM 服务获取，并手动放置到对应前端项目的 keys 目录下。例如：
-
-```bash
-# 为 g2rain-main-shell 配置 IAM 公钥
-# 将 iam-public-key 和 iam-key-id 文件放置到：
-config/g2rain-main-shell/keys/iam-public-key
-config/g2rain-main-shell/keys/iam-key-id
-
-# 为 g2rain-test-app 配置 IAM 公钥
-# 将 iam-public-key 和 iam-key-id 文件放置到：
-config/g2rain-test-app/keys/iam-public-key
-config/g2rain-test-app/keys/iam-key-id
-```
-
-**Nginx 路径映射配置**：
-
-前端项目部署时，还需要在 `config/nginx/conf.d/locations.inc` 文件中添加路径映射配置。路径必须与前端项目中 `.env.production` 文件中的 `VITE_CONTEXT_PATH` 配置保持一致。
-
-例如，如果前端项目的 `VITE_CONTEXT_PATH=/test`，则需要在 `locations.inc` 中添加：
-
-```nginx
-location /test/ {
-    proxy_pass http://g2rain-test-app:8080;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline' 'unsafe-eval';" always;
-}
-```
-
-**配置说明**：
-- `location /test/` 中的路径必须与前端项目的 `VITE_CONTEXT_PATH` 完全一致（包括前导斜杠）
-- `proxy_pass` 中的服务名称必须与 `docker-compose.yml` 中对应的服务名称一致
-- 配置完成后需要重启 nginx 服务使配置生效：`docker-compose restart nginx`
-
-**注意事项**：
-- 确保已安装 OpenSSL
-- 如果目标目录不存在，脚本会自动创建
-- 生成的密钥文件会覆盖同名的现有文件（不会提示确认）
-- IAM 公钥和公钥 ID 文件需要从 IAM 服务获取，并手动配置到对应前端项目的 keys 目录
-- **重要**：路径映射配置必须与前端项目的 `VITE_CONTEXT_PATH` 保持一致，否则前端应用无法正常访问
-
-### 更新服务
-
-`update.sh` 会读取 **`services.conf`**：默认先对有关仓库 **`git pull`** 并执行 **`build.sh`**，再经脚本内 **`dc`** 执行 **`pull` / `up`**（默认 **`docker-compose`**；若 **`config/compose-cli.env`** 或 **`--compose-v2`** 则为 **`docker compose`**，细节以 **`./update.sh --help`** 为准）。
-
-**快捷方案：** 全量更新所有服务。
-
-**全参数方案：** 只更新指定服务、强制拉镜像等。
-
-```bash
-# 更新所有服务
-./update.sh
-
-# 与 config/compose-cli.env 中 V2 一致时，可直接（或显式）：
-./update.sh --compose-v2
-
-# 更新指定服务
-./update.sh g2rain-gateway
-./update.sh --compose-v2 g2rain-iam
-
-# 强制拉取最新镜像并更新
-./update.sh --force-pull
-
-# 更新并清理未使用镜像
-./update.sh --cleanup-all
-```
-
-### 查看服务状态
-```bash
-docker-compose ps
-```
-
-### 查看服务日志
-```bash
-# 查看所有服务日志
-docker-compose logs -f
-
-# 查看指定服务日志
-docker-compose logs -f app
-docker-compose logs -f mysql
-docker-compose logs -f redis
-docker-compose logs -f nginx
-```
-
-## ⚙️ 配置说明
-
-### 环境变量配置
-
-复制 `env.example` 为 `.env` 并根据需要修改（**`init-once.sh` / `start.sh` 在首次时也可代为创建 `.env`**）：
-
-```bash
+```shell
 cp env.example .env
 ```
 
-与部署脚本强相关的主要项（完整列表以 `env.example` 为准）：
+逐项修改 `.env` 中的平台地址、端口、数据库、Redis、Nacos 及其他认证配置。`env.example` 中的固定值仅供本地示例，禁止直接用于生产。
 
-```env
-# 平台对外的 Host / Port（写入 compose 中 SSO 等；init-once 会据此替换 g2rain-basis.sql 占位符）
-PLATFORM_HOST=your server host
-PLATFORM_PORT=your server host
+### 2. 检查 Compose 配置
 
-# Nginx 入口端口（HTTP / HTTPS）
-NGINX_HTTP_PORT=10080
-NGINX_HTTPS_PORT=10443
-
-# MySQL / Redis
-MYSQL_ROOT_PASSWORD=g2rain123456
-MYSQL_DATABASE=g2rain
-MYSQL_PORT=3306
-REDIS_PORT=6379
+```shell
+docker compose --env-file .env -f docker-compose.yml config
 ```
 
-### 数据持久化
+使用 V2 主配置时：
 
-所有重要数据都进行了持久化配置：
-
-- **MySQL数据**: `data/mysql` 目录
-- **Redis数据**: `data/redis` 目录
-- **应用日志**: `logs/app` 目录
-- **服务日志**: `logs/` 目录
-
-### 网络配置
-
-- **网络名称**: g2rain-network
-- **子网**: 172.20.0.0/16
-- **驱动**: bridge
-
-## 🔧 高级配置
-
-### MySQL配置优化
-
-编辑 `config/mysql/my.cnf` 进行MySQL性能优化：
-
-```ini
-# 内存设置
-innodb_buffer_pool_size=1G
-max_connections=1000
-
-# 日志设置
-slow_query_log=1
-long_query_time=2
+```shell
+docker compose --env-file .env \
+  -f compose-v2/compose.yaml \
+  --project-directory . \
+  config
 ```
 
-### Redis配置优化
+### 3. 首次初始化
 
-编辑 `config/redis/redis.conf` 进行Redis配置：
-
-```conf
-# 内存设置
-maxmemory 512mb
-maxmemory-policy allkeys-lru
-
-# 持久化设置
-save 900 1
-save 300 10
-save 60 10000
+```shell
+./init-once.sh --host <平台域名或IP> --port <HTTPS端口>
 ```
 
-### Nginx配置
+初始化会克隆或更新多个 G2rain 仓库，并执行 `services.conf` 中声明的构建命令，但不会启动完整平台。仅准备配置或源码时可加 `--skip-build`。
 
-编辑 `config/nginx/conf.d/default.conf` 进行反向代理配置。
+### 4. 启动与检查
 
-**配置文件说明**：
-- `default.conf`: HTTP 和 HTTPS server 块配置
-- `locations.inc`: 共享的 location 配置（被 HTTP 和 HTTPS 共同使用）
-
-**前端项目路径映射**：
-
-在 `config/nginx/conf.d/locations.inc` 文件中配置前端项目的路径映射。路径必须与前端项目的 `VITE_CONTEXT_PATH` 配置保持一致。
-
-例如，如果前端项目的 `VITE_CONTEXT_PATH=/test`，则添加：
-
-```nginx
-location /test/ {
-    proxy_pass http://g2rain-test-app:8080;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline' 'unsafe-eval';" always;
-}
-```
-
-配置完成后重启 nginx：`docker-compose restart nginx`
-
-### SSL证书配置
-
-SSL证书仅用于集群总入口的 nginx 服务，用于提供 HTTPS 访问。其他服务（gateway、iam、basis、infra、test-app、main-shell 等）均为内部服务，不需要证书。
-
-#### 生成证书
-
-首次部署时，需要为 nginx 生成SSL证书：
-
-```bash
-./config/generate-ssl.sh <服务器IP地址>
-```
-
-**注意事项**：
-- **仅用于 nginx**：证书仅用于 docker-compose.yml 中配置的 nginx 服务（集群总入口）
-- 请使用服务器的实际IP地址（公网IP或内网IP）
-- 如果IP地址变更，需要重新生成证书
-- 证书生成后，启动脚本会自动检查证书是否存在
-
-#### 证书管理
-
-```bash
-# 查看证书信息
-openssl x509 -in ssl/server.crt -text -noout
-
-# 检查证书有效期
-openssl x509 -in ssl/server.crt -noout -dates
-
-# 重新生成证书（删除旧证书后重新生成）
-rm ssl/server.crt ssl/server.key
-./config/generate-ssl.sh <新IP地址>
-```
-
-## 🚨 故障排除
-
-### 常见问题
-
-1. **SSL 证书不存在**
-   ```bash
-   # 错误提示：SSL证书不存在，无法启动HTTPS服务
-   ./config/generate-ssl.sh <服务器IP或域名>
-   # 或在安装阶段一并生成：
-   ./init-once.sh --ssl-ip <服务器IP或域名>
-   ```
-
-2. **端口冲突**
-   ```bash
-   # 检查端口占用（按 .env 中实际端口调整，以下为 env.example 常见示例）
-   netstat -tulpn | grep :3306
-   netstat -tulpn | grep :6379
-   netstat -tulpn | grep :10080
-   netstat -tulpn | grep :10443
-   ```
-
-3. **权限问题**
-   ```bash
-   # 设置目录权限
-   chmod -R 755 data/
-   chmod -R 755 logs/
-   ```
-
-4. **服务启动失败**
-   ```bash
-   # 查看详细日志
-   docker-compose logs -f [服务名]
-   ```
-
-### 数据备份
-
-```bash
-# 手动备份数据
-cp -r data/ backup/data_$(date +%Y%m%d_%H%M%S)/
-```
-
-### 数据恢复
-
-```bash
-# 停止服务
-./stop.sh --cleanup
-
-# 恢复数据
-cp -r backup/data_YYYYMMDD_HHMMSS/* data/
-
-# 重新启动
+```shell
 ./start.sh
+docker compose -f docker-compose.yml ps
 ```
 
-## 📊 监控和维护
+启动脚本先启动 MySQL 与 Redis，再等待 MySQL、Redis、Nacos、Kafka 健康，最后启动完整服务栈。启动后还应检查容器日志、HTTPS 入口、登录和核心服务调用。
 
-### 健康检查
+## 配置与扩展
 
-所有服务都配置了健康检查：
+| 文件或目录 | 作用 | 关键规则 |
+| --- | --- | --- |
+| `env.example` / `.env` | 平台地址、端口、中间件与运行参数 | `.env` 不应提交；生产环境必须替换所有示例凭据。 |
+| `config/compose-cli.env` | 默认 Compose CLI 偏好 | 命令行 `--compose-v1`/`--compose-v2` 优先。 |
+| `docker-compose.yml` | Compose V1 主编排 | 主文件始终最先加载。 |
+| `compose-v2/compose.yaml` | Compose V2 主编排 | 使用 V2 时需保持与 V1 的服务语义一致。 |
+| `business.d/*.yml` | 业务 Compose 扩展 | 默认加载全部；`--business <name>` 可重复并限定片段。 |
+| `services.conf` | 默认源码构建映射 | 格式为 `repo|dir|compose_service|build_cmd`。 |
+| `service_config.d/*.conf` | 服务映射扩展 | 相同 `compose_service` 后加载项整行覆盖；文件会被 Shell `source`。 |
 
-```bash
-# 检查服务健康状态
-docker-compose ps
+业务片段和服务配置目录的默认扫描没有显式排序。存在覆盖关系时，应使用重复的 `--business` 或 `--service` 参数显式指定所需片段和顺序。
+
+Compose CLI 偏好可通过以下命令探测并写入：
+
+```shell
+./scripts/write-compose-cli-preference.sh --dry-run
+./scripts/write-compose-cli-preference.sh --write
 ```
 
-### 日志管理
+## 部署命令
 
-```bash
-# 清理旧日志
-find logs/ -name "*.log" -mtime +7 -delete
+### 初始化
+
+```shell
+./init-once.sh [--host HOST] [--port PORT] [--skip-build] [--ssl-ip IP] [--force]
+./init-once.sh --service <name> [--service <name> ...]
 ```
 
-### 镜像更新
+`--force` 会忽略安装完成标记重新执行；使用前先确认 `.env`、SQL 文件、源码目录和镜像的预期状态。
 
-```bash
-# 更新所有镜像
+### 启动
+
+```shell
+./start.sh
+./start.sh --compose-v2
+./start.sh --business g2rain-cms
+./start.sh --business <name> --service <name>
+./start.sh kafka
+```
+
+### 停止
+
+```shell
+./stop.sh
+./stop.sh --business <name>
+```
+
+需要扩大清理范围时才执行：
+
+```shell
+./stop.sh --cleanup
+```
+
+`--cleanup` 会清理容器、网络和未使用镜像。执行前必须确认当前 Docker Context、数据卷保留行为和恢复方案。
+
+### 更新
+
+```shell
 ./update.sh
-
-# 清理未使用镜像
-docker system prune -f
+./update.sh <compose-service>
+./update.sh <compose-service> --force-pull
 ```
 
-## 🤝 贡献指南
+指定参数是 Compose 服务名，不一定等于仓库名。源码路径使用 `git fetch` 与 `git pull --ff-only`；`--force-pull` 使用镜像拉取路径。
 
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 打开 Pull Request
+以下命令会调用 Docker system prune，仅在明确接受影响时使用：
 
-## 📄 许可证
+```shell
+./update.sh --cleanup-all
+```
 
-本项目基于 [Apache 2.0许可证](LICENSE) 开源。
+完整参数见 [命令参考](docs/operations/commands.md)。
 
-## 🆘 支持
+## 验证
 
-如果您遇到问题或有任何疑问，请：
+| 检查 | 命令 | 当前结果 |
+| --- | --- | --- |
+| Shell 语法 | `bash -n <script>` | 2026-09-06 检查 10 个 Shell/Include 文件，全部通过。 |
+| Compose V1 | `docker compose --env-file env.example -f docker-compose.yml config` | 主配置及默认 CMS 合并配置解析通过；`version` 属性产生已过时警告。 |
+| Compose V2 | `docker compose --env-file env.example -f compose-v2/compose.yaml --project-directory . config` | 主配置及默认 CMS 合并配置解析通过。 |
+| 运行时部署 | `./start.sh` 后执行健康与业务冒烟检查 | 本轮未执行，不能据静态验证声称整套平台运行成功。 |
 
-1. 查看本文档的故障排除部分
-2. 检查 [Issues](https://github.com/g2rain/g2rain-deploy/issues)
-3. 创建新的 Issue 描述您的问题
+验证策略详见 [工程验证文档](docs/development/testing.md)。
 
----
+## 安全说明
 
-**G2Rain团队** - 让SaaS部署更简单！
+| 主题 | 要求 |
+| --- | --- |
+| 示例凭据 | `env.example` 中存在固定示例密码和认证材料，生产环境必须全部替换并通过受控 Secret 注入。 |
+| 应用私钥 | 仓库当前跟踪多个前端应用目录下命名为私钥的 PEM/DER 文件；只能视为不可信演示材料，禁止生产复用。若曾被使用，必须轮换。 |
+| 扩展脚本 | `service_config.d/*.conf` 会被 `source`，其中的 `build_cmd` 以及被拉取仓库的 `build.sh` 都属于代码执行边界，只能使用受评审来源。 |
+| 数据与网络 | MySQL、Redis、Nacos、Kafka 不应暴露到不可信网络；需要最小权限、备份、TLS/网络隔离和恢复演练。 |
+| 镜像与源码 | 避免只依赖不可追溯的 `latest`；生产发布应记录镜像 digest、源码提交和配置版本。 |
+| 清理命令 | `--cleanup`、`--cleanup-all` 会扩大 Docker 清理范围，执行前确认 Context、数据影响和回滚方案。 |
+
+生产安全要求见 [安全、密钥与数据](docs/security/secrets-and-data.md)。本仓库中的演示密钥是否从当前版本及 Git 历史删除，需要单独的安全治理决策。
+
+## 模块说明
+
+| 模块 | 职责 |
+| --- | --- |
+| `init-once.sh` | 创建环境、可选生成证书、同步源码、执行镜像构建并管理安装标记。 |
+| `start.sh` | 选择 Compose 栈、检查配置与镜像、等待基础设施健康并启动服务。 |
+| `stop.sh` | 停止当前合并栈；显式参数可执行额外清理。 |
+| `update.sh` | 全量或按服务更新源码/镜像、重建容器并可选清理镜像。 |
+| `compose-*.inc` | 解析 CLI 偏好，组织主 Compose 与业务片段的参数链。 |
+| `services.conf` / `services-merge.inc` | 定义并合并仓库、源码目录、Compose 服务与构建命令。 |
+| `business.d` | 提供可选业务服务编排，默认包含 CMS 后端与前端应用。 |
+| `service_config.d` | 按环境或业务模块追加、覆盖源码构建映射。 |
+| `config` | 提供中间件、数据库初始化、Nginx、SSL 与应用密钥配置。 |
+
+## 职责边界
+
+本仓库负责：
+
+- 维护平台部署拓扑、环境装配和服务生命周期脚本
+- 维护源码构建映射、Compose V1/V2 兼容及业务片段扩展机制
+- 提供本地、演示或私有化环境的标准部署入口
+
+本仓库不负责：
+
+- 各后端服务或前端应用的内部业务实现
+- 生产 Secret 托管、证书权威、数据库迁移平台和灾难恢复系统
+- Kubernetes 等集群调度、高可用架构和多节点自动容灾
+- 在未经验证的环境中保证脚本执行结果或数据可恢复性
+
+## 常见问题
+
+| 问题 | 可能原因 | 处理建议 |
+| --- | --- | --- |
+| Compose 命令不可用 | V1/V2 未安装或 CLI 偏好与本机不一致 | 运行偏好探测脚本，或显式使用 `--compose-v1`/`--compose-v2`。 |
+| Compose 合并结果异常 | 业务片段重复定义服务，或依赖默认扫描顺序 | 使用 `docker compose ... config` 检查最终结果，并显式指定片段顺序。 |
+| 服务镜像构建失败 | Git 访问、JDK/Maven、源码目录或目标仓库 `build.sh` 异常 | 检查 `services.conf`、扩展映射、仓库日志和构建工具。 |
+| 平台服务未就绪 | MySQL、Redis、Nacos、Kafka 未健康，或端口/卷/权限异常 | 查看 Compose 状态与容器日志，先恢复基础设施。 |
+| 指定服务未更新 | 参数使用了仓库名而非 Compose 服务名，或映射被片段覆盖 | 检查最终服务映射和 Compose 服务名称。 |
+| MySQL 初始化 SQL 未生效 | 数据卷已存在 | 初始化 SQL 只在空数据卷首次创建时执行；已有数据使用受控迁移流程。 |
+| 源码无法快进更新 | checkout 存在本地提交、分叉或冲突 | 先确认本地变更归属，再人工处理分支；脚本使用 `pull --ff-only`。 |
+
+## 关联仓库
+
+`services.conf` 和默认 Compose 当前编排 Gateway、Infra、Basis、IAM、Department、Main Shell 及多个前端应用；`business.d/g2rain-cms.yml` 追加 CMS 后端和 CMS App。本仓库只负责组装和生命周期管理，各项目仍独立负责自身构建与运行行为。
+
+## 参与贡献
+
+欢迎通过 Issue、文档改进、功能建议和代码提交参与贡献。部署变更应保持单一目的，同时验证两套 Compose、相关业务片段和 Shell 语法；涉及数据、密钥或清理行为时，请在 Pull Request 中说明影响与回滚方案。
+
+## 许可证
+
+本项目基于 [Apache License 2.0](LICENSE) 开源。
+
+## 联系我们
+
+- Issues: [GitHub Issues](https://github.com/g2rain/g2rain/issues)
+- 讨论: [GitHub Discussions](https://github.com/g2rain/g2rain/discussions)
+- 邮箱: g2rain_developer@163.com
+
+## 致谢
+
+感谢所有为 G2rain 项目提交 Issue、代码、文档、建议和使用反馈的开发者们！
