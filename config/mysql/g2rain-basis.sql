@@ -607,7 +607,8 @@ VALUES
     (7, 2, '综合管理平台', 'g2rain-main-shell',  0, 1, 0, 'SUPPORT', 'EC', 'PEM', '-----BEGIN PUBLIC KEY----- MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEXmlg1y2fUD9KJj4WB6DrRZU+iVwA yzz60AxRoFb2yDnBvYiiK9JR1p5QUw2jkR9RPvkZez1Kx2BqxwyOoWRV/A== -----END PUBLIC KEY----- ', 3600, 86400, '//__PLATFORM_HOST__:__PLATFORM_PORT__', '/main/',    'PUBLISHED', '管理平台入口', '2026-02-01 09:12:28', '2026-02-01 09:12:28'),
     (8, 2, '基础支撑平台', 'g2rain-infra-app',  1, 1, 0, 'SUPPORT', 'EC', 'PEM', '-----BEGIN PUBLIC KEY----- MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAcmLmXDroj3aJiTFxP6oy5Q+3Tawz1LFg0BY1a5CRNynqpVvG+/wVGUhXf7KOJ7/nA2OO/H+IQaHryS+SXtnOA== -----END PUBLIC KEY----- ', 3600, 86400, '//__PLATFORM_HOST__:__PLATFORM_PORT__', '/infra/',    'PUBLISHED', '字典、国际化与全局序列等公共能力前台', '2026-02-01 09:12:28', '2026-02-01 09:12:28'),
     (9, 2, '业务支撑平台', 'g2rain-manager-app',  1, 1, 0, 'SUPPORT', 'EC', 'PEM', '-----BEGIN PUBLIC KEY----- MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEXGDOn5B+GFE42lcMd5u47r6na9iE H1AzxAU49KiWBz17su0M1vPZ+s57bvMlYvbcPG2nfWcJvJzRuKUakrUhsA== -----END PUBLIC KEY----- ', 3600, 86400, '//__PLATFORM_HOST__:__PLATFORM_PORT__', '/manager/',    'PUBLISHED', '平台运营与租户自助管理前台', '2026-02-01 09:12:28', '2026-02-01 09:12:28'),
-    (10, 2, '部门管理平台', 'g2rain-department-app', 1, 0, 0, 'SUPPORT', 'EC', 'PEM', '-----BEGIN PUBLIC KEY----- MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEtghefsDYicSn9s7OsNlwIoIlVTYZ DN9bBwnvKQUENpPuCXZj+qBb+kQBh5C5inokwbjzjbxP2vP360mhfovhag== -----END PUBLIC KEY----- ', 3600, 86400, '//__PLATFORM_HOST__:__PLATFORM_PORT__', '/department/', 'PUBLISHED', '部门组织与权限模型管理前台', '2026-02-01 09:12:28', '2026-02-01 09:12:28');
+    (10, 2, '部门管理平台', 'g2rain-department-app', 1, 0, 0, 'SUPPORT', 'EC', 'PEM', '-----BEGIN PUBLIC KEY----- MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEtghefsDYicSn9s7OsNlwIoIlVTYZ DN9bBwnvKQUENpPuCXZj+qBb+kQBh5C5inokwbjzjbxP2vP360mhfovhag== -----END PUBLIC KEY----- ', 3600, 86400, '//__PLATFORM_HOST__:__PLATFORM_PORT__', '/department/', 'PUBLISHED', '部门组织与权限模型管理前台', '2026-02-01 09:12:28', '2026-02-01 09:12:28'),
+    (11, 2, '会员管理平台', 'g2rain-member-app', 1, 0, 0, 'SUPPORT', 'EC', 'PEM', '-----BEGIN PUBLIC KEY----- MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZeJpllERjPOMRPd1H03XkPMSC9vD xg85d0EIeAyMP6lGD9+u6VJlvo/BRViZnc7Nu7K9FnolpPovQmWPkREW1Q== -----END PUBLIC KEY----- ', 3600, 86400, '//__PLATFORM_HOST__:__PLATFORM_PORT__', '/member/', 'PUBLISHED', '会员主数据与外部身份管理前台', '2026-02-01 09:12:28', '2026-02-01 09:12:28');
 
 -- 应用归类关系
 INSERT INTO `application_suite`
@@ -615,7 +616,8 @@ INSERT INTO `application_suite`
 VALUES
     (11, 8, 7, '2026-02-01 09:12:28', '2026-02-01 09:12:28'),
     (12, 9, 7, '2026-02-01 09:12:28', '2026-02-01 09:12:28'),
-    (13, 10, 7, '2026-02-01 09:12:28', '2026-02-01 09:12:28');
+    (13, 10, 7, '2026-02-01 09:12:28', '2026-02-01 09:12:28'),
+    (14, 11, 7, '2026-02-01 09:12:28', '2026-02-01 09:12:28');
 
 -- 控制单元
 INSERT INTO `control_unit`
@@ -626,7 +628,9 @@ VALUES
     (16, 9, '女娲',   'OPERATION',  1, 'PUBLISHED', '核心运营支撑组件', '2026-02-01 09:12:28', '2026-02-01 09:12:28'),
     (17, 10, '颛顼',   'OPERATION',  0, 'PUBLISHED', '权限模型运营配置', '2026-02-01 09:12:28', '2026-02-01 09:12:28'),
     (18, 9, '有巢氏',   'CUSTOMER',  1, 'PUBLISHED', '租户空间构建逻辑', '2026-02-01 09:12:28', '2026-02-01 09:12:28'),
-    (19, 10, '大禹',   'CUSTOMER',  0, 'PUBLISHED', '部门权限租户配置', '2026-02-01 09:12:28', '2026-02-01 09:12:28');
+    (19, 10, '大禹',   'CUSTOMER',  0, 'PUBLISHED', '部门权限租户配置', '2026-02-01 09:12:28', '2026-02-01 09:12:28'),
+    (20, 11, '后稷',   'OPERATION',  0, 'PUBLISHED', '会员主数据运营配置', '2026-02-01 09:12:28', '2026-02-01 09:12:28'),
+    (21, 11, '祝融',   'CUSTOMER',  0, 'PUBLISHED', '会员管理租户配置', '2026-02-01 09:12:28', '2026-02-01 09:12:28');
 
 -- 角色控制单元关联
 INSERT INTO `role_control_unit_relation`
@@ -634,21 +638,26 @@ INSERT INTO `role_control_unit_relation`
 VALUES
     (20, 4, 15, NULL, 'ACTIVATED', '2026-02-01 09:12:28', '2026-02-01 09:12:28'),
     (21, 4, 16, NULL, 'ACTIVATED', '2026-02-01 09:12:28', '2026-02-01 09:12:28'),
-    (22, 4, 17, NULL, 'ACTIVATED', '2026-02-01 09:12:28', '2026-02-01 09:12:28');
+    (22, 4, 17, NULL, 'ACTIVATED', '2026-02-01 09:12:28', '2026-02-01 09:12:28'),
+    (23, 4, 20, NULL, 'ACTIVATED', '2026-02-01 09:12:28', '2026-02-01 09:12:28');
 
 -- 控制域
 INSERT INTO `control_domain`
 (`id`, `application_id`, `control_domain_name`, `control_domain_type`, `control_domain_scope`, `description`, `create_time`, `update_time`)
 VALUES
     (23, 10, '权限模型运营交付', 'APPLICATION', 'OPERATION', '面向平台运营的权限模型能力交付包，开通后同步权限模型运营配置等相关功能权限', '2026-02-01 09:12:28', '2026-02-01 09:12:28'),
-    (24, 10, '部门管理平台交付', 'APPLICATION', 'CUSTOMER', '面向租户售卖的部门管理平台能力包，开通后同步部门权限租户配置等相关功能权限', '2026-02-01 09:12:28', '2026-02-01 09:12:28');
+    (24, 10, '部门管理平台交付', 'APPLICATION', 'CUSTOMER', '面向租户售卖的部门管理平台能力包，开通后同步部门权限租户配置等相关功能权限', '2026-02-01 09:12:28', '2026-02-01 09:12:28'),
+    (27, 11, '会员主数据运营交付', 'APPLICATION', 'OPERATION', '面向平台运营的会员主数据能力交付包，开通后同步会员主数据运营配置等相关功能权限', '2026-02-01 09:12:28', '2026-02-01 09:12:28'),
+    (28, 11, '会员管理平台交付', 'APPLICATION', 'CUSTOMER', '面向租户售卖的会员管理平台能力包，开通后同步会员管理租户配置等相关功能权限', '2026-02-01 09:12:28', '2026-02-01 09:12:28');
 
 -- 控制域控制单元关联
 INSERT INTO `control_domain_control_unit_relation`
 (`id`, `control_domain_id`, `control_unit_id`, `create_time`, `update_time`)
 VALUES
     (25, 23, 17, '2026-02-01 09:12:28', '2026-02-01 09:12:28'),
-    (26, 24, 19, '2026-02-01 09:12:28', '2026-02-01 09:12:28');
+    (26, 24, 19, '2026-02-01 09:12:28', '2026-02-01 09:12:28'),
+    (27, 27, 20, '2026-02-01 09:12:28', '2026-02-01 09:12:28'),
+    (28, 28, 21, '2026-02-01 09:12:28', '2026-02-01 09:12:28');
 
 -- 服务注册表
 INSERT INTO `service_registry`
