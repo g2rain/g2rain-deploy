@@ -373,6 +373,7 @@ services:
       - ./config/mysql/g2rain-basis.sql:/docker-entrypoint-initdb.d/g2rain-basis.sql
       - ./config/mysql/g2rain-cms.sql:/docker-entrypoint-initdb.d/g2rain-cms.sql
       - ./config/mysql/g2rain-department.sql:/docker-entrypoint-initdb.d/g2rain-department.sql
+      - ./config/mysql/g2rain-member.sql:/docker-entrypoint-initdb.d/g2rain-member.sql
       - ./logs/mysql:/var/log/mysql
     networks:
       - g2rain-network
