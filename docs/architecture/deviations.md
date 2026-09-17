@@ -4,7 +4,7 @@
 
 - 中央 G2rain 目录暂无部署编排类正式 Profile 或本项目登记，当前使用本地基线。
 - `env.example` 含固定的数据库、Redis、Nacos 示例凭据和认证材料；生产环境直接沿用会形成安全风险。
-- Git 当前跟踪 5 个前端应用目录下共 10 个命名为 `private-key.pem`/`private-key.der` 的文件。无论其是否仅用于演示，均不得用于生产，且需要单独决定删除、轮换和历史清理策略。
+- Git 当前跟踪 6 个前端应用目录下共 12 个命名为 `private-key.pem`/`private-key.der` 的文件。无论其是否仅用于演示，均不得用于生产，且需要单独决定删除、轮换和历史清理策略。
 - Docker Compose V1 主文件声明了已过时的 `version` 属性；Compose V2 解析时会警告但仍成功。
 - `business.d` 与 `service_config.d` 默认扫描没有显式排序，多片段覆盖不应依赖目录枚举顺序。
 - 初始化可能改写 `.env` 和 SQL 占位符文件，并在多个仓库执行构建脚本；其影响超出本仓库。
