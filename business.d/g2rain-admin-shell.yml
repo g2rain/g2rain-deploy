@@ -1,0 +1,32 @@
+# g2rain-admin-shell（Main Shell，Context Path /admin）
+# 与主 docker-compose.yml / compose-v2/compose.yaml 合并加载；网络 g2rain-network 由主文件定义。
+# 启动：默认加载本目录全部 .yml；或 ./start.sh --business g2rain-admin-shell（可与 g2rain-cms 并用）
+services:
+  g2rain-admin-shell:
+    image: g2rain/g2rain-admin-shell:latest
+    container_name: g2rain-admin-shell
+    restart: unless-stopped
+    volumes:
+      - ./logs/g2rain-admin-shell:/logs
+      - ./config/g2rain-admin-shell/keys:/usr/local/openresty/nginx/lua/keys:ro
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - SERVER_PORT=8080
+      - CONTEXT_PATH=/admin
+      - APPLICATION_CODE=g2rain-admin-shell
+      - SSO_BASE_URL=${PLATFORM_BASE_URL}
+      - GATEWAY_HOST=g2rain-gateway
+      - GATEWAY_PORT=8080
+      - IAM_HOST=g2rain-iam
+      - IAM_PORT=8080
+    networks:
+      - g2rain-network
+    depends_on:
+      g2rain-gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/ 2>/dev/null || nc -z 127.0.0.1 8080 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
