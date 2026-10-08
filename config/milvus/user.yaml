@@ -1,0 +1,11 @@
+common:
+  security:
+    authorizationEnabled: true
+
+mq:
+  type: woodpecker
+
+woodpecker:
+  storage:
+    type: local
+    rootPath: /var/lib/milvus/woodpecker

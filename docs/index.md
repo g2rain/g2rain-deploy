@@ -26,4 +26,4 @@
 
 ## 当前验证
 
-2026-09-06 已完成 10 个 Shell/Include 文件的 Bash 语法检查；Compose V1、V2 的主配置和默认 CMS 合并配置均可解析。未启动容器、未验证运行时健康状态，也未执行安装、更新、停止或清理操作。
+2026-09-06 已完成 10 个 Shell/Include 文件的 Bash 语法检查。2026-10-08 将 `docling-serve`、`milvus`、`g2rain-knowledge` 迁入 `business.d/g2rain-knowledge.yml`；主配置静态解析为 16 个服务，默认合并全部业务片段（CMS + Admin Shell + Knowledge）为 22 个服务。同日为主服务补充测试环境 `deploy.resources` 与 JDK 25 `JAVA_TOOL_OPTIONS`。未启动容器、未验证运行时健康状态，也未执行安装、更新、停止或清理操作。

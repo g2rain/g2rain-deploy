@@ -1,6 +1,6 @@
 # Compose V2：本文件符合 Compose Specification，不使用已废弃的 compose file version 键。
 # 网关改用 WebMVC 实现时：在 business.d/ 放置覆盖 g2rain-gateway 的 image 的片段（可与根目录 docker-compose.fragment.gateway-webmvc.yml 内容等价），或维护 compose-v2 专用叠加文件（见仓库 compose.yaml 同主题说明）。
-# CMS：`g2rain-cms`、`g2rain-cms-app` 在 business.d/g2rain-cms.yml，与主文件合并加载。
+# CMS：`g2rain-cms`、`g2rain-cms-app` 在 business.d/g2rain-cms.yml；知识库：`docling-serve`、`milvus`、`g2rain-knowledge` 在 business.d/g2rain-knowledge.yml。
 # 务必在仓库根目录指定项目目录，使 ./config、./data、./ssl、./logs 指向正确：
 #   docker compose -f compose-v2/compose.yaml --project-directory . up -d
 # 等待全部服务健康（需插件较新版本，可选）：
@@ -17,6 +17,73 @@ volumes:
     driver: local
   kafka_data:
     driver: local
+
+
+# 测试环境资源上限（低并发）。JDK 25 在有 memory limit 时默认 MaxRAMPercentage≈75%，须显式压堆。
+x-deploy-frontend: &deploy-frontend
+  resources:
+    limits:
+      cpus: "0.50"
+      memory: 256M
+    reservations:
+      cpus: "0.10"
+      memory: 64M
+
+x-deploy-java: &deploy-java
+  resources:
+    limits:
+      cpus: "0.50"
+      memory: 384M
+    reservations:
+      cpus: "0.10"
+      memory: 256M
+
+x-deploy-mysql: &deploy-mysql
+  resources:
+    limits:
+      cpus: "1.00"
+      memory: 1G
+    reservations:
+      cpus: "0.25"
+      memory: 512M
+
+x-deploy-redis: &deploy-redis
+  resources:
+    limits:
+      cpus: "0.25"
+      memory: 256M
+    reservations:
+      cpus: "0.05"
+      memory: 64M
+
+x-deploy-nacos: &deploy-nacos
+  resources:
+    limits:
+      cpus: "0.75"
+      memory: 768M
+    reservations:
+      cpus: "0.25"
+      memory: 512M
+
+x-deploy-kafka: &deploy-kafka
+  resources:
+    limits:
+      cpus: "0.50"
+      memory: 512M
+    reservations:
+      cpus: "0.15"
+      memory: 384M
+
+x-deploy-nginx: &deploy-nginx
+  resources:
+    limits:
+      cpus: "0.25"
+      memory: 128M
+    reservations:
+      cpus: "0.05"
+      memory: 32M
+
+x-java-tool-options: &java-tool-options JAVA_TOOL_OPTIONS=-Xms64m -Xmx128m -XX:+UseSerialGC -Xss256k -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=32m -XX:+ExitOnOutOfMemoryError
 
 services:
 
@@ -48,6 +115,7 @@ services:
       timeout: 10s
       retries: 20
       start_period: 120s
+    deploy: *deploy-frontend
 
   # 应用服务 部门应用服务
   g2rain-department-app:
@@ -77,6 +145,37 @@ services:
       timeout: 10s
       retries: 20
       start_period: 120s
+    deploy: *deploy-frontend
+
+  # 应用服务 会员应用服务
+  g2rain-member-app:
+    image: ${MEMBER_APP_IMAGE:-g2rain/g2rain-member-app:latest}
+    container_name: g2rain-member-app
+    restart: unless-stopped
+    volumes:
+      - ./logs/g2rain-member-app:/logs
+      - ./config/g2rain-member-app/keys:/usr/local/openresty/nginx/lua/keys:ro
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - SERVER_PORT=8080
+      - CONTEXT_PATH=/member
+      - SSO_BASE_URL=${PLATFORM_BASE_URL}
+      - GATEWAY_HOST=g2rain-gateway
+      - GATEWAY_PORT=8080
+      - IAM_HOST=g2rain-iam
+      - IAM_PORT=8080
+    networks:
+      - g2rain-network
+    depends_on:
+      g2rain-gateway:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/ 2>/dev/null || nc -z 127.0.0.1 8080 || exit 1" ]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
+    deploy: *deploy-frontend
 
   # 应用服务 基础设施控制台子应用
   g2rain-infra-app:
@@ -106,6 +205,7 @@ services:
       timeout: 10s
       retries: 20
       start_period: 120s
+    deploy: *deploy-frontend
 
   # 应用服务 控制台默认应用
   g2rain-main-shell:
@@ -135,6 +235,7 @@ services:
       timeout: 10s
       retries: 20
       start_period: 120s
+    deploy: *deploy-frontend
 
   # 后端服务 网关
   g2rain-gateway:
@@ -156,6 +257,7 @@ services:
       - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
       - SPRING_CLOUD_NACOS_DISCOVERY_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
       - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
+      - *java-tool-options
     networks:
       - g2rain-network
     depends_on:
@@ -173,6 +275,7 @@ services:
       timeout: 15s
       retries: 15
       start_period: 180s
+    deploy: *deploy-java
 
   # 后端服务 basis认证
   g2rain-basis:
@@ -192,6 +295,7 @@ services:
       - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
       - SPRING_CLOUD_NACOS_DISCOVERY_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
       - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
+      - *java-tool-options
     networks:
       - g2rain-network
     depends_on:
@@ -209,6 +313,7 @@ services:
       timeout: 15s
       retries: 15
       start_period: 180s
+    deploy: *deploy-java
 
   # 后端服务 infra认证
   g2rain-infra:
@@ -228,6 +333,7 @@ services:
       - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
       - SPRING_CLOUD_NACOS_DISCOVERY_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
       - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
+      - *java-tool-options
     networks:
       - g2rain-network
     depends_on:
@@ -243,6 +349,7 @@ services:
       timeout: 15s
       retries: 15
       start_period: 180s
+    deploy: *deploy-java
 
   # 后端服务 IAM认证
   g2rain-iam:
@@ -266,6 +373,7 @@ services:
       - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
       - IAM_BASE_URL=${IAM_BASE_URL:-${PLATFORM_BASE_URL:-}}
       - PLATFORM_BASE_URL=${PLATFORM_BASE_URL:-}
+      - *java-tool-options
     networks:
       - g2rain-network
     depends_on:
@@ -281,6 +389,7 @@ services:
       timeout: 15s
       retries: 15
       start_period: 180s
+    deploy: *deploy-java
 
   # 后端服务 部门管理
   g2rain-department:
@@ -300,6 +409,7 @@ services:
       - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
       - SPRING_CLOUD_NACOS_DISCOVERY_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
       - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
+      - *java-tool-options
     networks:
       - g2rain-network
     depends_on:
@@ -315,6 +425,44 @@ services:
       timeout: 15s
       retries: 15
       start_period: 180s
+    deploy: *deploy-java
+
+  # 后端服务 会员主数据
+  g2rain-member:
+    image: ${MEMBER_IMAGE:-g2rain/g2rain-member:latest}
+    container_name: g2rain-member
+    restart: unless-stopped
+    volumes:
+      - ./logs/g2rain-member:/logs
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - SERVER_PORT=8080
+      # member 的 spring.config.import 在 application-nacos.yml，需叠加 nacos profile
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-test},nacos
+      - NACOS_SERVER_ADDR=${NACOS_SERVER_ADDR:-nacos:8848}
+      - SPRING_CLOUD_NACOS_CONFIG_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
+      - SPRING_CLOUD_NACOS_CONFIG_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
+      - SPRING_CLOUD_NACOS_CONFIG_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
+      - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
+      - SPRING_CLOUD_NACOS_DISCOVERY_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
+      - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
+      - *java-tool-options
+    networks:
+      - g2rain-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8080 || timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080' || exit 1"]
+      interval: 15s
+      timeout: 15s
+      retries: 15
+      start_period: 180s
+    deploy: *deploy-java
 
   # MySQL数据库服务
   mysql:
@@ -338,6 +486,7 @@ services:
       - ./config/mysql/g2rain-basis.sql:/docker-entrypoint-initdb.d/g2rain-basis.sql
       - ./config/mysql/g2rain-cms.sql:/docker-entrypoint-initdb.d/g2rain-cms.sql
       - ./config/mysql/g2rain-department.sql:/docker-entrypoint-initdb.d/g2rain-department.sql
+      - ./config/mysql/g2rain-member.sql:/docker-entrypoint-initdb.d/g2rain-member.sql
       - ./logs/mysql:/var/log/mysql
     networks:
       - g2rain-network
@@ -348,6 +497,7 @@ services:
       timeout: 5s
       retries: 60
       start_period: 180s
+    deploy: *deploy-mysql
 
   # Redis缓存服务
   redis:
@@ -367,6 +517,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy: *deploy-redis
 
   # Nacos注册中心
   nacos:
@@ -405,6 +556,9 @@ services:
       - NACOS_SERVER_TOMCAT_ACCESSLOG_PATTERN=
       - NACOS_SERVER_TOMCAT_ACCESSLOG_MAXDAYS=3
       - NACOS_SERVER_TOMCAT_ACCESSLOG_MAXSIZE=10MB
+      # 测试环境压低堆；容器 limit 见 x-deploy-nacos
+      - JVM_XMS=256m
+      - JVM_XMX=512m
     networks:
       - g2rain-network
     depends_on:
@@ -416,6 +570,7 @@ services:
       timeout: 10s
       retries: 30
       start_period: 120s
+    deploy: *deploy-nacos
 
   # Nginx反向代理
   nginx:
@@ -443,6 +598,7 @@ services:
       timeout: 10s
       retries: 10
       start_period: 40s
+    deploy: *deploy-nginx
 
   # Kafka（单节点 KRaft，无 ZooKeeper，供联调；官方镜像 apache/kafka）
   # 容器内地址：kafka:9092，例如 spring.kafka.bootstrap-servers=kafka:9092
@@ -482,6 +638,7 @@ services:
       timeout: 10s
       retries: 12
       start_period: 90s
+    deploy: *deploy-kafka
 
 networks:
   g2rain-network:

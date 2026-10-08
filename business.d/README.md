@@ -4,7 +4,7 @@
 约定
 ----
 - 本目录下扩展名为 `.yml` 的文件会在 start / stop / update 时按「主 docker-compose.yml（或 compose-v2 主文件）之后追加 -f」合并加载；不排序。
-- 仓库默认提供 **`g2rain-cms.yml`**（**`g2rain-cms`**、**`g2rain-cms-app`**），与主 compose 中的网络、MySQL 初始化等配合使用；勿在主 compose 中重复定义同名 service。
+- 仓库默认提供 **`g2rain-cms.yml`**（**`g2rain-cms`**、**`g2rain-cms-app`**）、**`g2rain-admin-shell.yml`**（**`g2rain-admin-shell`**，Context Path `/admin`）与 **`g2rain-knowledge.yml`**（**`docling-serve`**、**`milvus`**、**`g2rain-knowledge`**），与主 compose 中的网络、MySQL 初始化等配合使用；勿在主 compose 中重复定义同名 service。
 - 请勿在多个片段中重复定义同一 service 名，合并结果由 Compose 覆盖规则决定，易产生非预期行为。
 
 可选：只加载部分片段
