@@ -31,20 +31,20 @@ project:
     composeV1: docker-compose.yml
     composeV2: compose-v2/compose.yaml
   validation:
-    observedAt: 2026-09-06
+    observedAt: 2026-10-08
     shellSyntax:
       status: passed
       filesChecked: 10
     composeV1:
       baseStatus: passed
       mergedStatus: passed
-      baseServices: 15
-      mergedServices: 17
+      baseServices: 16
+      mergedServices: 22
     composeV2:
       baseStatus: passed
       mergedStatus: passed
-      baseServices: 15
-      mergedServices: 17
+      baseServices: 16
+      mergedServices: 22
     runtimeDeployment: not-run
   documentation:
     entry: docs/index.md
