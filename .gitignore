@@ -44,10 +44,12 @@ config/*
 !config/nacos/
 !config/nginx/
 !config/redis/
+!config/milvus/
 !config/mysql/**
 !config/nacos/**
 !config/nginx/**
 !config/redis/**
+!config/milvus/**
 !config/generate_key.sh
 !config/generate-ssl.sh
 !config/compose-cli.env.example
