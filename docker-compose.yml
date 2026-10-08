@@ -9,6 +9,73 @@ volumes:
   kafka_data:
     driver: local
 
+
+# 测试环境资源上限（低并发）。JDK 25 在有 memory limit 时默认 MaxRAMPercentage≈75%，须显式压堆。
+x-deploy-frontend: &deploy-frontend
+  resources:
+    limits:
+      cpus: "0.50"
+      memory: 256M
+    reservations:
+      cpus: "0.10"
+      memory: 64M
+
+x-deploy-java: &deploy-java
+  resources:
+    limits:
+      cpus: "0.50"
+      memory: 384M
+    reservations:
+      cpus: "0.10"
+      memory: 256M
+
+x-deploy-mysql: &deploy-mysql
+  resources:
+    limits:
+      cpus: "1.00"
+      memory: 1G
+    reservations:
+      cpus: "0.25"
+      memory: 512M
+
+x-deploy-redis: &deploy-redis
+  resources:
+    limits:
+      cpus: "0.25"
+      memory: 256M
+    reservations:
+      cpus: "0.05"
+      memory: 64M
+
+x-deploy-nacos: &deploy-nacos
+  resources:
+    limits:
+      cpus: "0.75"
+      memory: 768M
+    reservations:
+      cpus: "0.25"
+      memory: 512M
+
+x-deploy-kafka: &deploy-kafka
+  resources:
+    limits:
+      cpus: "0.50"
+      memory: 512M
+    reservations:
+      cpus: "0.15"
+      memory: 384M
+
+x-deploy-nginx: &deploy-nginx
+  resources:
+    limits:
+      cpus: "0.25"
+      memory: 128M
+    reservations:
+      cpus: "0.05"
+      memory: 32M
+
+x-java-tool-options: &java-tool-options JAVA_TOOL_OPTIONS=-Xms64m -Xmx128m -XX:+UseSerialGC -Xss256k -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=32m -XX:+ExitOnOutOfMemoryError
+
 services:
         
   # 应用服务 业务支撑应用
@@ -39,6 +106,7 @@ services:
       timeout: 10s
       retries: 20
       start_period: 120s
+    deploy: *deploy-frontend
  
   # 应用服务 部门应用服务 
   g2rain-department-app:
@@ -68,6 +136,7 @@ services:
       timeout: 10s
       retries: 20
       start_period: 120s
+    deploy: *deploy-frontend
 
   # 应用服务 会员应用服务
   g2rain-member-app:
@@ -97,6 +166,7 @@ services:
       timeout: 10s
       retries: 20
       start_period: 120s
+    deploy: *deploy-frontend
  
   # 应用服务 基础设施控制台子应用
   g2rain-infra-app:
@@ -126,6 +196,7 @@ services:
       timeout: 10s
       retries: 20
       start_period: 120s
+    deploy: *deploy-frontend
 
   # 应用服务 控制台默认应用
   g2rain-main-shell:
@@ -155,6 +226,7 @@ services:
       timeout: 10s
       retries: 20
       start_period: 120s
+    deploy: *deploy-frontend
 
   # 后端服务 网关
   g2rain-gateway:
@@ -178,6 +250,7 @@ services:
       - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=${SPRING_KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
       - SPRING_KAFKA_ENABLED=${SPRING_KAFKA_ENABLED:-true}
+      - *java-tool-options
     networks:
       - g2rain-network
     depends_on:
@@ -195,6 +268,7 @@ services:
       timeout: 15s
       retries: 15
       start_period: 180s
+    deploy: *deploy-java
 
   # 后端服务 basis认证
   g2rain-basis:
@@ -216,6 +290,7 @@ services:
       - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=${SPRING_KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
       - G2RAIN_AUDIT_EVENT_ENABLED=${G2RAIN_AUDIT_EVENT_ENABLED:-true}
+      - *java-tool-options
     networks:
       - g2rain-network
     depends_on:
@@ -233,6 +308,7 @@ services:
       timeout: 15s
       retries: 15
       start_period: 180s
+    deploy: *deploy-java
 
   # 后端服务 infra认证
   g2rain-infra:
@@ -252,6 +328,7 @@ services:
       - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
       - SPRING_CLOUD_NACOS_DISCOVERY_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
       - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
+      - *java-tool-options
     networks:
       - g2rain-network
     depends_on:
@@ -267,6 +344,7 @@ services:
       timeout: 15s
       retries: 15
       start_period: 180s
+    deploy: *deploy-java
 
   # 后端服务 IAM认证
   g2rain-iam:
@@ -290,6 +368,7 @@ services:
       - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
       - IAM_BASE_URL=${IAM_BASE_URL:-${PLATFORM_BASE_URL:-}}
       - PLATFORM_BASE_URL=${PLATFORM_BASE_URL:-}
+      - *java-tool-options
     networks:
       - g2rain-network
     depends_on:
@@ -305,6 +384,7 @@ services:
       timeout: 15s
       retries: 15
       start_period: 180s
+    deploy: *deploy-java
 
   # 后端服务 部门管理
   g2rain-department:
@@ -324,6 +404,7 @@ services:
       - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
       - SPRING_CLOUD_NACOS_DISCOVERY_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
       - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
+      - *java-tool-options
     networks:
       - g2rain-network
     depends_on:
@@ -339,6 +420,7 @@ services:
       timeout: 15s
       retries: 15
       start_period: 180s
+    deploy: *deploy-java
 
   # 后端服务 会员主数据
   g2rain-member:
@@ -359,6 +441,7 @@ services:
       - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
       - SPRING_CLOUD_NACOS_DISCOVERY_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
       - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
+      - *java-tool-options
     networks:
       - g2rain-network
     depends_on:
@@ -374,6 +457,7 @@ services:
       timeout: 15s
       retries: 15
       start_period: 180s
+    deploy: *deploy-java
 
   # MySQL数据库服务
   mysql:
@@ -408,6 +492,7 @@ services:
       timeout: 5s
       retries: 60
       start_period: 180s
+    deploy: *deploy-mysql
 
   # Redis缓存服务
   redis:
@@ -427,6 +512,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy: *deploy-redis
 
   # Nacos注册中心
   nacos:
@@ -465,6 +551,9 @@ services:
       - NACOS_SERVER_TOMCAT_ACCESSLOG_PATTERN=
       - NACOS_SERVER_TOMCAT_ACCESSLOG_MAXDAYS=3
       - NACOS_SERVER_TOMCAT_ACCESSLOG_MAXSIZE=10MB
+      # 测试环境压低堆；容器 limit 见 x-deploy-nacos
+      - JVM_XMS=256m
+      - JVM_XMX=512m
     networks:
       - g2rain-network
     depends_on:
@@ -476,6 +565,7 @@ services:
       timeout: 10s
       retries: 30
       start_period: 120s
+    deploy: *deploy-nacos
 
   # Nginx反向代理
   nginx:
@@ -503,6 +593,7 @@ services:
       timeout: 10s
       retries: 10
       start_period: 40s
+    deploy: *deploy-nginx
 
   # Kafka（单节点 KRaft，无 ZooKeeper，供联调；官方镜像 apache/kafka）
   # 容器内地址：kafka:9092，例如 spring.kafka.bootstrap-servers=kafka:9092
@@ -542,6 +633,7 @@ services:
       timeout: 10s
       retries: 12
       start_period: 90s
+    deploy: *deploy-kafka
 
 networks:
   g2rain-network:
