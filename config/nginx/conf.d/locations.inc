@@ -112,14 +112,14 @@ location /manager/ {
     add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline' 'unsafe-eval';" always;
 }
 
-location /cms/ {
-    proxy_pass http://g2rain-cms-app:8080;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline' 'unsafe-eval';" always;
-}
+#location /cms/ {
+#    proxy_pass http://g2rain-cms-app:8080;
+#    proxy_set_header Host $host;
+#    proxy_set_header X-Real-IP $remote_addr;
+#    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+#    proxy_set_header X-Forwarded-Proto $scheme;
+#    add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline' 'unsafe-eval';" always;
+#}
 
 location /infra/ {
     proxy_pass http://g2rain-infra-app:8080;
