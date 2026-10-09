@@ -102,7 +102,7 @@ location /main/ {
 #    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 #    proxy_set_header X-Forwarded-Proto $scheme;
 #    add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline' 'unsafe-eval';" always;
-}
+#}
 location /manager/ {
     proxy_pass http://g2rain-manager-app:8080;
     proxy_set_header Host $host;
