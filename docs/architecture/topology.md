@@ -6,7 +6,7 @@ V1 与 V2 主配置静态解析后均包含 16 个服务：MySQL、Redis、Nacos
 
 ## 默认业务扩展
 
-`business.d/g2rain-cms.yml` 增加 `g2rain-cms` 与 `g2rain-cms-app`；`business.d/g2rain-admin-shell.yml` 增加 `g2rain-admin-shell`（Context Path `/admin`）；`business.d/g2rain-knowledge.yml` 增加 `docling-serve`、`milvus` 与 `g2rain-knowledge`。默认加载全部业务片段时合并后共 22 个服务。其他 `business.d/*.yml` 可继续扩展，但不得重复定义服务名，除非明确接受 Compose 覆盖语义。
+`business.d/g2rain-cms.yml` 增加 `g2rain-cms` 与 `g2rain-cms-app`；`business.d/g2rain-admin-shell.yml` 增加 `g2rain-admin-shell`（Context Path `/admin`）；`business.d/g2rain-chat-shell.yml` 增加 `g2rain-chat-shell`（Context Path `/chat`）；`business.d/g2rain-knowledge.yml` 增加 `docling-serve`、`milvus` 与 `g2rain-knowledge`。其他 `business.d/*.yml` 可继续扩展，但不得重复定义服务名，除非明确接受 Compose 覆盖语义。
 
 ## 知识库业务片段
 
