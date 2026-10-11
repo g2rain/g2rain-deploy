@@ -2,11 +2,13 @@
 # 与主 docker-compose.yml / compose-v2/compose.yaml 合并加载；网络 g2rain-network 由主文件定义。
 # 片段文件无法引用主文件 YAML 锚点，资源上限在本文件内联声明。
 services:
-  # 文档解析：仅供 g2rain-knowledge 在内部网络调用，不暴露宿主机端口。
+  # 文档解析：默认映射宿主机 DOCLING_PORT（5001）供运维联调；容器内互访仍用 docling-serve:5001。
   docling-serve:
     image: ${DOCLING_IMAGE:-ghcr.io/docling-project/docling-serve:v1.29.0}
     container_name: docling-serve
     restart: unless-stopped
+    ports:
+      - "${DOCLING_PORT:-5001}:5001"
     environment:
       - TZ=${TZ:-Asia/Shanghai}
       - DOCLING_SERVE_ENABLE_UI=0
@@ -15,9 +17,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1G
-        reservations:
           memory: 512M
+        reservations:
+          memory: 256M
 
   # 向量检索：Standalone 单容器使用嵌入式 etcd、Woodpecker 本地 WAL 和本地持久化。
   # Milvus v3 默认非 root；入口先以 root chown bind-mount，再降权为 milvus 启动（兼容 Compose V1）。
@@ -28,6 +30,8 @@ services:
     restart: unless-stopped
     security_opt:
       - seccomp:unconfined
+    ports:
+      - "${MILVUS_PORT:-19530}:19530"
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
@@ -65,9 +69,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 2G
-        reservations:
           memory: 1G
+        reservations:
+          memory: 512M
 
   # 知识库领域服务（JDK 25）；profile 使用 nacos（与 dev 互斥）。
   g2rain-knowledge:
@@ -97,7 +101,7 @@ services:
       - KNOWLEDGE_EMBEDDING_MODEL=${KNOWLEDGE_EMBEDDING_MODEL:-}
       - KNOWLEDGE_ANSWER_MODEL=${KNOWLEDGE_ANSWER_MODEL:-}
       - KNOWLEDGE_RERANK_MODEL=${KNOWLEDGE_RERANK_MODEL:-}
-      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx128m -XX:+UseSerialGC -Xss256k -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=32m -XX:+ExitOnOutOfMemoryError
+      - JAVA_TOOL_OPTIONS=-Xms128m -Xmx128m -XX:+UseSerialGC -Xss256k -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=32m -XX:+ExitOnOutOfMemoryError
     networks:
       - g2rain-network
     depends_on:

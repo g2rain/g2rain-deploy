@@ -11,14 +11,14 @@
 | 角色 | 锚点 | 典型 memory limit |
 |------|------|-------------------|
 | 前端 App / Shell | `deploy-frontend` | 256M |
-| JDK 25 后端 | `deploy-java` + `JAVA_TOOL_OPTIONS`（`-Xmx128m`、`UseSerialGC`） | 384M |
+| JDK 25 后端 | `deploy-java` + `JAVA_TOOL_OPTIONS`（`-Xms128m`/`-Xmx128m`、`UseSerialGC`） | 384M |
 | MySQL | `deploy-mysql` + `config/mysql/my.cnf`（`innodb_buffer_pool_size=256M`） | 768M |
 | Redis | `deploy-redis` + `config/redis/redis.conf`（`maxmemory 128mb`） | 256M |
 | Nacos | `deploy-nacos` + `JVM_XMS`/`JVM_XMX` | 768M |
 | Kafka | `deploy-kafka`（沿用 `KAFKA_HEAP_OPTS`） | 512M |
 | Nginx | `deploy-nginx` | 128M |
 
-编排不设置 `cpus`（Compose V1 对 `deploy.resources.reservations.cpus` 会告警且常被忽略）。知识库片段 `business.d/g2rain-knowledge.yml` 内联声明 Docling（1G）、Milvus（2G）与 `g2rain-knowledge`（384M + `JAVA_TOOL_OPTIONS`）；Milvus 入口在启动时 `chown` `data/milvus/` 后降权运行。片段文件不能引用主文件 YAML 锚点。
+编排不设置 `cpus`（Compose V1 对 `deploy.resources.reservations.cpus` 会告警且常被忽略）。知识库片段 `business.d/g2rain-knowledge.yml` 内联声明 Docling（512M）、Milvus（1G）与 `g2rain-knowledge`（384M + `JAVA_TOOL_OPTIONS`），面向低并发测试；若 OOM（exit 137）或解析失败再按需调高。Milvus 入口在启动时 `chown` `data/milvus/` 后降权运行。片段文件不能引用主文件 YAML 锚点。
 
 JDK 25 在容器已设 memory limit 时默认 `MaxRAMPercentage≈75%`，因此业务 Java 服务必须显式设置 `JAVA_TOOL_OPTIONS`，不能只靠容器 limit。生产或压测前应按实测调高，避免 OOM（exit 137）或启动失败。
 

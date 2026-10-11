@@ -69,7 +69,7 @@ x-deploy-nginx: &deploy-nginx
     reservations:
       memory: 32M
 
-x-java-tool-options: &java-tool-options JAVA_TOOL_OPTIONS=-Xms64m -Xmx128m -XX:+UseSerialGC -Xss256k -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=32m -XX:+ExitOnOutOfMemoryError
+x-java-tool-options: &java-tool-options JAVA_TOOL_OPTIONS=-Xms128m -Xmx128m -XX:+UseSerialGC -Xss256k -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=32m -XX:+ExitOnOutOfMemoryError
 
 services:
 
