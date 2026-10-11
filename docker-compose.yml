@@ -33,10 +33,10 @@ x-deploy-mysql: &deploy-mysql
   resources:
     limits:
       cpus: "1.00"
-      memory: 1G
+      memory: 768M
     reservations:
       cpus: "0.25"
-      memory: 512M
+      memory: 256M
 
 x-deploy-redis: &deploy-redis
   resources:
