@@ -14,64 +14,50 @@ volumes:
 x-deploy-frontend: &deploy-frontend
   resources:
     limits:
-      cpus: "0.50"
       memory: 256M
     reservations:
-      cpus: "0.10"
       memory: 64M
 
 x-deploy-java: &deploy-java
   resources:
     limits:
-      cpus: "0.50"
       memory: 384M
     reservations:
-      cpus: "0.10"
       memory: 256M
 
 x-deploy-mysql: &deploy-mysql
   resources:
     limits:
-      cpus: "1.00"
       memory: 768M
     reservations:
-      cpus: "0.25"
       memory: 256M
 
 x-deploy-redis: &deploy-redis
   resources:
     limits:
-      cpus: "0.25"
       memory: 256M
     reservations:
-      cpus: "0.05"
       memory: 64M
 
 x-deploy-nacos: &deploy-nacos
   resources:
     limits:
-      cpus: "0.75"
       memory: 768M
     reservations:
-      cpus: "0.25"
       memory: 512M
 
 x-deploy-kafka: &deploy-kafka
   resources:
     limits:
-      cpus: "0.50"
       memory: 512M
     reservations:
-      cpus: "0.15"
       memory: 384M
 
 x-deploy-nginx: &deploy-nginx
   resources:
     limits:
-      cpus: "0.25"
       memory: 128M
     reservations:
-      cpus: "0.05"
       memory: 32M
 
 x-java-tool-options: &java-tool-options JAVA_TOOL_OPTIONS=-Xms64m -Xmx128m -XX:+UseSerialGC -Xss256k -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=32m -XX:+ExitOnOutOfMemoryError

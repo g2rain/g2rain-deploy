@@ -15,10 +15,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "1.00"
           memory: 1G
         reservations:
-          cpus: "0.25"
           memory: 512M
 
   # 向量检索：Standalone 单容器使用嵌入式 etcd、Woodpecker 本地 WAL 和本地持久化。
@@ -67,10 +65,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "1.00"
           memory: 2G
         reservations:
-          cpus: "0.25"
           memory: 1G
 
   # 知识库领域服务（JDK 25）；profile 使用 nacos（与 dev 互斥）。
@@ -124,8 +120,6 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.50"
           memory: 384M
         reservations:
-          cpus: "0.10"
           memory: 256M

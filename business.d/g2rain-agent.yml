@@ -38,10 +38,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.50"
           memory: 384M
         reservations:
-          cpus: "0.10"
           memory: 256M
 
   g2rain-agent-studio:
@@ -80,10 +78,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.50"
           memory: 384M
         reservations:
-          cpus: "0.10"
           memory: 256M
 
   g2rain-mcp-registry:
@@ -122,8 +118,6 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.50"
           memory: 384M
         reservations:
-          cpus: "0.10"
           memory: 256M
