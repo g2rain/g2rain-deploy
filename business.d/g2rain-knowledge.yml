@@ -57,8 +57,7 @@ services:
       - COMMON_STORAGETYPE=local
       - DEPLOY_MODE=STANDALONE
     depends_on:
-      milvus-init:
-        condition: service_completed_successfully
+      - milvus-init
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
       interval: 30s

@@ -12,7 +12,7 @@ V1 与 V2 主配置静态解析后均包含 16 个服务：MySQL、Redis、Nacos
 
 `docling-serve` 与 `milvus` 均只接入 `g2rain-network`，不映射宿主机端口。`g2rain-knowledge` 通过 `http://docling-serve:5001` 调用文档解析与 HybridChunker，通过 `http://milvus:19530` 访问向量检索。Milvus 以 Standalone 单容器运行，使用嵌入式 etcd、Woodpecker 本地 WAL 和本地存储，数据持久化在 `data/milvus/`；首期不引入 MinIO 或外部消息队列。知识原文件及解析产物持久化在 `data/g2rain-knowledge/`（容器内默认 `/data/knowledge`）。
 
-Milvus v3 镜像以非 root 用户运行：`milvus-init`（root、一次性）在启动前将 `data/milvus/` 属主改为 `milvus:milvus`，避免 bind-mount 目录不可写导致 `mkdir ... permission denied`。单独用 `./update.sh milvus`（`--no-deps`）时请先执行 `./update.sh milvus-init`。
+Milvus v3 镜像以非 root 用户运行：`milvus-init`（root、一次性）将 `data/milvus/` 属主改为 `milvus:milvus`，`milvus` 以普通 `depends_on` 依赖它（兼容 Compose V1；V1 只保证容器已启动，不保证 init 已退出）。单独用 `./update.sh milvus`（`--no-deps`）时请先执行 `./update.sh milvus-init`。
 
 ## 依赖顺序
 
