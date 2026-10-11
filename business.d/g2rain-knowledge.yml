@@ -21,6 +21,22 @@ services:
           cpus: "0.25"
           memory: 512M
 
+  # Milvus v3 以非 root 用户运行；bind-mount ./data/milvus 时先修正宿主机目录属主，避免 mkdir permission denied。
+  milvus-init:
+    image: ${MILVUS_IMAGE:-milvusdb/milvus:v3.0.2}
+    container_name: milvus-init
+    user: "0:0"
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        mkdir -p /var/lib/milvus &&
+        chown -R milvus:milvus /var/lib/milvus
+    volumes:
+      - ./data/milvus:/var/lib/milvus
+    networks:
+      - g2rain-network
+
   # 向量检索：Standalone 单容器使用嵌入式 etcd、Woodpecker 本地 WAL 和本地持久化。
   milvus:
     image: ${MILVUS_IMAGE:-milvusdb/milvus:v3.0.2}
@@ -40,6 +56,9 @@ services:
       - ETCD_CONFIG_PATH=/milvus/configs/embedEtcd.yaml
       - COMMON_STORAGETYPE=local
       - DEPLOY_MODE=STANDALONE
+    depends_on:
+      milvus-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
       interval: 30s
@@ -52,10 +71,10 @@ services:
       resources:
         limits:
           cpus: "1.00"
-          memory: 1536M
+          memory: 2G
         reservations:
           cpus: "0.25"
-          memory: 768M
+          memory: 1G
 
   # 知识库领域服务（JDK 25）；profile 使用 nacos（与 dev 互斥）。
   g2rain-knowledge:
