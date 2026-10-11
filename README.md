@@ -63,9 +63,8 @@ G2rain 平台标准化部署与环境编排仓库，负责基础设施、后端�
 
 - `business.d/g2rain-cms.yml` 增加 `g2rain-cms` 和 `g2rain-cms-app`
 - `business.d/g2rain-admin-shell.yml` 增加 `g2rain-admin-shell`（入口 `/admin/`）
+- `business.d/g2rain-chat-shell.yml` 增加 `g2rain-chat-shell`（入口 `/chat/`）
 - `business.d/g2rain-knowledge.yml` 增加 `docling-serve`、`milvus` 和 `g2rain-knowledge`
-
-与主 Compose 合并后共 22 个服务。
 
 ```mermaid
 flowchart TD
@@ -278,7 +277,7 @@ Compose CLI 偏好可通过以下命令探测并写入：
 
 ## 关联仓库
 
-`services.conf` 和默认 Compose 当前编排 Gateway、Infra、Basis、IAM、Department、Member、Main Shell 及多个前端应用；`business.d/g2rain-cms.yml` 追加 CMS 后端和 CMS App；`business.d/g2rain-admin-shell.yml` 追加 Admin Shell（`/admin/`）；`business.d/g2rain-knowledge.yml` 追加 Docling、Milvus 与 Knowledge。本仓库只负责组装和生命周期管理，各项目仍独立负责自身构建与运行行为。
+`services.conf` 和默认 Compose 当前编排 Gateway、Infra、Basis、IAM、Department、Member、Main Shell 及多个前端应用；`business.d/g2rain-cms.yml` 追加 CMS 后端和 CMS App；`business.d/g2rain-admin-shell.yml` 追加 Admin Shell（`/admin/`）；`business.d/g2rain-chat-shell.yml` 追加 Chat Shell（`/chat/`）；`business.d/g2rain-knowledge.yml` 追加 Docling、Milvus 与 Knowledge。本仓库只负责组装和生命周期管理，各项目仍独立负责自身构建与运行行为。
 
 ## 参与贡献
 
