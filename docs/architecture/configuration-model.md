@@ -18,7 +18,7 @@
 | Kafka | `deploy-kafka`（沿用 `KAFKA_HEAP_OPTS`） | 0.5 CPU / 512M |
 | Nginx | `deploy-nginx` | 0.25 CPU / 128M |
 
-知识库片段 `business.d/g2rain-knowledge.yml` 内联声明 Docling（1 CPU / 1G）、Milvus（1 CPU / 2G）与 `g2rain-knowledge`（0.5 CPU / 384M + `JAVA_TOOL_OPTIONS`）；并以一次性 `milvus-init` 修正 `data/milvus/` 属主。片段文件不能引用主文件 YAML 锚点。
+知识库片段 `business.d/g2rain-knowledge.yml` 内联声明 Docling（1 CPU / 1G）、Milvus（1 CPU / 2G）与 `g2rain-knowledge`（0.5 CPU / 384M + `JAVA_TOOL_OPTIONS`）；Milvus 入口在启动时 `chown` `data/milvus/` 后降权运行。片段文件不能引用主文件 YAML 锚点。
 
 JDK 25 在容器已设 memory limit 时默认 `MaxRAMPercentage≈75%`，因此业务 Java 服务必须显式设置 `JAVA_TOOL_OPTIONS`，不能只靠容器 limit。生产或压测前应按实测调高，避免 OOM（exit 137）或启动失败。
 

@@ -4,8 +4,8 @@
 约定
 ----
 - 本目录下扩展名为 `.yml` 的文件会在 start / stop / update 时按「主 docker-compose.yml（或 compose-v2 主文件）之后追加 -f」合并加载；不排序。
-- 仓库默认提供 **`g2rain-cms.yml`**（**`g2rain-cms`**、**`g2rain-cms-app`**）、**`g2rain-admin-shell.yml`**（**`g2rain-admin-shell`**，Context Path `/admin`）、**`g2rain-chat-shell.yml`**（**`g2rain-chat-shell`**，Context Path `/chat`）、**`g2rain-knowledge.yml`**（**`docling-serve`**、**`milvus-init`**、**`milvus`**、**`g2rain-knowledge`**）、**`g2rain-agent.yml`**（**`g2rain-agent-runtime`**、**`g2rain-agent-studio`**、**`g2rain-mcp-registry`**）与 **`g2rain-model.yml`**（**`g2rain-model-nexus`**），与主 compose 中的网络、MySQL 初始化等配合使用；勿在主 compose 中重复定义同名 service。
-- **`milvus-init`** 为一次性 root 任务，负责将 bind-mount 的 `data/milvus/` 属主改为 `milvus:milvus`；`milvus` 以普通 `depends_on` 依赖它（兼容 Compose V1）。单独 `./update.sh milvus` 时请先 `./update.sh milvus-init`（`update.sh` 对单服务使用 `--no-deps`，且 V1 不会等待 init 退出）。
+- 仓库默认提供 **`g2rain-cms.yml`**（**`g2rain-cms`**、**`g2rain-cms-app`**）、**`g2rain-admin-shell.yml`**（**`g2rain-admin-shell`**，Context Path `/admin`）、**`g2rain-chat-shell.yml`**（**`g2rain-chat-shell`**，Context Path `/chat`）、**`g2rain-knowledge.yml`**（**`docling-serve`**、**`milvus`**、**`g2rain-knowledge`**）、**`g2rain-agent.yml`**（**`g2rain-agent-runtime`**、**`g2rain-agent-studio`**、**`g2rain-mcp-registry`**）与 **`g2rain-model.yml`**（**`g2rain-model-nexus`**），与主 compose 中的网络、MySQL 初始化等配合使用；勿在主 compose 中重复定义同名 service。
+- **`milvus`** 入口以 root `chown` bind-mount 的 `data/milvus/` 后，再降权为 `milvus` 用户启动（兼容 Compose V1；可用 `./update.sh milvus` 单独更新）。
 - 请勿在多个片段中重复定义同一 service 名，合并结果由 Compose 覆盖规则决定，易产生非预期行为。
 
 可选：只加载部分片段

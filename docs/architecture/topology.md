@@ -6,13 +6,13 @@ V1 与 V2 主配置静态解析后均包含 16 个服务：MySQL、Redis、Nacos
 
 ## 默认业务扩展
 
-`business.d/g2rain-cms.yml` 增加 `g2rain-cms` 与 `g2rain-cms-app`；`business.d/g2rain-admin-shell.yml` 增加 `g2rain-admin-shell`（Context Path `/admin`）；`business.d/g2rain-chat-shell.yml` 增加 `g2rain-chat-shell`（Context Path `/chat`）；`business.d/g2rain-knowledge.yml` 增加 `docling-serve`、`milvus-init`、`milvus` 与 `g2rain-knowledge`。其他 `business.d/*.yml` 可继续扩展，但不得重复定义服务名，除非明确接受 Compose 覆盖语义。
+`business.d/g2rain-cms.yml` 增加 `g2rain-cms` 与 `g2rain-cms-app`；`business.d/g2rain-admin-shell.yml` 增加 `g2rain-admin-shell`（Context Path `/admin`）；`business.d/g2rain-chat-shell.yml` 增加 `g2rain-chat-shell`（Context Path `/chat`）；`business.d/g2rain-knowledge.yml` 增加 `docling-serve`、`milvus` 与 `g2rain-knowledge`。其他 `business.d/*.yml` 可继续扩展，但不得重复定义服务名，除非明确接受 Compose 覆盖语义。
 
 ## 知识库业务片段
 
 `docling-serve` 与 `milvus` 均只接入 `g2rain-network`，不映射宿主机端口。`g2rain-knowledge` 通过 `http://docling-serve:5001` 调用文档解析与 HybridChunker，通过 `http://milvus:19530` 访问向量检索。Milvus 以 Standalone 单容器运行，使用嵌入式 etcd、Woodpecker 本地 WAL 和本地存储，数据持久化在 `data/milvus/`；首期不引入 MinIO 或外部消息队列。知识原文件及解析产物持久化在 `data/g2rain-knowledge/`（容器内默认 `/data/knowledge`）。
 
-Milvus v3 镜像以非 root 用户运行：`milvus-init`（root、一次性）将 `data/milvus/` 属主改为 `milvus:milvus`，`milvus` 以普通 `depends_on` 依赖它（兼容 Compose V1；V1 只保证容器已启动，不保证 init 已退出）。单独用 `./update.sh milvus`（`--no-deps`）时请先执行 `./update.sh milvus-init`。
+Milvus v3 镜像默认非 root：`milvus` 服务入口以 root `chown` `data/milvus/` 后，再通过 `runuser`/`setpriv` 降权为 `milvus` 用户启动（兼容 Compose V1，可用 `./update.sh milvus` 单独更新）。
 
 ## 依赖顺序
 
