@@ -10,7 +10,7 @@ V1 与 V2 主配置静态解析后均包含 16 个服务：MySQL、Redis、Nacos
 
 ## 知识库业务片段
 
-`docling-serve` 与 `milvus` 均接入 `g2rain-network`，并默认映射宿主机端口：Docling `5001`（`DOCLING_PORT`）、Milvus SDK `19530`（`MILVUS_PORT`）；Milvus 健康检查 `9091` 仅容器内使用。`g2rain-knowledge` 通过 `http://docling-serve:5001` 调用文档解析与 HybridChunker，通过 `http://milvus:19530` 访问向量检索。Milvus 以 Standalone 单容器运行，使用嵌入式 etcd、Woodpecker 本地 WAL 和本地存储，数据持久化在 `data/milvus/`；首期不引入 MinIO 或外部消息队列。知识原文件及解析产物持久化在 `data/g2rain-knowledge/`（容器内默认 `/data/knowledge`）。
+`docling-serve` 与 `milvus` 均接入 `g2rain-network`，并默认映射宿主机端口：Docling `5001`（`DOCLING_PORT`）、Milvus SDK `19530`（`MILVUS_PORT`）；Milvus 健康检查 `9091` 仅容器内使用。`docling-serve` 默认镜像为 `ghcr.io/docling-project/docling-serve-cpu:v1.29.0`（可由 `DOCLING_IMAGE` 覆盖），内存 limit 2G；无 GPU 测试栈使用 CPU 变体。`g2rain-knowledge` 通过 `http://docling-serve:5001` 调用文档解析与 HybridChunker，通过 `http://milvus:19530` 访问向量检索。Milvus 以 Standalone 单容器运行，使用嵌入式 etcd、Woodpecker 本地 WAL 和本地存储，数据持久化在 `data/milvus/`；首期不引入 MinIO 或外部消息队列。知识原文件及解析产物持久化在 `data/g2rain-knowledge/`（容器内默认 `/data/knowledge`）。
 
 Milvus v3 镜像默认非 root：`milvus` 服务入口以 root `chown` `data/milvus/` 后，再通过 `runuser`/`setpriv` 降权为 `milvus` 用户启动（兼容 Compose V1，可用 `./update.sh milvus` 单独更新）。
 
