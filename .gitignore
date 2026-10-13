@@ -61,6 +61,7 @@ config/*
 !config/g2rain-manager-app/
 !config/g2rain-department-app/
 !config/g2rain-member-app/
+!config/g2rain-agent-app/
 !config/g2rain-cms-app/**
 !config/g2rain-infra-app/**
 !config/g2rain-main-shell/**
@@ -69,3 +70,4 @@ config/*
 !config/g2rain-manager-app/**
 !config/g2rain-department-app/**
 !config/g2rain-member-app/**
+!config/g2rain-agent-app/**
