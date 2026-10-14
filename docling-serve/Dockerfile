@@ -2,5 +2,5 @@
 ARG BASE_IMAGE=ghcr.io/docling-project/docling-serve-cpu:v1.29.0
 FROM ${BASE_IMAGE}
 
-COPY fix-opencv.py /tmp/fix-opencv.py
+COPY --chown=1001:0 fix-opencv.py /tmp/fix-opencv.py
 RUN python3 /tmp/fix-opencv.py && rm -f /tmp/fix-opencv.py
