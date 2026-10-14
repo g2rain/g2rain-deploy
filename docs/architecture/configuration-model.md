@@ -18,7 +18,7 @@
 | Kafka | `deploy-kafka`（沿用 `KAFKA_HEAP_OPTS`） | 512M |
 | Nginx | `deploy-nginx` | 128M |
 
-编排不设置 `cpus`（Compose V1 对 `deploy.resources.reservations.cpus` 会告警且常被忽略）。知识库片段 `business.d/g2rain-knowledge.yml` 内联声明 Docling（默认 `docling-serve-cpu:v1.29.0`，2G）、Milvus（1G）与 `g2rain-knowledge`（384M + `JAVA_TOOL_OPTIONS`），面向低并发测试；若 OOM（exit 137）或解析失败再按需调高。Docling 启动预热会 `import cv2`；CentOS 7 / 内核 3.10 可能因 OpenCV 自带 Qt 的 ABI-tag 失败，应使用较新宿主（如 Ubuntu 22.04+）。Milvus 入口在启动时 `chown` `data/milvus/` 后降权运行。片段文件不能引用主文件 YAML 锚点。
+编排不设置 `cpus`（Compose V1 对 `deploy.resources.reservations.cpus` 会告警且常被忽略）。知识库片段 `business.d/g2rain-knowledge.yml` 内联声明 Docling（默认 `g2rain/docling-serve-cpu:v1.29.0`，2G）、Milvus（1G）与 `g2rain-knowledge`（384M + `JAVA_TOOL_OPTIONS`），面向低并发测试；若 OOM（exit 137）或解析失败再按需调高。Docling 派生镜像以官方 `ghcr.io/docling-project/docling-serve-cpu:v1.29.0` 为基础，在构建阶段把 `opencv-python` 换成同版本 `opencv-python-headless`，避免旧内核无法加载 Qt。部署前需 build 该镜像，且 `.env` 的 `DOCLING_IMAGE` 不能写死未修复的官方标签。Milvus 入口在启动时 `chown` `data/milvus/` 后降权运行。片段文件不能引用主文件 YAML 锚点。
 
 JDK 25 在容器已设 memory limit 时默认 `MaxRAMPercentage≈75%`，因此业务 Java 服务必须显式设置 `JAVA_TOOL_OPTIONS`，不能只靠容器 limit。生产或压测前应按实测调高，避免 OOM（exit 137）或启动失败。
 
