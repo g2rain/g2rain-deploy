@@ -30,7 +30,8 @@ services:
 
   # 向量检索：Standalone 单容器使用嵌入式 etcd、Woodpecker 本地 WAL 和本地持久化。
   # v3 单进程含 proxy、streamingnode 与嵌入式 etcd。1G 余量不足，测试环境用 2G。
-  # Milvus v3 默认非 root；入口先以 root chown bind-mount，再降权为 milvus 启动（兼容 Compose V1）。
+  # Milvus v3 默认非 root。入口 chown 后降权启动，healthz 通过再幂等建表。
+  # 健康检查还要求建表标记，避免 g2rain-knowledge 在 collection 出现前开始检索。
   milvus:
     image: ${MILVUS_IMAGE:-milvusdb/milvus:v3.0.2}
     container_name: milvus-standalone
@@ -40,25 +41,14 @@ services:
       - seccomp:unconfined
     ports:
       - "${MILVUS_PORT:-19530}:19530"
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        set -eu
-        uid="$$(id -u milvus)"
-        gid="$$(id -g milvus)"
-        mkdir -p /var/lib/milvus
-        chown -R "$${uid}:$${gid}" /var/lib/milvus
-        if command -v runuser >/dev/null 2>&1; then
-          exec runuser -u milvus -- /tini -- milvus run standalone
-        elif command -v setpriv >/dev/null 2>&1; then
-          exec setpriv --reuid=milvus --regid=milvus --clear-groups /tini -- milvus run standalone
-        else
-          exec /tini -- milvus run standalone
-        fi
+    entrypoint: ["/tini", "--", "/bin/sh", "/milvus/configs/start-standalone.sh"]
     volumes:
       - ./data/milvus:/var/lib/milvus
       - ./config/milvus/embedEtcd.yaml:/milvus/configs/embedEtcd.yaml:ro
       - ./config/milvus/user.yaml:/milvus/configs/user.yaml:ro
+      - ./config/milvus/start-standalone.sh:/milvus/configs/start-standalone.sh:ro
+      - ./config/milvus/init-collection.sh:/milvus/configs/init-collection.sh:ro
+      - ./config/milvus/knowledge-collection.json:/milvus/configs/knowledge-collection.json:ro
     environment:
       - TZ=${TZ:-Asia/Shanghai}
       - ETCD_USE_EMBED=true
@@ -66,12 +56,14 @@ services:
       - ETCD_CONFIG_PATH=/milvus/configs/embedEtcd.yaml
       - COMMON_STORAGETYPE=local
       - DEPLOY_MODE=STANDALONE
+      - KNOWLEDGE_MILVUS_COLLECTION=${KNOWLEDGE_MILVUS_COLLECTION:-g2rain_knowledge_chunks_qwen_4096_v1}
+      - MILVUS_BOOTSTRAP_TOKEN=${MILVUS_BOOTSTRAP_TOKEN:-root:Milvus}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9091/healthz >/dev/null && test -f /var/lib/milvus/.knowledge-collection-ready"]
       interval: 30s
       timeout: 20s
       retries: 3
-      start_period: 120s
+      start_period: 180s
     networks:
       - g2rain-network
     deploy:
@@ -105,6 +97,7 @@ services:
       - DOCLING_API_KEY=${DOCLING_API_KEY:-}
       - MILVUS_URI=${MILVUS_URI:-http://milvus:19530}
       - MILVUS_TOKEN=${MILVUS_TOKEN:-}
+      - KNOWLEDGE_MILVUS_COLLECTION=${KNOWLEDGE_MILVUS_COLLECTION:-g2rain_knowledge_chunks_qwen_4096_v1}
       - JAVA_TOOL_OPTIONS=-Xms128m -Xmx128m -XX:+UseSerialGC -Xss256k -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=32m -XX:+ExitOnOutOfMemoryError
     networks:
       - g2rain-network
