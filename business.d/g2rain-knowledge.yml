@@ -29,6 +29,7 @@ services:
           memory: 1G
 
   # 向量检索：Standalone 单容器使用嵌入式 etcd、Woodpecker 本地 WAL 和本地持久化。
+  # v3 单进程含 proxy、streamingnode 与嵌入式 etcd，1G 会在会话注册阶段卡住或被 OOM。
   # Milvus v3 默认非 root；入口先以 root chown bind-mount，再降权为 milvus 启动（兼容 Compose V1）。
   milvus:
     image: ${MILVUS_IMAGE:-milvusdb/milvus:v3.0.2}
@@ -70,15 +71,15 @@ services:
       interval: 30s
       timeout: 20s
       retries: 3
-      start_period: 90s
+      start_period: 120s
     networks:
       - g2rain-network
     deploy:
       resources:
         limits:
-          memory: 1G
+          memory: 4G
         reservations:
-          memory: 512M
+          memory: 2G
 
   # 知识库领域服务（JDK 25）；profile 使用 nacos（与 dev 互斥）。
   g2rain-knowledge:
@@ -104,10 +105,6 @@ services:
       - DOCLING_API_KEY=${DOCLING_API_KEY:-}
       - MILVUS_URI=${MILVUS_URI:-http://milvus:19530}
       - MILVUS_TOKEN=${MILVUS_TOKEN:-}
-      - MODEL_NEXUS_BASE_URL=${MODEL_NEXUS_BASE_URL:-}
-      - KNOWLEDGE_EMBEDDING_MODEL=${KNOWLEDGE_EMBEDDING_MODEL:-}
-      - KNOWLEDGE_ANSWER_MODEL=${KNOWLEDGE_ANSWER_MODEL:-}
-      - KNOWLEDGE_RERANK_MODEL=${KNOWLEDGE_RERANK_MODEL:-}
       - JAVA_TOOL_OPTIONS=-Xms128m -Xmx128m -XX:+UseSerialGC -Xss256k -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=32m -XX:+ExitOnOutOfMemoryError
     networks:
       - g2rain-network

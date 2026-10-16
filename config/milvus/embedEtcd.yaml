@@ -1,5 +1,7 @@
 listen-client-urls: http://0.0.0.0:2379
-advertise-client-urls: http://0.0.0.0:2379
-quota-backend-bytes: 4294967296
+# 客户端只能拨 127.0.0.1；0.0.0.0 只适合 listen，写进 advertise 会导致角色向 etcd 注册会话失败。
+advertise-client-urls: http://127.0.0.1:2379
+# 嵌入式 etcd 的库大小上限（1GiB）。容器内存上限 4G，须给 Milvus 各角色留出余量。
+quota-backend-bytes: 1073741824
 auto-compaction-mode: revision
 auto-compaction-retention: "1000"
