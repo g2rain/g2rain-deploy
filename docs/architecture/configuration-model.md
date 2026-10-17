@@ -11,16 +11,16 @@
 | 角色 | 锚点 | 典型 memory limit |
 |------|------|-------------------|
 | 前端 App / Shell | `deploy-frontend` | 256M |
-| JDK 25 后端 | `deploy-java` + `JAVA_TOOL_OPTIONS`（`-Xms128m`/`-Xmx128m`、`UseSerialGC`） | 384M |
+| JDK 25 后端 | `deploy-java` + `JAVA_TOOL_OPTIONS`（`-Xms64m`/`-Xmx512m`、`MaxMetaspaceSize=256m`、`UseG1GC`） | 1G |
 | MySQL | `deploy-mysql` + `config/mysql/my.cnf`（`innodb_buffer_pool_size=256M`） | 768M |
 | Redis | `deploy-redis` + `config/redis/redis.conf`（`maxmemory 128mb`） | 256M |
 | Nacos | `deploy-nacos` + `JVM_XMS`/`JVM_XMX` | 768M |
 | Kafka | `deploy-kafka`（沿用 `KAFKA_HEAP_OPTS`） | 512M |
 | Nginx | `deploy-nginx` | 128M |
 
-编排不设置 `cpus`（Compose V1 对 `deploy.resources.reservations.cpus` 会告警且常被忽略）。知识库片段 `business.d/g2rain-knowledge.yml` 内联声明 Docling（默认 `g2rain/docling-serve-cpu:v1.29.0`，2G）、Milvus（2G）、`g2rain-knowledge`（384M + `JAVA_TOOL_OPTIONS`）与 `g2rain-knowledge-app`（256M，入口 `/knowledge/`），面向低并发测试；若 OOM（exit 137）或解析失败再按需调高。Milvus 嵌入式 etcd 的 `advertise-client-urls` 为 `http://127.0.0.1:2379`，库大小上限 1GiB，心跳 500ms、选举超时 5000ms（`config/milvus/embedEtcd.yaml`）。Docling 派生镜像以官方 `ghcr.io/docling-project/docling-serve-cpu:v1.29.0` 为基础，在构建阶段把 `opencv-python` 换成同版本 `opencv-python-headless`，避免旧内核无法加载 Qt。部署前需 build 该镜像，且 `.env` 的 `DOCLING_IMAGE` 不能写死未修复的官方标签。Milvus 入口在启动时 `chown` `data/milvus/` 后降权运行，并用 `MILVUS_BOOTSTRAP_TOKEN` 按 `config/milvus/knowledge-collection.json` 幂等创建 `KNOWLEDGE_MILVUS_COLLECTION`（默认 `g2rain_knowledge_chunks_qwen_4096_v1`）。已有同名 collection 不会删除或重建。片段文件不能引用主文件 YAML 锚点。
+编排不设置 `cpus`（Compose V1 对 `deploy.resources.reservations.cpus` 会告警且常被忽略）。知识库片段 `business.d/g2rain-knowledge.yml` 内联声明 Docling（默认 `g2rain/docling-serve-cpu:v1.29.0`，2G）、Milvus（2G）、`g2rain-knowledge`（1G + `JAVA_TOOL_OPTIONS`）与 `g2rain-knowledge-app`（256M，入口 `/knowledge/`），面向低并发测试；若 OOM（exit 137）或解析失败再按需调高。Milvus 嵌入式 etcd 的 `advertise-client-urls` 为 `http://127.0.0.1:2379`，库大小上限 1GiB，心跳 500ms、选举超时 5000ms（`config/milvus/embedEtcd.yaml`）。Docling 派生镜像以官方 `ghcr.io/docling-project/docling-serve-cpu:v1.29.0` 为基础，在构建阶段把 `opencv-python` 换成同版本 `opencv-python-headless`，避免旧内核无法加载 Qt。部署前需 build 该镜像，且 `.env` 的 `DOCLING_IMAGE` 不能写死未修复的官方标签。Milvus 入口在启动时 `chown` `data/milvus/` 后降权运行，并用 `MILVUS_BOOTSTRAP_TOKEN` 按 `config/milvus/knowledge-collection.json` 幂等创建 `KNOWLEDGE_MILVUS_COLLECTION`（默认 `g2rain_knowledge_chunks_qwen_4096_v1`）。已有同名 collection 不会删除或重建。片段文件不能引用主文件 YAML 锚点。
 
-JDK 25 在容器已设 memory limit 时默认 `MaxRAMPercentage≈75%`，因此业务 Java 服务必须显式设置 `JAVA_TOOL_OPTIONS`，不能只靠容器 limit。生产或压测前应按实测调高，避免 OOM（exit 137）或启动失败。
+JDK 25 在容器已设 memory limit 时默认 `MaxRAMPercentage≈75%`，因此业务 Java 服务必须显式设置 `JAVA_TOOL_OPTIONS`，不能只靠容器 limit。策略为低起步、按需涨：`-Xms64m`、`-Xmx512m`、`MaxMetaspaceSize=256m`（Metaspace 本身按加载增长）、容器 limit `1G` / reservation `256M`，热点可吃满上限，空闲常驻远低于 1G。保留 `-XX:+ExitOnOutOfMemoryError`；若仍 Metaspace OOM 或 exit 137，再按实测调高。
 
 MySQL / Redis 的进程内上限（`innodb_buffer_pool_size`、`maxmemory`）须与对应 `deploy.resources` 一致，且为容器与 OS 留出余量；生产或高并发前应按实测调高。
 

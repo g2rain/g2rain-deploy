@@ -10,7 +10,7 @@ volumes:
     driver: local
 
 
-# 测试环境资源上限（低并发）。JDK 25 在有 memory limit 时默认 MaxRAMPercentage≈75%，须显式压堆。
+# 测试环境资源上限（低并发）。Java：低起步、容器上限 1G，热点可涨；Metaspace 上限须够 Spring Boot 4 冷启动。
 x-deploy-frontend: &deploy-frontend
   resources:
     limits:
@@ -21,7 +21,7 @@ x-deploy-frontend: &deploy-frontend
 x-deploy-java: &deploy-java
   resources:
     limits:
-      memory: 384M
+      memory: 1G
     reservations:
       memory: 256M
 
@@ -60,7 +60,8 @@ x-deploy-nginx: &deploy-nginx
     reservations:
       memory: 32M
 
-x-java-tool-options: &java-tool-options JAVA_TOOL_OPTIONS=-Xms128m -Xmx128m -XX:+UseSerialGC -Xss256k -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=32m -XX:+ExitOnOutOfMemoryError
+# Xms 低起步，Xmx/Metaspace 按需涨；容器 1G 内约：堆≤512m + Metaspace≤256m + CodeCache≤64m + 本地内存。
+x-java-tool-options: &java-tool-options JAVA_TOOL_OPTIONS=-Xms64m -Xmx512m -XX:+UseG1GC -Xss256k -XX:MaxMetaspaceSize=256m -XX:ReservedCodeCacheSize=64m -XX:+ExitOnOutOfMemoryError
 
 services:
         

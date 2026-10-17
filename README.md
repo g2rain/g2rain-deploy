@@ -168,6 +168,24 @@ Compose CLI 偏好可通过以下命令探测并写入：
 
 `--force` 会忽略安装完成标记重新执行；使用前先确认 `.env`、SQL 文件、源码目录和镜像的预期状态。
 
+### 初始化前端 / Shell 应用密钥
+
+新增或轮换 OpenResty 子应用（如 `g2rain-knowledge-app`、`g2rain-cms-app`、`g2rain-agent-app`）的 ES256 密钥时，使用：
+
+```shell
+./config/generate_key.sh config/<compose-service>/keys
+```
+
+示例：
+
+```shell
+./config/generate_key.sh config/g2rain-knowledge-app/keys
+```
+
+脚本在目标目录生成 `private-key.pem` / `public-key.pem` 以及对应 DER。Compose 将该目录只读挂载到容器内 `/usr/local/openresty/nginx/lua/keys`。另需放入 `iam-public-key.pem` 与 `iam-key-id.txt`（与 IAM 签发密钥一致，可从已有 App 的 `keys/` 复制）。将 `public-key.pem` 登记到平台 `application.public_key`，`application_code` 与 `CONTEXT_PATH` 须与 Compose / 构建期 `VITE_*` 一致。仓库内已有密钥仅为演示材料，生产必须重新生成并受控注入。
+
+SSL 证书仍用 `./start.sh --generate-ssl <IP>` 或 `init-once.sh --ssl-ip <IP>`（调用 `config/generate-ssl.sh`），与应用密钥脚本分开。
+
 ### 启动
 
 ```shell
@@ -247,7 +265,7 @@ Compose CLI 偏好可通过以下命令探测并写入：
 | `services.conf` / `services-merge.inc` | 定义并合并仓库、源码目录、Compose 服务与构建命令。 |
 | `business.d` | 提供可选业务服务编排，默认包含 CMS、Admin Shell 与 Knowledge。 |
 | `service_config.d` | 按环境或业务模块追加、覆盖源码构建映射。 |
-| `config` | 提供中间件、数据库初始化、Nginx、SSL 与应用密钥配置。 |
+| `config` | 提供中间件、数据库初始化、Nginx、SSL 与应用密钥配置；`generate_key.sh` 初始化前端/Shell 应用密钥，`generate-ssl.sh` 生成 HTTPS 证书。 |
 
 ## 职责边界
 
