@@ -1,7 +1,42 @@
-# 知识库：Docling Serve、Milvus Standalone、g2rain-knowledge。
+# 知识库：Docling Serve、Milvus Standalone、g2rain-knowledge、g2rain-knowledge-app（Context Path /knowledge）。
 # 与主 docker-compose.yml / compose-v2/compose.yaml 合并加载；网络 g2rain-network 由主文件定义。
 # 片段文件无法引用主文件 YAML 锚点，资源上限在本文件内联声明。
 services:
+  g2rain-knowledge-app:
+    image: ${KNOWLEDGE_APP_IMAGE:-g2rain/g2rain-knowledge-app:latest}
+    container_name: g2rain-knowledge-app
+    restart: unless-stopped
+    volumes:
+      - ./logs/g2rain-knowledge-app:/logs
+      - ./config/g2rain-knowledge-app/keys:/usr/local/openresty/nginx/lua/keys:ro
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - SERVER_PORT=8080
+      - CONTEXT_PATH=/knowledge
+      - APPLICATION_CODE=g2rain-knowledge-app
+      - SSO_BASE_URL=${PLATFORM_BASE_URL}
+      - GATEWAY_HOST=g2rain-gateway
+      - GATEWAY_PORT=8080
+      - IAM_HOST=g2rain-iam
+      - IAM_PORT=8080
+    networks:
+      - g2rain-network
+    depends_on:
+      g2rain-gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/ 2>/dev/null || nc -z 127.0.0.1 8080 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
   # 文档解析：默认 CPU 镜像（无 GPU 测试栈）；宿主机端口 DOCLING_PORT（5001），栈内用 docling-serve:5001。
   # 预热需加载模型，512M 易 OOM。派生镜像把 opencv-python 换成同版本 headless，避免旧内核加载 Qt 失败。
   # build.context 相对 Compose 项目目录（部署根目录）。更新前先 build；.env 中 DOCLING_IMAGE 勿写死官方 ghcr 标签。
