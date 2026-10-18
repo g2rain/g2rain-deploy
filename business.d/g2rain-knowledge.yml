@@ -38,7 +38,8 @@ services:
           memory: 128M
 
   # 文档解析：默认 CPU 镜像（无 GPU 测试栈）；宿主机端口 DOCLING_PORT（5001），栈内用 docling-serve:5001。
-  # 预热需加载模型，512M 易 OOM。派生镜像把 opencv-python 换成同版本 headless，避免旧内核加载 Qt 失败。
+  # 预热加载模型时 512M 易 OOM，故 limit 保持 2G；reservation 只是软预留，空闲不占满 1G。
+  # 派生镜像把 opencv-python 换成同版本 headless，避免旧内核加载 Qt 失败。
   # build.context 相对 Compose 项目目录（部署根目录）。更新前先 build；.env 中 DOCLING_IMAGE 勿写死官方 ghcr 标签。
   docling-serve:
     image: ${DOCLING_IMAGE:-g2rain/docling-serve-cpu:v1.29.0}
@@ -61,10 +62,10 @@ services:
         limits:
           memory: 2G
         reservations:
-          memory: 1G
+          memory: 256M
 
   # 向量检索：Standalone 单容器使用嵌入式 etcd、Woodpecker 本地 WAL 和本地持久化。
-  # v3 单进程含 proxy、streamingnode 与嵌入式 etcd。1G 余量不足，测试环境用 2G。
+  # v3 单进程含 proxy、streamingnode 与嵌入式 etcd。硬上限保持 2G；reservation 仅软预留。
   # Milvus v3 默认非 root。入口 chown 后降权启动，healthz 通过再幂等建表。
   # 健康检查还要求建表标记，避免 g2rain-knowledge 在 collection 出现前开始检索。
   milvus:
@@ -106,7 +107,7 @@ services:
         limits:
           memory: 2G
         reservations:
-          memory: 1G
+          memory: 256M
 
   # 知识库领域服务（JDK 25）；profile 使用 nacos（与 dev 互斥）。
   g2rain-knowledge:
