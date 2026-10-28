@@ -5,7 +5,7 @@
 ----
 - 本目录下扩展名为 `.yml` 的文件会在 start / stop / update 时按「主 docker-compose.yml（或 compose-v2 主文件）之后追加 -f」合并加载；不排序。
 - 仓库默认提供 **`g2rain-cms.yml`**（**`g2rain-cms`**、**`g2rain-cms-app`**）、**`g2rain-admin-shell.yml`**（**`g2rain-admin-shell`**，Context Path `/admin`）、**`g2rain-chat-shell.yml`**（**`g2rain-chat-shell`**，Context Path `/chat`）、**`g2rain-knowledge.yml`**（**`docling-serve`** 默认 **`docling-serve-cpu`**、**`milvus`**、**`g2rain-knowledge`**、**`g2rain-knowledge-app`** Context Path `/knowledge`）与 **`g2rain-agent.yml`**（**`g2rain-agent-app`** Context Path `/agent`、**`g2rain-agent-runtime`**、**`g2rain-agent-studio`**、**`g2rain-mcp-registry`**、**`g2rain-model-nexus`**），与主 compose 中的网络、MySQL 初始化等配合使用；勿在主 compose 中重复定义同名 service。
-- **`docling-serve`**：先构建派生镜像，再 `./update.sh docling-serve`。在部署根目录执行 `docker-compose -f docker-compose.yml -f business.d/g2rain-knowledge.yml build docling-serve`（Compose V2 则把主文件换成 `compose-v2/compose.yaml` 并使用 `docker compose`）。服务器 `.env` 的 `DOCLING_IMAGE` 须为 `g2rain/docling-serve-cpu:v1.29.0`；写死官方 `ghcr.io/docling-project/docling-serve-cpu:v1.29.0` 会继续使用未修复镜像。
+- **`docling-serve`**：先构建派生镜像，再 `./update.sh docling-serve`。在部署根目录执行 `docker-compose -f docker-compose.yml -f business.d/g2rain-knowledge.yml build docling-serve`（Compose V2 则把主文件换成 `compose-v2/compose.yaml` 并使用 `docker compose`）。服务器 `.env` 的 `DOCLING_IMAGE` 须为 `g2rain/docling-serve-cpu:v1.29.0`；写死官方 `ghcr.io/docling-project/docling-serve-cpu:v1.29.0` 会继续使用未修复镜像。HybridChunker 需预置 `all-MiniLM-L6-v2` 到 `DOCLING_HF_CACHE`（默认 `./data/docling-hf`，或指向 `/root/.cache/huggingface`）；改挂载后须 `./update.sh docling-serve` recreate，勿只 `docker restart`。
 - 请勿在多个片段中重复定义同一 service 名，合并结果由 Compose 覆盖规则决定，易产生非预期行为。
 
 可选：只加载部分片段

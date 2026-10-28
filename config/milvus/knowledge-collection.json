@@ -10,6 +10,11 @@
       {"fieldName": "revision_id", "dataType": "Int64"},
       {"fieldName": "searchable", "dataType": "Bool"},
       {
+        "fieldName": "visibility",
+        "dataType": "VarChar",
+        "elementTypeParams": {"max_length": "16"}
+      },
+      {
         "fieldName": "tags",
         "dataType": "Array",
         "elementDataType": "VarChar",
@@ -40,6 +45,7 @@
     {"fieldName": "knowledge_id", "indexName": "knowledge_id", "indexType": "AUTOINDEX"},
     {"fieldName": "revision_id", "indexName": "revision_id", "indexType": "AUTOINDEX"},
     {"fieldName": "searchable", "indexName": "searchable", "indexType": "AUTOINDEX"},
+    {"fieldName": "visibility", "indexName": "visibility", "indexType": "AUTOINDEX"},
     {"fieldName": "embedding_profile", "indexName": "embedding_profile", "indexType": "AUTOINDEX"},
     {"fieldName": "tags", "indexName": "tags", "indexType": "AUTOINDEX"}
   ]

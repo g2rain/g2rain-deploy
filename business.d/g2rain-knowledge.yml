@@ -41,6 +41,10 @@ services:
   # 预热加载模型时 512M 易 OOM，故 limit 保持 2G；reservation 只是软预留，空闲不占满 1G。
   # 派生镜像把 opencv-python 换成同版本 headless，避免旧内核加载 Qt 失败。
   # build.context 相对 Compose 项目目录（部署根目录）。更新前先 build；.env 中 DOCLING_IMAGE 勿写死官方 ghcr 标签。
+  # HybridChunker 需 sentence-transformers/all-MiniLM-L6-v2（tokenizer）。无出网环境须预置 HF cache：
+  #   HF_ENDPOINT=https://hf-mirror.com huggingface-cli download sentence-transformers/all-MiniLM-L6-v2
+  #   拷贝到 DOCLING_HF_CACHE（默认 ./data/docling-hf），或 DOCLING_HF_CACHE=/root/.cache/huggingface
+  # 改 volumes/env 后须 recreate：./update.sh docling-serve（勿只 docker restart）。
   docling-serve:
     image: ${DOCLING_IMAGE:-g2rain/docling-serve-cpu:v1.29.0}
     build:
@@ -55,6 +59,13 @@ services:
     environment:
       - TZ=${TZ:-Asia/Shanghai}
       - DOCLING_SERVE_ENABLE_UI=0
+      # 容器内默认 HOME=/opt/app-root/src；HF cache 挂到此路径下，避免运行时访问 huggingface.co
+      - HF_HOME=/opt/app-root/src/.cache/huggingface
+      - HF_HUB_OFFLINE=${DOCLING_HF_HUB_OFFLINE:-1}
+      - TRANSFORMERS_OFFLINE=${DOCLING_TRANSFORMERS_OFFLINE:-1}
+      - HF_ENDPOINT=${DOCLING_HF_ENDPOINT:-https://hf-mirror.com}
+    volumes:
+      - ${DOCLING_HF_CACHE:-./data/docling-hf}:/opt/app-root/src/.cache/huggingface
     networks:
       - g2rain-network
     deploy:
