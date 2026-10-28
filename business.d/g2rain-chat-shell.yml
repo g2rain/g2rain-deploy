@@ -15,6 +15,8 @@ services:
       - CONTEXT_PATH=/chat
       - APPLICATION_CODE=g2rain-chat-shell
       - SSO_BASE_URL=${PLATFORM_BASE_URL}
+      # 宿主机 .env：CHAT_ANONYMOUS_ENTRY_KEY；容器内名 ANONYMOUS_ENTRY_KEY（写入 env-config.js）
+      - ANONYMOUS_ENTRY_KEY=${CHAT_ANONYMOUS_ENTRY_KEY:-}
       - GATEWAY_HOST=g2rain-gateway
       - GATEWAY_PORT=8080
       - IAM_HOST=g2rain-iam

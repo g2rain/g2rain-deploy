@@ -102,7 +102,7 @@ flowchart TD
 cp env.example .env
 ```
 
-逐项修改 `.env` 中的平台地址、端口、数据库、Redis、Nacos 及其他认证配置。`env.example` 中的固定值仅供本地示例，禁止直接用于生产。
+逐项修改 `.env` 中的平台地址、端口、数据库、Redis、Nacos 及其他认证配置。启用 Chat Shell 匿名访问时填写 `CHAT_ANONYMOUS_ENTRY_KEY`（见 `env.example` 注释；映射到容器 `ANONYMOUS_ENTRY_KEY`）。`env.example` 中的固定值仅供本地示例，禁止直接用于生产。
 
 ### 2. 检查 Compose 配置
 

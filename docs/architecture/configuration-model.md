@@ -4,6 +4,8 @@
 
 `env.example` 是 `.env` 模板，包含平台地址、端口、数据库、Redis、Nacos、时区和镜像等配置。模板中的固定值仅用于本地示例，生产环境必须全部审查并替换敏感项。Nacos 外置库时在服务器 `.env` 设置 `MYSQL_SERVICE_HOST`（默认 `mysql` 为本 compose 服务名），勿把真实内网地址提交进仓库。
 
+Chat Shell 匿名接入码：宿主机 `.env` 使用 `CHAT_ANONYMOUS_ENTRY_KEY`；`business.d/g2rain-chat-shell.yml` 映射为容器环境变量 `ANONYMOUS_ENTRY_KEY`（由镜像 `docker-entrypoint.sh` 写入 `env-config.js`）。为空表示不开放匿名访问。
+
 ## 测试环境资源上限
 
 `docker-compose.yml` 与 `compose-v2/compose.yaml` 通过文件级 YAML 锚点（`x-deploy-*`、`x-java-tool-options`）为各服务声明 `deploy.resources` 上限，面向低并发测试主机。
