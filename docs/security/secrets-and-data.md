@@ -13,9 +13,9 @@
 ## 数据与网络
 
 - MySQL、Redis、Nacos 和 Kafka 不应直接暴露到不可信网络。
-- Docling Serve 与 Milvus 由 `business.d/g2rain-knowledge.yml` 编排，仅在 `g2rain-network` 内提供服务；不得为二者添加面向公网的端口映射。
-- Milvus 必须保持鉴权开启。首次部署由运维使用初始 root 账号完成一次性引导：修改默认 root 密码、创建供 Knowledge Service 使用的最小权限账号，并以 `MILVUS_TOKEN` 通过受控 Secret 注入 `username:password` 连接凭据；Compose 配置本身不创建业务账号，不得将初始密码或真实凭据提交到仓库。
-- Milvus 的持久化目录为 `data/milvus/`，其中包含向量数据、嵌入式 etcd 和本地 WAL，必须整体纳入备份与恢复演练。知识原文件和解析产物默认持久化在 `data/g2rain-knowledge/`（由 `business.d/g2rain-knowledge.yml` 挂载），须独立备份。
+- Docling Serve / Milvus 由 `business.d/g2rain-knowledge.yml` 编排，默认分别映射宿主机 `DOCLING_PORT`（5001）与 `MILVUS_PORT`（19530）供运维联调；生产环境必须限制访问来源（安全组/防火墙），不得对不可信网络开放。
+- Milvus 必须保持鉴权开启。首次部署由运维使用初始 root 账号完成一次性引导：修改默认 root 密码、创建供 Knowledge Service 使用的最小权限账号，并以 `MILVUS_TOKEN` 通过受控 Secret 注入 `username:password` 连接凭据。Compose 不创建业务账号。容器启动时用 `MILVUS_BOOTSTRAP_TOKEN` 幂等创建知识库 collection；该变量是管理员凭据，改密后必须同步，否则健康检查不会通过。不得把真实凭据提交到仓库。
+- Milvus 的持久化目录为 `data/milvus/`，其中包含向量数据、嵌入式 etcd 和本地 WAL，必须整体纳入备份与恢复演练。`milvus` 容器启动时会将该目录 `chown` 为容器内 `milvus` 用户后再降权运行；勿依赖仅 root 可写的长期权限。知识原文件和解析产物默认持久化在 `data/g2rain-knowledge/`（由 `business.d/g2rain-knowledge.yml` 挂载），须独立备份。
 - 生产端口、网络策略、TLS、备份和最小权限由部署环境负责。
 - Nginx/Gateway 转发的身份头必须只在可信网络内建立与传播。
 - 日志和备份可能含 Token、用户数据及连接信息，应限制访问和保留周期。

@@ -64,7 +64,7 @@ G2rain 平台标准化部署与环境编排仓库，负责基础设施、后端�
 - `business.d/g2rain-cms.yml` 增加 `g2rain-cms` 和 `g2rain-cms-app`
 - `business.d/g2rain-admin-shell.yml` 增加 `g2rain-admin-shell`（入口 `/admin/`）
 - `business.d/g2rain-chat-shell.yml` 增加 `g2rain-chat-shell`（入口 `/chat/`）
-- `business.d/g2rain-knowledge.yml` 增加 `docling-serve`、`milvus` 和 `g2rain-knowledge`
+- `business.d/g2rain-knowledge.yml` 增加 `docling-serve`、`milvus`、`g2rain-knowledge` 和 `g2rain-knowledge-app`（入口 `/knowledge/`）
 - `business.d/g2rain-agent.yml` 增加 `g2rain-agent-app`（入口 `/agent/`）、`g2rain-agent-runtime`、`g2rain-agent-studio`、`g2rain-mcp-registry` 和 `g2rain-model-nexus`
 
 ```mermaid
@@ -102,7 +102,7 @@ flowchart TD
 cp env.example .env
 ```
 
-逐项修改 `.env` 中的平台地址、端口、数据库、Redis、Nacos 及其他认证配置。`env.example` 中的固定值仅供本地示例，禁止直接用于生产。
+逐项修改 `.env` 中的平台地址、端口、数据库、Redis、Nacos 及其他认证配置。启用 Chat Shell 匿名访问时填写 `CHAT_ANONYMOUS_ENTRY_KEY`（见 `env.example` 注释；映射到容器 `ANONYMOUS_ENTRY_KEY`）。`env.example` 中的固定值仅供本地示例，禁止直接用于生产。
 
 ### 2. 检查 Compose 配置
 
@@ -167,6 +167,24 @@ Compose CLI 偏好可通过以下命令探测并写入：
 ```
 
 `--force` 会忽略安装完成标记重新执行；使用前先确认 `.env`、SQL 文件、源码目录和镜像的预期状态。
+
+### 初始化前端 / Shell 应用密钥
+
+新增或轮换 OpenResty 子应用（如 `g2rain-knowledge-app`、`g2rain-cms-app`、`g2rain-agent-app`）的 ES256 密钥时，使用：
+
+```shell
+./config/generate_key.sh config/<compose-service>/keys
+```
+
+示例：
+
+```shell
+./config/generate_key.sh config/g2rain-knowledge-app/keys
+```
+
+脚本在目标目录生成 `private-key.pem` / `public-key.pem` 以及对应 DER。Compose 将该目录只读挂载到容器内 `/usr/local/openresty/nginx/lua/keys`。另需放入 `iam-public-key.pem` 与 `iam-key-id.txt`（与 IAM 签发密钥一致，可从已有 App 的 `keys/` 复制）。将 `public-key.pem` 登记到平台 `application.public_key`，`application_code` 与 `CONTEXT_PATH` 须与 Compose / 构建期 `VITE_*` 一致。仓库内已有密钥仅为演示材料，生产必须重新生成并受控注入。
+
+SSL 证书仍用 `./start.sh --generate-ssl <IP>` 或 `init-once.sh --ssl-ip <IP>`（调用 `config/generate-ssl.sh`），与应用密钥脚本分开。
 
 ### 启动
 
@@ -247,7 +265,7 @@ Compose CLI 偏好可通过以下命令探测并写入：
 | `services.conf` / `services-merge.inc` | 定义并合并仓库、源码目录、Compose 服务与构建命令。 |
 | `business.d` | 提供可选业务服务编排，默认包含 CMS、Admin Shell 与 Knowledge。 |
 | `service_config.d` | 按环境或业务模块追加、覆盖源码构建映射。 |
-| `config` | 提供中间件、数据库初始化、Nginx、SSL 与应用密钥配置。 |
+| `config` | 提供中间件、数据库初始化、Nginx、SSL 与应用密钥配置；`generate_key.sh` 初始化前端/Shell 应用密钥，`generate-ssl.sh` 生成 HTTPS 证书。 |
 
 ## 职责边界
 
@@ -278,7 +296,7 @@ Compose CLI 偏好可通过以下命令探测并写入：
 
 ## 关联仓库
 
-`services.conf` 和默认 Compose 当前编排 Gateway、Infra、Basis、IAM、Department、Member、Main Shell 及多个前端应用；`business.d/g2rain-cms.yml` 追加 CMS 后端和 CMS App；`business.d/g2rain-admin-shell.yml` 追加 Admin Shell（`/admin/`）；`business.d/g2rain-chat-shell.yml` 追加 Chat Shell（`/chat/`）；`business.d/g2rain-knowledge.yml` 追加 Docling、Milvus 与 Knowledge；`business.d/g2rain-agent.yml` 追加 Agent App（`/agent/`）、Agent 后端与 Model Nexus。本仓库只负责组装和生命周期管理，各项目仍独立负责自身构建与运行行为。
+`services.conf` 和默认 Compose 当前编排 Gateway、Infra、Basis、IAM、Department、Member、Main Shell 及多个前端应用；`business.d/g2rain-cms.yml` 追加 CMS 后端和 CMS App；`business.d/g2rain-admin-shell.yml` 追加 Admin Shell（`/admin/`）；`business.d/g2rain-chat-shell.yml` 追加 Chat Shell（`/chat/`）；`business.d/g2rain-knowledge.yml` 追加 Docling、Milvus、Knowledge 与 Knowledge App（`/knowledge/`）；`business.d/g2rain-agent.yml` 追加 Agent App（`/agent/`）、Agent 后端与 Model Nexus。本仓库只负责组装和生命周期管理，各项目仍独立负责自身构建与运行行为。
 
 ## 参与贡献
 

@@ -10,71 +10,58 @@ volumes:
     driver: local
 
 
-# 测试环境资源上限（低并发）。JDK 25 在有 memory limit 时默认 MaxRAMPercentage≈75%，须显式压堆。
+# 测试环境资源上限（低并发）。Java：低起步、容器上限 1G，热点可涨；Metaspace 上限须够 Spring Boot 4 冷启动。
 x-deploy-frontend: &deploy-frontend
   resources:
     limits:
-      cpus: "0.50"
       memory: 256M
     reservations:
-      cpus: "0.10"
       memory: 64M
 
 x-deploy-java: &deploy-java
   resources:
     limits:
-      cpus: "0.50"
-      memory: 384M
+      memory: 1G
     reservations:
-      cpus: "0.10"
       memory: 256M
 
 x-deploy-mysql: &deploy-mysql
   resources:
     limits:
-      cpus: "1.00"
-      memory: 1G
+      memory: 768M
     reservations:
-      cpus: "0.25"
-      memory: 512M
+      memory: 256M
 
 x-deploy-redis: &deploy-redis
   resources:
     limits:
-      cpus: "0.25"
       memory: 256M
     reservations:
-      cpus: "0.05"
       memory: 64M
 
 x-deploy-nacos: &deploy-nacos
   resources:
     limits:
-      cpus: "0.75"
       memory: 768M
     reservations:
-      cpus: "0.25"
       memory: 512M
 
 x-deploy-kafka: &deploy-kafka
   resources:
     limits:
-      cpus: "0.50"
       memory: 512M
     reservations:
-      cpus: "0.15"
       memory: 384M
 
 x-deploy-nginx: &deploy-nginx
   resources:
     limits:
-      cpus: "0.25"
       memory: 128M
     reservations:
-      cpus: "0.05"
       memory: 32M
 
-x-java-tool-options: &java-tool-options JAVA_TOOL_OPTIONS=-Xms64m -Xmx128m -XX:+UseSerialGC -Xss256k -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=32m -XX:+ExitOnOutOfMemoryError
+# Xms 低起步，Xmx/Metaspace 按需涨；容器 1G 内约：堆≤512m + Metaspace≤256m + CodeCache≤64m + 本地内存。
+x-java-tool-options: &java-tool-options JAVA_TOOL_OPTIONS=-Xms64m -Xmx512m -XX:+UseG1GC -Xss256k -XX:MaxMetaspaceSize=256m -XX:ReservedCodeCacheSize=64m -XX:+ExitOnOutOfMemoryError
 
 services:
         
@@ -530,7 +517,7 @@ services:
       - TZ=${TZ:-Asia/Shanghai}
       - MODE=standalone
       - SPRING_DATASOURCE_PLATFORM=mysql
-      - MYSQL_SERVICE_HOST=mysql
+      - MYSQL_SERVICE_HOST=${MYSQL_SERVICE_HOST:-mysql}
       - MYSQL_SERVICE_PORT=3306
       - MYSQL_SERVICE_DB_NAME=${NACOS_DATABASE:-nacos}
       - MYSQL_SERVICE_USER=${NACOS_MYSQL_USER:-nacos}

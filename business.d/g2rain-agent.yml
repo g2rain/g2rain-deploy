@@ -48,7 +48,7 @@ services:
       - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
       - SPRING_CLOUD_NACOS_DISCOVERY_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
       - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
-      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx128m -XX:+UseSerialGC -Xss256k -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=32m -XX:+ExitOnOutOfMemoryError
+      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx512m -XX:+UseG1GC -Xss256k -XX:MaxMetaspaceSize=256m -XX:ReservedCodeCacheSize=64m -XX:+ExitOnOutOfMemoryError
     networks:
       - g2rain-network
     depends_on:
@@ -67,10 +67,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.50"
-          memory: 384M
+          memory: 1G
         reservations:
-          cpus: "0.10"
           memory: 256M
 
   g2rain-agent-studio:
@@ -90,7 +88,7 @@ services:
       - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
       - SPRING_CLOUD_NACOS_DISCOVERY_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
       - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
-      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx128m -XX:+UseSerialGC -Xss256k -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=32m -XX:+ExitOnOutOfMemoryError
+      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx512m -XX:+UseG1GC -Xss256k -XX:MaxMetaspaceSize=256m -XX:ReservedCodeCacheSize=64m -XX:+ExitOnOutOfMemoryError
     networks:
       - g2rain-network
     depends_on:
@@ -109,10 +107,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.50"
-          memory: 384M
+          memory: 1G
         reservations:
-          cpus: "0.10"
           memory: 256M
 
   g2rain-mcp-registry:
@@ -132,7 +128,7 @@ services:
       - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
       - SPRING_CLOUD_NACOS_DISCOVERY_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
       - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
-      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx128m -XX:+UseSerialGC -Xss256k -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=32m -XX:+ExitOnOutOfMemoryError
+      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx512m -XX:+UseG1GC -Xss256k -XX:MaxMetaspaceSize=256m -XX:ReservedCodeCacheSize=64m -XX:+ExitOnOutOfMemoryError
     networks:
       - g2rain-network
     depends_on:
@@ -151,10 +147,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.50"
-          memory: 384M
+          memory: 1G
         reservations:
-          cpus: "0.10"
           memory: 256M
 
   g2rain-model-nexus:
@@ -174,7 +168,7 @@ services:
       - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=${NACOS_NAMESPACE:-g2rain-test}
       - SPRING_CLOUD_NACOS_DISCOVERY_USERNAME=${NACOS_AUTH_IDENTITY_KEY:-g2rain-admin}
       - SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD=${NACOS_AUTH_IDENTITY_VALUE:-G2Rain@Nacos2024!Secure}
-      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx128m -XX:+UseSerialGC -Xss256k -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=32m -XX:+ExitOnOutOfMemoryError
+      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx512m -XX:+UseG1GC -Xss256k -XX:MaxMetaspaceSize=256m -XX:ReservedCodeCacheSize=64m -XX:+ExitOnOutOfMemoryError
     networks:
       - g2rain-network
     depends_on:
@@ -194,7 +188,7 @@ services:
       resources:
         limits:
           cpus: "0.50"
-          memory: 384M
+          memory: 1G
         reservations:
           cpus: "0.10"
           memory: 256M

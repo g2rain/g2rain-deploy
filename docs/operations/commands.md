@@ -11,6 +11,17 @@
 - `--force`：忽略完成标记重新执行。
 - `--ssl-ip`：调用 OpenSSL 生成证书。
 
+## 初始化前端 / Shell 应用密钥
+
+```shell
+./config/generate_key.sh config/<compose-service>/keys
+./config/generate_key.sh config/g2rain-knowledge-app/keys
+```
+
+- 生成 ES256（P-256）的 PEM/DER 公私钥，供 OpenResty Lua 挂载目录使用。
+- 同目录还需 `iam-public-key.pem`、`iam-key-id.txt`；将 `public-key.pem` 登记到平台应用公钥。
+- 与 `config/generate-ssl.sh`（平台 HTTPS 证书）职责不同，勿混用。
+
 ## 启动
 
 ```shell

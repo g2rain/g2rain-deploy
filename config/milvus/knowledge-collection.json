@@ -1,0 +1,52 @@
+{
+  "collectionName": "__COLLECTION_NAME__",
+  "schema": {
+    "autoID": false,
+    "enableDynamicField": false,
+    "fields": [
+      {"fieldName": "chunk_id", "dataType": "Int64", "isPrimary": true},
+      {"fieldName": "organ_id", "dataType": "Int64"},
+      {"fieldName": "knowledge_id", "dataType": "Int64"},
+      {"fieldName": "revision_id", "dataType": "Int64"},
+      {"fieldName": "searchable", "dataType": "Bool"},
+      {
+        "fieldName": "visibility",
+        "dataType": "VarChar",
+        "elementTypeParams": {"max_length": "16"}
+      },
+      {
+        "fieldName": "tags",
+        "dataType": "Array",
+        "elementDataType": "VarChar",
+        "elementTypeParams": {"max_capacity": "64", "max_length": "64"}
+      },
+      {"fieldName": "source_type", "dataType": "VarChar", "elementTypeParams": {"max_length": "32"}},
+      {"fieldName": "content", "dataType": "VarChar", "elementTypeParams": {"max_length": "65535"}},
+      {
+        "fieldName": "title_path",
+        "dataType": "VarChar",
+        "nullable": true,
+        "elementTypeParams": {"max_length": "8192"}
+      },
+      {"fieldName": "page_start", "dataType": "Int32", "nullable": true},
+      {"fieldName": "page_end", "dataType": "Int32", "nullable": true},
+      {"fieldName": "embedding_profile", "dataType": "VarChar", "elementTypeParams": {"max_length": "128"}},
+      {"fieldName": "content_vector", "dataType": "FloatVector", "elementTypeParams": {"dim": "4096"}}
+    ]
+  },
+  "indexParams": [
+    {
+      "fieldName": "content_vector",
+      "indexName": "content_vector",
+      "metricType": "COSINE",
+      "indexType": "HNSW"
+    },
+    {"fieldName": "organ_id", "indexName": "organ_id", "indexType": "AUTOINDEX"},
+    {"fieldName": "knowledge_id", "indexName": "knowledge_id", "indexType": "AUTOINDEX"},
+    {"fieldName": "revision_id", "indexName": "revision_id", "indexType": "AUTOINDEX"},
+    {"fieldName": "searchable", "indexName": "searchable", "indexType": "AUTOINDEX"},
+    {"fieldName": "visibility", "indexName": "visibility", "indexType": "AUTOINDEX"},
+    {"fieldName": "embedding_profile", "indexName": "embedding_profile", "indexType": "AUTOINDEX"},
+    {"fieldName": "tags", "indexName": "tags", "indexType": "AUTOINDEX"}
+  ]
+}

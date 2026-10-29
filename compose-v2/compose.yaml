@@ -1,6 +1,6 @@
 # Compose V2：本文件符合 Compose Specification，不使用已废弃的 compose file version 键。
 # 网关改用 WebMVC 实现时：在 business.d/ 放置覆盖 g2rain-gateway 的 image 的片段（可与根目录 docker-compose.fragment.gateway-webmvc.yml 内容等价），或维护 compose-v2 专用叠加文件（见仓库 compose.yaml 同主题说明）。
-# CMS：`g2rain-cms`、`g2rain-cms-app` 在 business.d/g2rain-cms.yml；知识库：`docling-serve`、`milvus`、`g2rain-knowledge` 在 business.d/g2rain-knowledge.yml。
+# CMS：`g2rain-cms`、`g2rain-cms-app` 在 business.d/g2rain-cms.yml；知识库：`docling-serve`、`milvus`、`g2rain-knowledge`、`g2rain-knowledge-app` 在 business.d/g2rain-knowledge.yml。
 # 务必在仓库根目录指定项目目录，使 ./config、./data、./ssl、./logs 指向正确：
 #   docker compose -f compose-v2/compose.yaml --project-directory . up -d
 # 等待全部服务健康（需插件较新版本，可选）：
@@ -19,71 +19,58 @@ volumes:
     driver: local
 
 
-# 测试环境资源上限（低并发）。JDK 25 在有 memory limit 时默认 MaxRAMPercentage≈75%，须显式压堆。
+# 测试环境资源上限（低并发）。Java：低起步、容器上限 1G，热点可涨；Metaspace 上限须够 Spring Boot 4 冷启动。
 x-deploy-frontend: &deploy-frontend
   resources:
     limits:
-      cpus: "0.50"
       memory: 256M
     reservations:
-      cpus: "0.10"
       memory: 64M
 
 x-deploy-java: &deploy-java
   resources:
     limits:
-      cpus: "0.50"
-      memory: 384M
+      memory: 1G
     reservations:
-      cpus: "0.10"
       memory: 256M
 
 x-deploy-mysql: &deploy-mysql
   resources:
     limits:
-      cpus: "1.00"
-      memory: 1G
+      memory: 768M
     reservations:
-      cpus: "0.25"
-      memory: 512M
+      memory: 256M
 
 x-deploy-redis: &deploy-redis
   resources:
     limits:
-      cpus: "0.25"
       memory: 256M
     reservations:
-      cpus: "0.05"
       memory: 64M
 
 x-deploy-nacos: &deploy-nacos
   resources:
     limits:
-      cpus: "0.75"
       memory: 768M
     reservations:
-      cpus: "0.25"
       memory: 512M
 
 x-deploy-kafka: &deploy-kafka
   resources:
     limits:
-      cpus: "0.50"
       memory: 512M
     reservations:
-      cpus: "0.15"
       memory: 384M
 
 x-deploy-nginx: &deploy-nginx
   resources:
     limits:
-      cpus: "0.25"
       memory: 128M
     reservations:
-      cpus: "0.05"
       memory: 32M
 
-x-java-tool-options: &java-tool-options JAVA_TOOL_OPTIONS=-Xms64m -Xmx128m -XX:+UseSerialGC -Xss256k -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=32m -XX:+ExitOnOutOfMemoryError
+# Xms 低起步，Xmx/Metaspace 按需涨；容器 1G 内约：堆≤512m + Metaspace≤256m + CodeCache≤64m + 本地内存。
+x-java-tool-options: &java-tool-options JAVA_TOOL_OPTIONS=-Xms64m -Xmx512m -XX:+UseG1GC -Xss256k -XX:MaxMetaspaceSize=256m -XX:ReservedCodeCacheSize=64m -XX:+ExitOnOutOfMemoryError
 
 services:
 
@@ -535,7 +522,7 @@ services:
       - TZ=${TZ:-Asia/Shanghai}
       - MODE=standalone
       - SPRING_DATASOURCE_PLATFORM=mysql
-      - MYSQL_SERVICE_HOST=mysql
+      - MYSQL_SERVICE_HOST=${MYSQL_SERVICE_HOST:-mysql}
       - MYSQL_SERVICE_PORT=3306
       - MYSQL_SERVICE_DB_NAME=${NACOS_DATABASE:-nacos}
       - MYSQL_SERVICE_USER=${NACOS_MYSQL_USER:-nacos}
