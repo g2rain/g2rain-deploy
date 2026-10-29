@@ -43,7 +43,7 @@ services:
   # build.context 相对 Compose 项目目录（部署根目录）。更新前先 build；.env 中 DOCLING_IMAGE 勿写死官方 ghcr 标签。
   # HybridChunker 需 sentence-transformers/all-MiniLM-L6-v2（tokenizer）。无出网环境须预置 HF cache：
   #   HF_ENDPOINT=https://hf-mirror.com huggingface-cli download sentence-transformers/all-MiniLM-L6-v2
-  #   拷贝到 DOCLING_HF_CACHE（默认 ./data/docling-hf），或 DOCLING_HF_CACHE=/root/.cache/huggingface
+  #   默认 DOCLING_HF_CACHE=/root/.cache/huggingface；或拷到独立目录后改路径
   # 改 volumes/env 后须 recreate：./update.sh docling-serve（勿只 docker restart）。
   docling-serve:
     image: ${DOCLING_IMAGE:-g2rain/docling-serve-cpu:v1.29.0}
@@ -65,7 +65,7 @@ services:
       - TRANSFORMERS_OFFLINE=${DOCLING_TRANSFORMERS_OFFLINE:-1}
       - HF_ENDPOINT=${DOCLING_HF_ENDPOINT:-https://hf-mirror.com}
     volumes:
-      - ${DOCLING_HF_CACHE:-./data/docling-hf}:/opt/app-root/src/.cache/huggingface
+      - ${DOCLING_HF_CACHE:-/root/.cache/huggingface}:/opt/app-root/src/.cache/huggingface
     networks:
       - g2rain-network
     deploy:

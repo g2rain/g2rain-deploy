@@ -2,6 +2,11 @@ common:
   security:
     authorizationEnabled: true
 
+# Demo/low-concurrency: default flushRate max=0.1 causes publish (multi-upsert) to stall and fail HTTP.
+quotaAndLimits:
+  flushRate:
+    max: 2
+
 mq:
   type: woodpecker
 
