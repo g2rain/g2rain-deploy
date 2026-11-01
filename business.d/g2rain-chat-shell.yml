@@ -3,9 +3,11 @@
 # 启动：默认加载本目录全部 .yml；或 ./start.sh --business g2rain-chat-shell（可与 g2rain-cms 并用）
 services:
   g2rain-chat-shell:
-    image: g2rain/g2rain-chat-shell:latest
+    image: ${CHAT_SHELL_IMAGE:-g2rain/g2rain-chat-shell:latest}
     container_name: g2rain-chat-shell
     restart: unless-stopped
+    security_opt:
+      - seccomp=unconfined
     volumes:
       - ./logs/g2rain-chat-shell:/logs
       - ./config/g2rain-chat-shell/keys:/usr/local/openresty/nginx/lua/keys:ro
