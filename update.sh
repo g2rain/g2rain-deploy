@@ -139,6 +139,24 @@ sync_repo_only() {
     fi
 }
 
+# 测试环境可在 .env 设置 JIB_FROM_IMAGE（如 docker://eclipse-temurin:25.0.4.1_1-jre），
+# 构建时改用本机 Docker 中已有的基础镜像，不再访问 Docker Hub；未设置时沿用各项目 pom 的配置
+export_jib_from_image() {
+    local image="${JIB_FROM_IMAGE:-}"
+    if [ -z "$image" ] && [ -f "${ROOT}/.env" ]; then
+        image="$(sed -n 's/^JIB_FROM_IMAGE=//p' "${ROOT}/.env" | tail -n 1 | tr -d '\r')"
+        image="${image%\"}"
+        image="${image#\"}"
+    fi
+    # 未设置，或 MAVEN_OPTS 已带该参数时不再追加
+    if [ -z "$image" ] || [[ "${MAVEN_OPTS:-}" == *"-Djib.from.image="* ]]; then
+        return 0
+    fi
+
+    export MAVEN_OPTS="${MAVEN_OPTS:-} -Djib.from.image=${image}"
+    log_info "Jib 基础镜像: ${image}"
+}
+
 build_from_source() {
     local service_name="${1:-}"
 
@@ -146,6 +164,9 @@ build_from_source() {
         log_warning "未找到 services.conf，跳过源码构建（仅执行镜像拉取/容器更新）"
         return 0
     fi
+
+    # 每次运行只设置一次，单服务与全量构建共用
+    export_jib_from_image
 
     if [ -n "$service_name" ]; then
         local row

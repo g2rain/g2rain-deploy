@@ -183,6 +183,6 @@ CREATE TABLE `department_idp_mapping` (
     `version` INT NOT NULL DEFAULT 0 COMMENT                                                            '记录版本',
     `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                    '删除标识[0:未删除, 1:已删除]',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_organ_idp_dept` (`organ_id`, `idp_type`, `idp_dept_id`, `delete_flag`),
+    UNIQUE KEY `uk_organ_idp_dept` (`organ_id`, `idp_type`, `idp_dept_id`, (IF(delete_flag = 0, 0, NULL))),
     INDEX `idx_organ_dept` (`organ_id`, `department_id`, `delete_flag`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT=                             'IdP 部门映射表';

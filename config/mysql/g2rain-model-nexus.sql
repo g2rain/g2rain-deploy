@@ -40,6 +40,10 @@ CREATE TABLE `model_service_profile` (
     `id` BIGINT NOT NULL COMMENT                                                                        '主键标识',
     `organ_id` BIGINT NOT NULL COMMENT                                                                  '机构标识',
     `catalog_id` BIGINT NOT NULL COMMENT                                                                '模型服务目录标识',
+    `model_type` VARCHAR(32) NOT NULL COMMENT                                                           '模型类型[LLM,VECTOR,RERANK]，取自目录',
+    `display_name` VARCHAR(64) NOT NULL COMMENT                                                         '展示名称',
+    `selectable` TINYINT NOT NULL DEFAULT 1 COMMENT                                                     '对话可选[0:否, 1:是]',
+    `default_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                   '默认标识[0:否, 1:是]，同机构同类型唯一',
     `temperature` DECIMAL(4, 2) DEFAULT NULL COMMENT                                                    '采样温度',
     `top_p` DECIMAL(4, 2) DEFAULT NULL COMMENT                                                          'Top P 采样',
     `max_tokens` INT DEFAULT NULL COMMENT                                                               '最大输出 token 数',
@@ -50,7 +54,8 @@ CREATE TABLE `model_service_profile` (
     `update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT          '更新时间',
     `version` INT NOT NULL DEFAULT 0 COMMENT                                                            '记录版本',
     `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                    '删除标识[0:未删除, 1:已删除]',
-    PRIMARY KEY (`id`)
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_organ_type_default` (`organ_id`, `model_type`, (IF(delete_flag = 0 AND default_flag = 1, 0, NULL)))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT=                             '模型服务配置';
 
 -- =============================================
@@ -77,13 +82,15 @@ CREATE TABLE `model_usage_record` (
     INDEX `idx_organ_create_time` (`organ_id`, `create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT=                             '模型用量记录';
 
--- 本地/开发示例：先写 catalog，再写租户 organ_id=2 的 profile
+-- 本地/开发示例：先写 catalog，再写租户 organ_id=3 的 profile
 INSERT INTO `model_service_catalog` (`id`, `model_name`, `model_type`, `resource_type`, `provider`, `protocol`, `base_url`, `api_key`, `status`, `description`)
-VALUES (1, 'Qwen3.6-27B-bw', 'LLM', 'CUSTOM', '千问大语言模型', 'OPENAI', 'https://g2rain.com/api/model/v1', 'sk-xxx', 'ACTIVE', '千问自建大语言模型'),
-       (2, '/models/Qwen3-Embedding-8B', 'VECTOR', 'CUSTOM', '千问向量模型', 'OPENAI', 'https://g2rain.com/api/model/v1', 'sk-xxx', 'ACTIVE', '千问自建向量模型'),
-       (3, 'Qwen3.8-27B', 'RERANK', 'CUSTOM', '千问向量模型', 'OPENAI', 'https://g2rain.com/api/model/v1', 'sk-xxx', 'ACTIVE', '千问重排序模型');
+VALUES (1, 'DeepSeek-V4-Flash-BW', 'LLM',    'MARKET', 'DeepSeek大语言模型', 'OPENAI', 'https://g2rain.com/api/model/v1', 'sk-xxx', 'ACTIVE', '千问大模型DeepSeek-V4-Flash'),
+       (2, 'Qwen3-8B-BW',          'LLM',    'MARKET', '千问大模型Qwen3-8B', 'OPENAI', 'https://g2rain.com/api/model/v1', 'sk-xxx', 'ACTIVE', '千问大模型Qwen3-8B'),
+       (3, 'Qwen3-Embedding-8B',   'VECTOR', 'CUSTOM', '千问向量模型',       'OPENAI', 'https://g2rain.com/api/model/v1', 'sk-xxx', 'ACTIVE', '千问自建向量模型'),
+       (5, 'bge-reranker-v2-m3',   'RERANK', 'CUSTOM', '千问重排序模型',      'OPENAI', 'https://g2rain.com/api/model/v1', 'sk-xxx', 'ACTIVE', '千问重排序模型');
 
-INSERT INTO `model_service_profile` (`id`, `organ_id`, `catalog_id`, `temperature`, `top_p`, `max_tokens`, `timeout_ms`, `status`, `description`)
-VALUES (4, 2, 1, 0.70, 1.00, 4096, 120000, 'ACTIVE', '千问自建大语言模型'),
-       (5, 2, 2, NULL, NULL, NULL, 120000, 'ACTIVE', '千问自建向量模型'),
-       (6, 2, 3, NULL, NULL, NULL, 120000, 'ACTIVE', '千问重排序模型');
+INSERT INTO `model_service_profile` (`id`, `organ_id`, `catalog_id`, `model_type`, `display_name`, `selectable`, `default_flag`, `temperature`, `top_p`, `max_tokens`, `timeout_ms`, `status`, `description`)
+VALUES (6, 3, 1, 'LLM',    'DeepSeek-V4-Flash',  1, 1, 0.00, 1.00, 8192, 120000, 'ACTIVE', '千问大模型DeepSeek-V4-Flash'),
+       (7, 3, 2, 'LLM',    'Qwen3-8B',           0, 0, 0.00, 1.00, 4096, 120000, 'ACTIVE', '千问大模型Qwen3-8B'),
+       (8, 3, 3, 'VECTOR', 'Qwen3-Embedding-8B', 0, 1, NULL, NULL, NULL, 120000, 'ACTIVE', '千问自建向量模型'),
+       (9, 3, 5, 'RERANK', 'bge-reranker-v2-m3', 0, 1, NULL, NULL, NULL, 120000, 'ACTIVE', '千问重排序模型');
