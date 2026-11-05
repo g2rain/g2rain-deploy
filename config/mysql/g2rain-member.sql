@@ -31,7 +31,7 @@ CREATE TABLE `member` (
     `version` INT NOT NULL DEFAULT 0 COMMENT '记录版本',
     `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT '删除标识[0:未删除, 1:已删除]',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_organ_member_no` (`organ_id`, `member_no`),
+    UNIQUE KEY `uk_organ_member_no` (`organ_id`, `member_no`, (IF(delete_flag = 0, 0, NULL))),
     INDEX `idx_organ_status_del` (`organ_id`, `status`, `delete_flag`),
     INDEX `idx_organ_mobile_del` (`organ_id`, `mobile`, `delete_flag`)
 ) ENGINE=InnoDB
@@ -56,8 +56,8 @@ CREATE TABLE `member_identity` (
     `version` INT NOT NULL DEFAULT 0 COMMENT '记录版本',
     `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT '删除标识[0:未删除, 1:已删除]',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_organ_identity` (`organ_id`, `identity_type`, `identity_value`),
-    UNIQUE KEY `uk_organ_member_type` (`organ_id`, `member_id`, `identity_type`),
+    UNIQUE KEY `uk_organ_identity` (`organ_id`, `identity_type`, `identity_value`, (IF(delete_flag = 0, 0, NULL))),
+    UNIQUE KEY `uk_organ_member_type` (`organ_id`, `member_id`, `identity_type`, (IF(delete_flag = 0, 0, NULL))),
     INDEX `idx_organ_member_del` (`organ_id`, `member_id`, `delete_flag`)
 ) ENGINE=InnoDB
   DEFAULT CHARSET=utf8mb4
