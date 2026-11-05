@@ -106,7 +106,12 @@ pull_and_build_repo() {
 ensure_build_script_executable_if_needed() {
     local target="$1"
     local build_cmd="$2"
-    local first_token="${build_cmd%% *}"
+    # 跳过开头的环境变量赋值（如 APP_IMAGE=g2rain/xxx ./build.sh latest），取真正执行的脚本
+    local cmd="$build_cmd"
+    while [[ "${cmd%% *}" == *=* ]]; do
+        cmd="${cmd#* }"
+    done
+    local first_token="${cmd%% *}"
 
     if [[ "$first_token" == ./*.sh && -f "${target}/${first_token}" && ! -x "${target}/${first_token}" ]]; then
         log_warning "检测到脚本不可执行，自动修复权限: ${target}/${first_token}"
