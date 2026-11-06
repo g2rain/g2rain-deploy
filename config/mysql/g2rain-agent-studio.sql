@@ -98,6 +98,24 @@ CREATE TABLE `chat_prompt_template` (
     INDEX `idx_organ_status_order` (`organ_id`, `status`, `delete_flag`, `sort_order`, `id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT=                             'Chat 问题模板';
 
+-- ---------------------------------------------
+-- 5. 智能体会话绑定 (agent_session_binding)
+-- ---------------------------------------------
+DROP TABLE IF EXISTS `agent_session_binding`;
+
+CREATE TABLE `agent_session_binding` (
+    `id` BIGINT NOT NULL COMMENT                                                                        '主键标识',
+    `organ_id` BIGINT NOT NULL COMMENT                                                                  '机构标识',
+    `agent_id` BIGINT NOT NULL COMMENT                                                                  '数字员工主键（agent_profile.id）',
+    `session_type` VARCHAR(32) NOT NULL COMMENT                                                         '会话主体类型[SessionType: USER|MEMBER|PASSPORT|ANONYMOUS]',
+    `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT                                      '创建时间',
+    `update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT          '更新时间',
+    `version` INT NOT NULL DEFAULT 0 COMMENT                                                            '记录版本',
+    `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                    '逻辑删除标记[0:未删除, 1:已删除]',
+    PRIMARY KEY (`id`),
+    UNIQUE INDEX `uk_agent_session` (`agent_id`, `session_type`, (IF(delete_flag = 0, 0, NULL)))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT=                             '智能体会话绑定表';
+
 -- =============================================
 -- 初始化数据
 -- organ_id=3 对齐 g2rain-basis 平台机构
@@ -259,3 +277,14 @@ VALUES
 (62, 3, '智能客服能接入企业现有系统吗？', 3, 'ACTIVE', NULL, 0, 0),
 (63, 3, '如何在企业环境中部署 G2rain？', 5, 'ACTIVE', NULL, 0, 0),
 (65, 3, '怎样避免不同组织间的数据越权？', 6, 'ACTIVE', NULL, 0, 0);
+
+-- 智能体会话绑定（宣传体验阶段：匿名即可访问）
+INSERT INTO `agent_session_binding`
+(`id`, `organ_id`, `agent_id`, `session_type`, `version`, `delete_flag`)
+VALUES
+(66, 3, 1, 'ANONYMOUS', 0, 0),
+(67, 3, 1, 'USER', 0, 0),
+(68, 3, 1, 'MEMBER', 0, 0),
+(69, 3, 2, 'ANONYMOUS', 0, 0),
+(70, 3, 2, 'USER', 0, 0),
+(71, 3, 2, 'MEMBER', 0, 0);

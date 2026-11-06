@@ -1279,9 +1279,6 @@ VALUES
        (886, 'ERROR_CODE', NULL, 'zh', 'CN', 'agent_runtime.42248', '追问没有依据：{0:detail}', null, '2026-06-04 16:00:00', '2026-06-04 16:00:00'),
        (887, 'ERROR_CODE', NULL, 'en', 'US', 'agent_runtime.42248', '追问没有依据：{0:detail}', null, '2026-06-04 16:00:00', '2026-06-04 16:00:00'),
        (888, 'ERROR_CODE', NULL, 'ja', 'JP', 'agent_runtime.42248', '追问没有依据：{0:detail}', null, '2026-06-04 16:00:00', '2026-06-04 16:00:00'),
-       (6686, 'ERROR_CODE', NULL, 'zh', 'CN', 'agent_runtime.42249', '写操作不在本节点范围内：{0:toolName}', null, '2026-11-05 12:00:00', '2026-11-05 12:00:00'),
-       (6687, 'ERROR_CODE', NULL, 'en', 'US', 'agent_runtime.42249', 'Write operation is outside the scope of this node: {0:toolName}', null, '2026-11-05 12:00:00', '2026-11-05 12:00:00'),
-       (6688, 'ERROR_CODE', NULL, 'ja', 'JP', 'agent_runtime.42249', 'この書き込み操作は本ノードの範囲外です：{0:toolName}', null, '2026-11-05 12:00:00', '2026-11-05 12:00:00'),
        (889, 'ERROR_CODE', NULL, 'zh', 'CN', 'agent_runtime.42901', '{0:message}', null, '2026-06-04 16:00:00', '2026-06-04 16:00:00'),
        (890, 'ERROR_CODE', NULL, 'en', 'US', 'agent_runtime.42901', '{0:message}', null, '2026-06-04 16:00:00', '2026-06-04 16:00:00'),
        (891, 'ERROR_CODE', NULL, 'ja', 'JP', 'agent_runtime.42901', '{0:message}', null, '2026-06-04 16:00:00', '2026-06-04 16:00:00'),
@@ -6895,9 +6892,6 @@ VALUES
        (6499, 'UI_MESSAGE', 'AGENT_RUNTIME', 'zh', 'CN', 'reply.rejected', '已取消，未执行：{action}。如需换个做法，直接告诉我。', null, '2026-10-31 00:00:00', '2026-10-31 00:00:00'),
        (6500, 'UI_MESSAGE', 'AGENT_RUNTIME', 'en', 'US', 'reply.rejected', 'Canceled; not run: {action}. Tell me if you would like to try another approach.', null, '2026-10-31 00:00:00', '2026-10-31 00:00:00'),
        (6501, 'UI_MESSAGE', 'AGENT_RUNTIME', 'ja', 'JP', 'reply.rejected', 'キャンセルしました。実行していません：{action}。別の方法を試す場合はお知らせください。', null, '2026-10-31 00:00:00', '2026-10-31 00:00:00'),
-       (6695, 'UI_MESSAGE', 'AGENT_RUNTIME', 'zh', 'CN', 'reply.rejected_done', '已完成：{steps}。', null, '2026-11-05 16:00:00', '2026-11-05 16:00:00'),
-       (6696, 'UI_MESSAGE', 'AGENT_RUNTIME', 'en', 'US', 'reply.rejected_done', 'Completed: {steps}. ', null, '2026-11-05 16:00:00', '2026-11-05 16:00:00'),
-       (6697, 'UI_MESSAGE', 'AGENT_RUNTIME', 'ja', 'JP', 'reply.rejected_done', '完了済み：{steps}。', null, '2026-11-05 16:00:00', '2026-11-05 16:00:00'),
        (6502, 'UI_MESSAGE', 'AGENT_RUNTIME', 'zh', 'CN', 'error.model_quota', '模型服务额度不足，请联系管理员。', null, '2026-10-31 00:00:00', '2026-10-31 00:00:00'),
        (6503, 'UI_MESSAGE', 'AGENT_RUNTIME', 'en', 'US', 'error.model_quota', 'The model service has reached its usage limit. Contact your administrator.', null, '2026-10-31 00:00:00', '2026-10-31 00:00:00'),
        (6504, 'UI_MESSAGE', 'AGENT_RUNTIME', 'ja', 'JP', 'error.model_quota', 'モデルサービスの利用上限に達しました。管理者にお問い合わせください。', null, '2026-10-31 00:00:00', '2026-10-31 00:00:00'),
@@ -6934,12 +6928,6 @@ VALUES
        (6535, 'UI_MESSAGE', 'AGENT_RUNTIME', 'zh', 'CN', 'node.stalled', '「{step}」连续多轮没有进展，已停止处理。', null, '2026-10-31 00:00:00', '2026-10-31 00:00:00'),
        (6536, 'UI_MESSAGE', 'AGENT_RUNTIME', 'en', 'US', 'node.stalled', 'No progress was made on "{step}" over several rounds. Processing has stopped.', null, '2026-10-31 00:00:00', '2026-10-31 00:00:00'),
        (6537, 'UI_MESSAGE', 'AGENT_RUNTIME', 'ja', 'JP', 'node.stalled', '「{step}」で複数回の処理に進展がなかったため、処理を停止しました。', null, '2026-10-31 00:00:00', '2026-10-31 00:00:00'),
-       (6689, 'UI_MESSAGE', 'AGENT_RUNTIME', 'zh', 'CN', 'node.handed_over', '已完成「{step}」，「{owner}」由后续步骤执行。', null, '2026-11-05 15:00:00', '2026-11-05 15:00:00'),
-       (6690, 'UI_MESSAGE', 'AGENT_RUNTIME', 'en', 'US', 'node.handed_over', 'Completed "{step}". "{owner}" will be handled by a later step.', null, '2026-11-05 15:00:00', '2026-11-05 15:00:00'),
-       (6691, 'UI_MESSAGE', 'AGENT_RUNTIME', 'ja', 'JP', 'node.handed_over', '「{step}」を完了しました。「{owner}」は後続のステップで実行します。', null, '2026-11-05 15:00:00', '2026-11-05 15:00:00'),
-       (6692, 'UI_MESSAGE', 'AGENT_RUNTIME', 'zh', 'CN', 'node.stalled_last', '最后一次：{tool}未成功（{code}）。', null, '2026-11-05 15:00:00', '2026-11-05 15:00:00'),
-       (6693, 'UI_MESSAGE', 'AGENT_RUNTIME', 'en', 'US', 'node.stalled_last', ' Last attempt: {tool} did not succeed ({code}).', null, '2026-11-05 15:00:00', '2026-11-05 15:00:00'),
-       (6694, 'UI_MESSAGE', 'AGENT_RUNTIME', 'ja', 'JP', 'node.stalled_last', '最後の試行：{tool}が成功しませんでした（{code}）。', null, '2026-11-05 15:00:00', '2026-11-05 15:00:00'),
        (6538, 'UI_MESSAGE', 'AGENT_RUNTIME', 'zh', 'CN', 'verify.ask', '上次的写操作结果不确定，请确认是否已经完成。', null, '2026-10-31 00:00:00', '2026-10-31 00:00:00'),
        (6539, 'UI_MESSAGE', 'AGENT_RUNTIME', 'en', 'US', 'verify.ask', 'The result of the previous write operation is unclear. Please confirm whether it completed.', null, '2026-10-31 00:00:00', '2026-10-31 00:00:00'),
        (6540, 'UI_MESSAGE', 'AGENT_RUNTIME', 'ja', 'JP', 'verify.ask', '前回の書き込み処理の結果を確認できません。完了したか確認してください。', null, '2026-10-31 00:00:00', '2026-10-31 00:00:00'),
@@ -7087,3 +7075,30 @@ VALUES
        (6682, 'ERROR_CODE', NULL, 'zh', 'CN', 'basis.40082', '客户交付范围只能关联客户功能或永久功能', null, '2026-11-03 12:53:53', '2026-11-03 12:53:53'),
        (6683, 'ERROR_CODE', NULL, 'en', 'US', 'basis.40082', 'A customer delivery scope can only include customer or perpetual features', null, '2026-11-03 12:53:53', '2026-11-03 12:53:53'),
        (6685, 'ERROR_CODE', NULL, 'ja', 'JP', 'basis.40082', '顧客提供範囲には顧客機能または恒久機能のみ関連付けできます', null, '2026-11-03 12:53:53', '2026-11-03 12:53:53');
+
+-- 智能体运行时：越界写入、交接收口、停滞提示、拒绝回复
+INSERT INTO `i18n_message` (`id`, `message_usage_code`, `tag`, `language_code`, `region_code`, `message_code`, `message_text`, `extend_field`, `create_time`, `update_time`)
+VALUES (6686, 'ERROR_CODE', NULL, 'zh', 'CN', 'agent_runtime.42249', '写操作不在本节点范围内：{0:toolName}', null, '2026-11-05 12:00:00', '2026-11-05 12:00:00'),
+       (6687, 'ERROR_CODE', NULL, 'en', 'US', 'agent_runtime.42249', 'Write operation is outside the scope of this node: {0:toolName}', null, '2026-11-05 12:00:00', '2026-11-05 12:00:00'),
+       (6688, 'ERROR_CODE', NULL, 'ja', 'JP', 'agent_runtime.42249', 'この書き込み操作は本ノードの範囲外です：{0:toolName}', null, '2026-11-05 12:00:00', '2026-11-05 12:00:00'),
+       (6689, 'UI_MESSAGE', 'AGENT_RUNTIME', 'zh', 'CN', 'node.handed_over', '已完成「{step}」，「{owner}」由后续步骤执行。', null, '2026-11-05 15:00:00', '2026-11-05 15:00:00'),
+       (6690, 'UI_MESSAGE', 'AGENT_RUNTIME', 'en', 'US', 'node.handed_over', 'Completed "{step}". "{owner}" will be handled by a later step.', null, '2026-11-05 15:00:00', '2026-11-05 15:00:00'),
+       (6691, 'UI_MESSAGE', 'AGENT_RUNTIME', 'ja', 'JP', 'node.handed_over', '「{step}」を完了しました。「{owner}」は後続のステップで実行します。', null, '2026-11-05 15:00:00', '2026-11-05 15:00:00'),
+       (6692, 'UI_MESSAGE', 'AGENT_RUNTIME', 'zh', 'CN', 'node.stalled_last', '最后一次：{tool}未成功（{code}）。', null, '2026-11-05 15:00:00', '2026-11-05 15:00:00'),
+       (6693, 'UI_MESSAGE', 'AGENT_RUNTIME', 'en', 'US', 'node.stalled_last', ' Last attempt: {tool} did not succeed ({code}).', null, '2026-11-05 15:00:00', '2026-11-05 15:00:00'),
+       (6694, 'UI_MESSAGE', 'AGENT_RUNTIME', 'ja', 'JP', 'node.stalled_last', '最後の試行：{tool}が成功しませんでした（{code}）。', null, '2026-11-05 15:00:00', '2026-11-05 15:00:00'),
+       (6695, 'UI_MESSAGE', 'AGENT_RUNTIME', 'zh', 'CN', 'reply.rejected_done', '已完成：{steps}。', null, '2026-11-05 16:00:00', '2026-11-05 16:00:00'),
+       (6696, 'UI_MESSAGE', 'AGENT_RUNTIME', 'en', 'US', 'reply.rejected_done', 'Completed: {steps}. ', null, '2026-11-05 16:00:00', '2026-11-05 16:00:00'),
+       (6697, 'UI_MESSAGE', 'AGENT_RUNTIME', 'ja', 'JP', 'reply.rejected_done', '完了済み：{steps}。', null, '2026-11-05 16:00:00', '2026-11-05 16:00:00');
+
+-- 智能体访问授权
+INSERT INTO `i18n_message` (`id`, `message_usage_code`, `tag`, `language_code`, `region_code`, `message_code`, `message_text`, `extend_field`, `create_time`, `update_time`)
+VALUES (6698, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_BTN_ACCESS_GRANT', '访问授权', null, '2026-11-06 16:00:00', '2026-11-06 16:00:00'),
+       (6699, 'UI_MESSAGE', 'AGENT', 'en', 'US', 'AGENT_BTN_ACCESS_GRANT', 'Access', null, '2026-11-06 16:00:00', '2026-11-06 16:00:00'),
+       (6700, 'UI_MESSAGE', 'AGENT', 'ja', 'JP', 'AGENT_BTN_ACCESS_GRANT', 'アクセス許可', null, '2026-11-06 16:00:00', '2026-11-06 16:00:00'),
+       (6701, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_DLG_ACCESS_GRANT', '访问授权 · {name}', null, '2026-11-06 16:00:00', '2026-11-06 16:00:00'),
+       (6702, 'UI_MESSAGE', 'AGENT', 'en', 'US', 'AGENT_DLG_ACCESS_GRANT', 'Access · {name}', null, '2026-11-06 16:00:00', '2026-11-06 16:00:00'),
+       (6703, 'UI_MESSAGE', 'AGENT', 'ja', 'JP', 'AGENT_DLG_ACCESS_GRANT', 'アクセス許可 · {name}', null, '2026-11-06 16:00:00', '2026-11-06 16:00:00'),
+       (6704, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_TIP_ACCESS_GRANT', '勾选允许在对话中使用该智能体的会话类型；均不勾选则任何人都无法使用。', null, '2026-11-06 16:00:00', '2026-11-06 16:00:00'),
+       (6705, 'UI_MESSAGE', 'AGENT', 'en', 'US', 'AGENT_TIP_ACCESS_GRANT', 'Select the session types allowed to use this agent in chat. If none is selected, no one can use it.', null, '2026-11-06 16:00:00', '2026-11-06 16:00:00'),
+       (6706, 'UI_MESSAGE', 'AGENT', 'ja', 'JP', 'AGENT_TIP_ACCESS_GRANT', 'チャットでこのエージェントを利用できるセッション種別を選択してください。何も選択しない場合、誰も利用できません。', null, '2026-11-06 16:00:00', '2026-11-06 16:00:00');
