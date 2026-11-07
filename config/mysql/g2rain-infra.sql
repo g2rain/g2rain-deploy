@@ -7102,3 +7102,12 @@ VALUES (6698, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_BTN_ACCESS_GRANT', '访�
        (6704, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_TIP_ACCESS_GRANT', '勾选允许在对话中使用该智能体的会话类型；均不勾选则任何人都无法使用。', null, '2026-11-06 16:00:00', '2026-11-06 16:00:00'),
        (6705, 'UI_MESSAGE', 'AGENT', 'en', 'US', 'AGENT_TIP_ACCESS_GRANT', 'Select the session types allowed to use this agent in chat. If none is selected, no one can use it.', null, '2026-11-06 16:00:00', '2026-11-06 16:00:00'),
        (6706, 'UI_MESSAGE', 'AGENT', 'ja', 'JP', 'AGENT_TIP_ACCESS_GRANT', 'チャットでこのエージェントを利用できるセッション種別を選択してください。何も選択しない場合、誰も利用できません。', null, '2026-11-06 16:00:00', '2026-11-06 16:00:00');
+
+-- 智能体运行时：节点跳过
+INSERT INTO `i18n_message` (`id`, `message_usage_code`, `tag`, `language_code`, `region_code`, `message_code`, `message_text`, `extend_field`, `create_time`, `update_time`)
+VALUES (6707, 'ERROR_CODE', NULL, 'zh', 'CN', 'agent_runtime.42250', '跳过没有依据：{0:detail}', null, '2026-11-07 12:00:00', '2026-11-07 12:00:00'),
+       (6708, 'ERROR_CODE', NULL, 'en', 'US', 'agent_runtime.42250', 'Skip is not grounded: {0:detail}', null, '2026-11-07 12:00:00', '2026-11-07 12:00:00'),
+       (6709, 'ERROR_CODE', NULL, 'ja', 'JP', 'agent_runtime.42250', 'スキップの根拠がありません：{0:detail}', null, '2026-11-07 12:00:00', '2026-11-07 12:00:00'),
+       (6710, 'UI_MESSAGE', 'AGENT_RUNTIME', 'zh', 'CN', 'step.skip', '跳过', null, '2026-11-07 12:00:00', '2026-11-07 12:00:00'),
+       (6711, 'UI_MESSAGE', 'AGENT_RUNTIME', 'en', 'US', 'step.skip', 'Skipped', null, '2026-11-07 12:00:00', '2026-11-07 12:00:00'),
+       (6712, 'UI_MESSAGE', 'AGENT_RUNTIME', 'ja', 'JP', 'step.skip', 'スキップ', null, '2026-11-07 12:00:00', '2026-11-07 12:00:00');
