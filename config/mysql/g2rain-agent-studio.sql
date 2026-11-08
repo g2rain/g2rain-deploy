@@ -98,6 +98,24 @@ CREATE TABLE `chat_prompt_template` (
     INDEX `idx_organ_status_order` (`organ_id`, `status`, `delete_flag`, `sort_order`, `id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT=                             'Chat 问题模板';
 
+-- ---------------------------------------------
+-- 5. 智能体会话绑定 (agent_session_binding)
+-- ---------------------------------------------
+DROP TABLE IF EXISTS `agent_session_binding`;
+
+CREATE TABLE `agent_session_binding` (
+    `id` BIGINT NOT NULL COMMENT                                                                        '主键标识',
+    `organ_id` BIGINT NOT NULL COMMENT                                                                  '机构标识',
+    `agent_id` BIGINT NOT NULL COMMENT                                                                  '数字员工主键（agent_profile.id）',
+    `session_type` VARCHAR(32) NOT NULL COMMENT                                                         '会话主体类型[SessionType: USER|MEMBER|PASSPORT|ANONYMOUS]',
+    `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT                                      '创建时间',
+    `update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT          '更新时间',
+    `version` INT NOT NULL DEFAULT 0 COMMENT                                                            '记录版本',
+    `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                    '逻辑删除标记[0:未删除, 1:已删除]',
+    PRIMARY KEY (`id`),
+    UNIQUE INDEX `uk_agent_session` (`agent_id`, `session_type`, (IF(delete_flag = 0, 0, NULL)))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT=                             '智能体会话绑定表';
+
 -- =============================================
 -- 初始化数据
 -- organ_id=3 对齐 g2rain-basis 平台机构
@@ -151,8 +169,9 @@ VALUES
 - 缺标题或正文时，只追问缺少的字段一次；用户补上的内容原样用于保存，不得再问。
 - 用户本轮明确要求新建文章分类时，定位空间后直接调用 native_g2rain_cms_post_article_category_save。
 - 写文章时，文章必须属于一个分类。用户指定了分类就按名称查询定位；没指定时先查该空间的分类：有分类就用 builtin_node_follow_up 列出分类让用户选，没有分类就用 builtin_node_follow_up 询问是否新建分类及分类名称，用户同意后再创建（创建同样须经确认）。不得自行决定分类或擅自建分类。
+- 用户要求在某个栏目下发文章时，文章归属该栏目挂载的分类（栏目的 categoryId）：从上游结果或前情取该栏目及其分类，按该分类创建；取不到时用 builtin_node_follow_up 让用户确认分类。
 - 新建文章必须带标题和正文，contentType 默认传 MARKDOWN，用户明确要求 HTML 时传 HTML；只改状态时只传文章 ID 和目标状态，不回传标题、正文与内容类型。
-- 未明确要求发布时保存为 DRAFT。发布必须用户本轮明确说出，对已有文章改 status=PUBLISHED，且须经用户确认；用户拒绝后不得再写。
+- 未明确要求发布时保存为 DRAFT；「发、发一篇、写一篇」等说法按保存草稿处理，只有明确说「发布、上线」才算要求发布。发布必须用户本轮明确说出，对已有文章改 status=PUBLISHED，且须经用户确认；用户拒绝后不得再写。
 - 新建或覆盖正文须经用户确认。
 - 标签交由标签能力；不得编造文章、空间或正文。
 
@@ -259,3 +278,14 @@ VALUES
 (62, 3, '智能客服能接入企业现有系统吗？', 3, 'ACTIVE', NULL, 0, 0),
 (63, 3, '如何在企业环境中部署 G2rain？', 5, 'ACTIVE', NULL, 0, 0),
 (65, 3, '怎样避免不同组织间的数据越权？', 6, 'ACTIVE', NULL, 0, 0);
+
+-- 智能体会话绑定（宣传体验阶段：匿名即可访问）
+INSERT INTO `agent_session_binding`
+(`id`, `organ_id`, `agent_id`, `session_type`, `version`, `delete_flag`)
+VALUES
+(66, 3, 1, 'ANONYMOUS', 0, 0),
+(67, 3, 1, 'USER', 0, 0),
+(68, 3, 1, 'MEMBER', 0, 0),
+(69, 3, 2, 'ANONYMOUS', 0, 0),
+(70, 3, 2, 'USER', 0, 0),
+(71, 3, 2, 'MEMBER', 0, 0);
