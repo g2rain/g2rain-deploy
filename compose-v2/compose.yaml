@@ -225,6 +225,7 @@ services:
     deploy: *deploy-frontend
 
   # 后端服务 网关
+  # 启动时拉 basis 路由与 infra 错误码文案；须等二者健康后再起。
   g2rain-gateway:
     image: ${GATEWAY_IMAGE:-g2rain/g2rain-gateway-webflux:latest}
     container_name: g2rain-gateway
@@ -255,6 +256,10 @@ services:
       nacos:
         condition: service_healthy
       kafka:
+        condition: service_healthy
+      g2rain-basis:
+        condition: service_healthy
+      g2rain-infra:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "nc -z localhost 8080 || timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080' || exit 1"]

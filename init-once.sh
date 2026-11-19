@@ -16,7 +16,7 @@
 #
 # 环境变量:
 #   G2RAIN_DEPLOY_INIT_FORCE=1           等同于 --force
-#   G2RAIN_GIT_BASE=...                  克隆地址前缀（默认 https://github.com/g2rain）
+#   G2RAIN_GIT_BASE=...                  克隆地址前缀（默认取 services.conf 的 GIT_BASE_DEFAULT，否则 https://github.com/g2rain）
 #   G2RAIN_BUILD_RETRIES / G2RAIN_BUILD_RETRY_SLEEP   见上文
 #
 # 注意: MySQL 仅在空数据卷首次初始化时执行 docker-entrypoint-initdb.d 下的 SQL；若 data/mysql
@@ -32,7 +32,7 @@ CONFIG="${ROOT}/services.conf"
 ENV_EXAMPLE="${ROOT}/env.example"
 ENV_FILE="${ROOT}/.env"
 SQL_BASIS="${ROOT}/config/mysql/g2rain-basis.sql"
-GIT_BASE="${G2RAIN_GIT_BASE:-git@github.com:g2rain}"
+GIT_BASE="${G2RAIN_GIT_BASE:-}"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -106,18 +106,28 @@ ensure_env_file() {
   log_ok "已创建 .env，可按需编辑"
 }
 
+apply_sql_placeholders_to_file() {
+  local sql_file="$1"
+  local eph="$2"
+  local epp="$3"
+  if [[ ! -f "$sql_file" ]]; then
+    return 0
+  fi
+  if ! grep -q '__PLATFORM_HOST__\|__PLATFORM_PORT__' "$sql_file" 2>/dev/null; then
+    return 0
+  fi
+  log_info "将平台地址写入 $(basename "$sql_file")（供 MySQL 首次初始化）"
+  sed -i.bak \
+    -e "s|__PLATFORM_HOST__|${eph}|g" \
+    -e "s|__PLATFORM_PORT__|${epp}|g" \
+    "$sql_file"
+  rm -f "${sql_file}.bak"
+}
+
 apply_sql_placeholders() {
   if [[ ! -f "$ENV_FILE" ]]; then
     log_err "缺少 .env，无法替换 SQL 占位符"
     exit 1
-  fi
-  if [[ ! -f "$SQL_BASIS" ]]; then
-    log_warn "未找到 $SQL_BASIS，跳过 SQL 占位符替换"
-    return 0
-  fi
-  if ! grep -q '__PLATFORM_HOST__' "$SQL_BASIS" 2>/dev/null; then
-    log_info "g2rain-basis.sql 中无 __PLATFORM_HOST__ 占位符，跳过替换（可能已替换过）"
-    return 0
   fi
 
   local ph pp
@@ -132,12 +142,25 @@ apply_sql_placeholders() {
   eph=$(escape_sed_repl "$ph")
   epp=$(escape_sed_repl "$pp")
 
-  log_info "将平台地址写入 g2rain-basis.sql（供 MySQL 首次初始化）"
-  sed -i.bak \
-    -e "s|__PLATFORM_HOST__|${eph}|g" \
-    -e "s|__PLATFORM_PORT__|${epp}|g" \
-    "$SQL_BASIS"
-  rm -f "${SQL_BASIS}.bak"
+  if [[ -f "$SQL_BASIS" ]]; then
+    if grep -q '__PLATFORM_HOST__\|__PLATFORM_PORT__' "$SQL_BASIS" 2>/dev/null; then
+      apply_sql_placeholders_to_file "$SQL_BASIS" "$eph" "$epp"
+    else
+      log_info "g2rain-basis.sql 中无平台占位符，跳过替换（可能已替换过）"
+    fi
+  else
+    log_warn "未找到 $SQL_BASIS，跳过 SQL 占位符替换"
+  fi
+
+  if [[ -n "${G2RAIN_EXTENSION_DIR:-}" && -d "${G2RAIN_EXTENSION_DIR}/config/mysql" ]]; then
+    local f
+    shopt -s nullglob
+    for f in "${G2RAIN_EXTENSION_DIR}/config/mysql"/*.sql; do
+      apply_sql_placeholders_to_file "$f" "$eph" "$epp"
+    done
+    shopt -u nullglob
+  fi
+
   log_ok "SQL 占位符已替换"
 }
 
@@ -157,15 +180,16 @@ run_ssl_if_requested() {
 
 list_config_services() {
   for entry in "${SERVICES[@]}"; do
-    IFS='|' read -r repo dir compose_service build_cmd <<<"$entry"
+    IFS='|' read -r repo dir compose_service build_cmd git_url <<<"$entry"
     repo="${repo:-}"
     dir="${dir:-$repo}"
     build_cmd="${build_cmd:-./build.sh}"
     compose_service="${compose_service:-}"
+    git_url="${git_url:-}"
     if [[ -z "$repo" ]]; then
       continue
     fi
-    printf "%s\t%s\t%s\t%s\n" "$repo" "$dir" "$build_cmd" "$compose_service"
+    printf "%s\t%s\t%s\t%s\t%s\n" "$repo" "$dir" "$build_cmd" "$compose_service" "$git_url"
   done
 }
 
@@ -335,12 +359,24 @@ if [[ ! -f "$CONFIG" ]]; then
   exit 1
 fi
 G2RAIN_DEPLOY_ROOT="$ROOT"
+COMPOSE_DEPLOY_ROOT="$ROOT"
+# shellcheck disable=SC1091
+source "${ROOT}/compose-merge.inc"
 # shellcheck disable=SC1091
 source "${ROOT}/services-merge.inc"
+ensure_env_file "$PLATFORM_HOST_ARG" "$PLATFORM_PORT_ARG"
+if [[ -f "$ENV_FILE" ]]; then
+  _ext_dir="$(grep -E '^G2RAIN_EXTENSION_DIR=' "$ENV_FILE" | head -1 | cut -d= -f2- | tr -d '\r' | tr -d '"' | tr -d "'")"
+  export G2RAIN_EXTENSION_DIR="${_ext_dir:-}"
+  unset _ext_dir
+fi
+g2rain_resolve_extension_dir || exit 1
 g2rain_load_services_config || exit 1
 if g2rain_has_extra_service_config; then
   log_info "已合并 service_config.d 中的额外服务映射"
 fi
+# 克隆地址前缀与 update.sh 一致
+GIT_BASE="${G2RAIN_GIT_BASE:-${GIT_BASE_DEFAULT:-https://github.com/g2rain}}"
 _rel="${CODES_DIR:-./codes}"
 if [[ "$_rel" == ./* ]]; then
   CODES="${ROOT}/${_rel#./}"
@@ -350,7 +386,6 @@ else
   CODES="${ROOT}/${_rel}"
 fi
 
-ensure_env_file "$PLATFORM_HOST_ARG" "$PLATFORM_PORT_ARG"
 apply_sql_placeholders
 run_ssl_if_requested "$SSL_IP"
 
@@ -359,9 +394,9 @@ mkdir -p "$CODES"
 mapfile -t service_rows < <(list_config_services)
 
 for row in "${service_rows[@]}"; do
-  IFS=$'\t' read -r repo dir build_cmd compose_service <<<"$row"
+  IFS=$'\t' read -r repo dir build_cmd compose_service git_url <<<"$row"
   target="${CODES}/${dir}"
-  url="${GIT_BASE}/${repo}.git"
+  url="${git_url:-${GIT_BASE}/${repo}.git}"
   sync_repo "$target" "$url" "$repo" || exit 1
 
   if [[ -z "$build_cmd" ]]; then
@@ -374,7 +409,7 @@ if [[ "$SKIP_BUILD" == true ]]; then
   log_info "已 --skip-build，跳过全部仓库构建"
 else
   for row in "${service_rows[@]}"; do
-    IFS=$'\t' read -r repo dir build_cmd compose_service <<<"$row"
+    IFS=$'\t' read -r repo dir build_cmd compose_service git_url <<<"$row"
     target="${CODES}/${dir}"
 
     if [[ -z "$build_cmd" ]]; then

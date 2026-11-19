@@ -302,7 +302,7 @@ is_business_compose_service() {
     local svc="$1"
     local entry compose_service
     for entry in "${SERVICES[@]:-}"; do
-        IFS='|' read -r _ _ compose_service _ <<<"$entry"
+        IFS='|' read -r _ _ compose_service _ _ <<<"$entry"
         compose_service="${compose_service:-}"
         if [[ "$compose_service" == "$svc" ]]; then
             return 0
@@ -371,7 +371,7 @@ build_missing_from_services_conf() {
 
     local entry repo dir compose_service build_cmd img_raw img
     for entry in "${SERVICES[@]:-}"; do
-        IFS='|' read -r repo dir compose_service build_cmd <<<"$entry"
+        IFS='|' read -r repo dir compose_service build_cmd _git_url <<<"$entry"
         repo="${repo:-}"
         dir="${dir:-$repo}"
         compose_service="${compose_service:-}"
@@ -382,6 +382,7 @@ build_missing_from_services_conf() {
         img_raw="$(compose_image_for_service "$compose_service")"
         img="$(expand_compose_image "$img_raw")"
         if [[ -z "$img" ]]; then
+            # compose 中无此服务时跳过（例如仅构建、不起服务的条目）
             continue
         fi
         if docker image inspect "$img" &>/dev/null; then
@@ -653,6 +654,12 @@ main() {
     COMPOSE_DEPLOY_ROOT="$SCRIPT_DIR"
     # shellcheck disable=SC1091
     source "${SCRIPT_DIR}/compose-merge.inc"
+    if [[ -f "${SCRIPT_DIR}/.env" ]]; then
+        _ext_dir="$(grep -E '^G2RAIN_EXTENSION_DIR=' "${SCRIPT_DIR}/.env" | head -1 | cut -d= -f2- | tr -d '\r' | tr -d '"' | tr -d "'")"
+        export G2RAIN_EXTENSION_DIR="${_ext_dir:-}"
+        unset _ext_dir
+    fi
+    g2rain_resolve_extension_dir || exit 1
     dc() { g2rain_dc "$@"; }
 
     echo "=========================================="

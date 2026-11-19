@@ -23,3 +23,27 @@
   ./update.sh g2rain-manager-app --business tenant-a
 
 将根目录 **`docker-compose.fragment.gateway-webmvc.yml`** 复制到本目录（如 **`gateway-webmvc.yml`**）可切换为 WebMVC 网关镜像；详见仓库根 **`README.md`**「网关 WebMVC 与 business.d 合并片段」。
+
+扩展目录
+--------
+`.env` 中可设置 `G2RAIN_EXTENSION_DIR` 指向扩展目录（相对路径以部署根为准）。未设置或为空表示不使用扩展；已设置但目录不存在时报错退出。
+
+目录约定：
+
+- `business.d/*.yml`：与本目录同名规则的业务片段
+- `service_config.d/*.conf`：额外 `SERVICES` 映射
+- `config/mysql/*.sql`：初始化 SQL（由片段给 `mysql` 追加挂载；文件名以 `z` 开头，保证在开源脚本之后执行）
+- 其他文件由片段自行引用
+
+未指定 `--business` 时，扫描本目录与 `${G2RAIN_EXTENSION_DIR}/business.d/` 下全部 `.yml`；指定时按名在两处查找。两处同名片段时报「业务片段重名」。
+
+片段中引用扩展目录内的文件必须写成 `${G2RAIN_EXTENSION_DIR}/...`。
+
+示例：
+
+```bash
+# .env
+# G2RAIN_EXTENSION_DIR=../example-extension/deploy
+
+./start.sh --business example
+```

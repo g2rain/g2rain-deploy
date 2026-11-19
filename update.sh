@@ -40,15 +40,16 @@ list_config_services() {
     fi
     local codes_dir="${CODES_DIR:-./codes}"
     while IFS= read -r entry; do
-        IFS='|' read -r repo dir compose_service build_cmd <<<"$entry"
+        IFS='|' read -r repo dir compose_service build_cmd git_url <<<"$entry"
         repo="${repo:-}"
         dir="${dir:-$repo}"
         compose_service="${compose_service:-}"
         build_cmd="${build_cmd:-./build.sh}"
+        git_url="${git_url:-}"
         if [ -z "$repo" ] || [ -z "$dir" ] || [ -z "$compose_service" ]; then
             continue
         fi
-        printf "%s\t%s\t%s\t%s\t%s\n" "$repo" "$dir" "$build_cmd" "$compose_service" "$codes_dir"
+        printf "%s\t%s\t%s\t%s\t%s\t%s\n" "$repo" "$dir" "$build_cmd" "$compose_service" "$codes_dir" "$git_url"
     done < <(printf "%s\n" "${SERVICES[@]:-}")
 }
 
@@ -59,13 +60,14 @@ get_service_by_compose_name() {
     fi
     local codes_dir="${CODES_DIR:-./codes}"
     for entry in "${SERVICES[@]:-}"; do
-        IFS='|' read -r repo dir svc build_cmd <<<"$entry"
+        IFS='|' read -r repo dir svc build_cmd git_url <<<"$entry"
         repo="${repo:-}"
         dir="${dir:-$repo}"
         build_cmd="${build_cmd:-./build.sh}"
         svc="${svc:-}"
+        git_url="${git_url:-}"
         if [ "$svc" = "$compose_service" ] && [ -n "$repo" ] && [ -n "$dir" ] && [ -n "$build_cmd" ]; then
-            printf "%s\t%s\t%s\t%s\n" "$repo" "$dir" "$build_cmd" "$codes_dir"
+            printf "%s\t%s\t%s\t%s\t%s\n" "$repo" "$dir" "$build_cmd" "$codes_dir" "$git_url"
             return 0
         fi
     done
@@ -77,10 +79,11 @@ pull_and_build_repo() {
     local dir="$2"
     local build_cmd="$3"
     local codes_dir="$4"
+    local git_url="${5:-}"
 
     local target="${codes_dir}/${dir}"
     local git_base="${G2RAIN_GIT_BASE:-${GIT_BASE_DEFAULT:-https://github.com/g2rain}}"
-    local url="${git_base}/${repo}.git"
+    local url="${git_url:-${git_base}/${repo}.git}"
 
     mkdir -p "$codes_dir"
 
@@ -123,10 +126,11 @@ sync_repo_only() {
     local repo="$1"
     local dir="$2"
     local codes_dir="$3"
+    local git_url="${4:-}"
 
     local target="${codes_dir}/${dir}"
     local git_base="${G2RAIN_GIT_BASE:-${GIT_BASE_DEFAULT:-https://github.com/g2rain}}"
-    local url="${git_base}/${repo}.git"
+    local url="${git_url:-${git_base}/${repo}.git}"
 
     mkdir -p "$codes_dir"
 
@@ -179,22 +183,22 @@ build_from_source() {
             log_info "服务 $service_name 未在 services.conf 中配置，跳过源码构建"
             return 0
         fi
-        local repo dir build_cmd codes_dir
-        IFS=$'\t' read -r repo dir build_cmd codes_dir <<<"$row"
-        pull_and_build_repo "$repo" "$dir" "$build_cmd" "$codes_dir"
+        local repo dir build_cmd codes_dir git_url
+        IFS=$'\t' read -r repo dir build_cmd codes_dir git_url <<<"$row"
+        pull_and_build_repo "$repo" "$dir" "$build_cmd" "$codes_dir" "$git_url"
         return 0
     fi
 
     log_info "按 services.conf 全量拉取代码..."
     mapfile -t rows < <(list_config_services)
     for row in "${rows[@]}"; do
-        IFS=$'\t' read -r repo dir build_cmd compose_service codes_dir <<<"$row"
-        sync_repo_only "$repo" "$dir" "$codes_dir"
+        IFS=$'\t' read -r repo dir build_cmd compose_service codes_dir git_url <<<"$row"
+        sync_repo_only "$repo" "$dir" "$codes_dir" "$git_url"
     done
 
     log_info "按 services.conf 全量构建镜像..."
     for row in "${rows[@]}"; do
-        IFS=$'\t' read -r repo dir build_cmd compose_service codes_dir <<<"$row"
+        IFS=$'\t' read -r repo dir build_cmd compose_service codes_dir git_url <<<"$row"
         local target="${codes_dir}/${dir}"
         ensure_build_script_executable_if_needed "$target" "$build_cmd"
         log_info "构建镜像: ${repo}（${build_cmd}）"
@@ -601,6 +605,12 @@ main() {
     source "${ROOT}/compose-merge.inc"
     # shellcheck disable=SC1091
     source "${ROOT}/services-merge.inc"
+    if [[ -f "${ROOT}/.env" ]]; then
+        _ext_dir="$(grep -E '^G2RAIN_EXTENSION_DIR=' "${ROOT}/.env" | head -1 | cut -d= -f2- | tr -d '\r' | tr -d '"' | tr -d "'")"
+        export G2RAIN_EXTENSION_DIR="${_ext_dir:-}"
+        unset _ext_dir
+    fi
+    g2rain_resolve_extension_dir || exit 1
     dc() { g2rain_dc "$@"; }
 
     if [ -f "$CONFIG" ]; then

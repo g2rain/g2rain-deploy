@@ -207,6 +207,12 @@ main() {
     COMPOSE_DEPLOY_ROOT="$SCRIPT_DIR"
     # shellcheck disable=SC1091
     source "${SCRIPT_DIR}/compose-merge.inc"
+    if [[ -f "${SCRIPT_DIR}/.env" ]]; then
+        _ext_dir="$(grep -E '^G2RAIN_EXTENSION_DIR=' "${SCRIPT_DIR}/.env" | head -1 | cut -d= -f2- | tr -d '\r' | tr -d '"' | tr -d "'")"
+        export G2RAIN_EXTENSION_DIR="${_ext_dir:-}"
+        unset _ext_dir
+    fi
+    g2rain_resolve_extension_dir || exit 1
     dc() { g2rain_dc "$@"; }
 
     echo "=========================================="

@@ -111,6 +111,7 @@ services:
         reservations:
           memory: 256M
 
+  # 启动时装载 native 工具须拉 basis 服务注册；须等 basis 健康后再起。
   g2rain-mcp-registry:
     image: ${MCP_REGISTRY_IMAGE:-g2rain/g2rain-mcp-registry:latest}
     container_name: g2rain-mcp-registry
@@ -137,6 +138,8 @@ services:
       redis:
         condition: service_healthy
       nacos:
+        condition: service_healthy
+      g2rain-basis:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "nc -z localhost 8080 || timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080' || exit 1"]

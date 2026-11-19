@@ -145,8 +145,9 @@ docker compose -f docker-compose.yml ps
 | `docker-compose.yml` | Compose V1 主编排 | 主文件始终最先加载。 |
 | `compose-v2/compose.yaml` | Compose V2 主编排 | 使用 V2 时需保持与 V1 的服务语义一致。 |
 | `business.d/*.yml` | 业务 Compose 扩展 | 默认加载全部；`--business <name>` 可重复并限定片段。 |
-| `services.conf` | 默认源码构建映射 | 格式为 `repo|dir|compose_service|build_cmd`。 |
-| `service_config.d/*.conf` | 服务映射扩展 | 相同 `compose_service` 后加载项整行覆盖；文件会被 Shell `source`。 |
+| `services.conf` | 默认源码构建映射 | 格式为 `repo|dir|compose_service|build_cmd`，可选第 5 段 `git_url`。 |
+| `service_config.d/*.conf` | 服务映射扩展 | 相同 `compose_service` 后加载项整行覆盖；文件会被 Shell `source`；亦可放在 `G2RAIN_EXTENSION_DIR`。 |
+| `G2RAIN_EXTENSION_DIR` | 可选扩展目录 | 相对路径以部署根为准；见 `business.d/README.md`。 |
 
 业务片段和服务配置目录的默认扫描没有显式排序。存在覆盖关系时，应使用重复的 `--business` 或 `--service` 参数显式指定所需片段和顺序。
 
