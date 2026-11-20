@@ -366,6 +366,11 @@ pull_images() {
     
     # 如果指定了服务名，只处理该服务的镜像
     if [ -n "$service_name" ]; then
+        if ! dc config --services 2>/dev/null | grep -qx "$service_name"; then
+            # 与 start.sh 一致：SERVICES 中可不在 compose（仅构建）
+            log_info "compose 中无服务 $service_name，跳过镜像拉取"
+            return 0
+        fi
         if [ "$force_pull" = "true" ]; then
             log_info "强制拉取服务 $service_name 的最新镜像..."
             dc pull "$service_name"
@@ -399,6 +404,11 @@ update_services() {
     local service=$1
     
     if [ -n "$service" ]; then
+        if ! dc config --services 2>/dev/null | grep -qx "$service"; then
+            # 与 start.sh 一致：SERVICES 中可不在 compose（仅构建）
+            log_info "compose 中无服务 $service，跳过容器更新（仅源码构建）"
+            return 0
+        fi
         log_info "更新服务: $service"
         dc up -d --no-deps "$service"
     else

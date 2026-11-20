@@ -52,4 +52,6 @@
 ./update.sh --cleanup-all
 ```
 
+位置参数对应 `services.conf` / `service_config.d` 中的 `compose_service`。若该名不在当前合并后的 compose 服务列表中（仅源码构建、不起容器），`update.sh` 仍会执行拉取与构建，并跳过镜像拉取与 `compose up`，不以失败退出。
+
 所有生命周期命令还支持 `--compose-v1`/`--compose-v2`；业务和服务片段参数可重复。执行前使用各脚本的 `--help` 核对当前实现。
