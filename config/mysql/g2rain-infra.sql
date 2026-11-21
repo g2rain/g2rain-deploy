@@ -7111,3 +7111,122 @@ VALUES (6707, 'ERROR_CODE', NULL, 'zh', 'CN', 'agent_runtime.42250', '跳过没�
        (6710, 'UI_MESSAGE', 'AGENT_RUNTIME', 'zh', 'CN', 'step.skip', '跳过', null, '2026-11-07 12:00:00', '2026-11-07 12:00:00'),
        (6711, 'UI_MESSAGE', 'AGENT_RUNTIME', 'en', 'US', 'step.skip', 'Skipped', null, '2026-11-07 12:00:00', '2026-11-07 12:00:00'),
        (6712, 'UI_MESSAGE', 'AGENT_RUNTIME', 'ja', 'JP', 'step.skip', 'スキップ', null, '2026-11-07 12:00:00', '2026-11-07 12:00:00');
+
+-- 智能体运行时：写确认首行的操作名、待确认写调用冲突错误码
+INSERT INTO `i18n_message` (`id`, `message_usage_code`, `tag`, `language_code`, `region_code`, `message_code`, `message_text`, `extend_field`, `create_time`, `update_time`)
+VALUES (6713, 'UI_MESSAGE', 'AGENT_RUNTIME', 'zh', 'CN', 'approval.action', '即将执行：{tool}', null, '2026-11-16 12:00:00', '2026-11-16 12:00:00'),
+       (6714, 'UI_MESSAGE', 'AGENT_RUNTIME', 'en', 'US', 'approval.action', 'About to run: {tool}', null, '2026-11-16 12:00:00', '2026-11-16 12:00:00'),
+       (6715, 'UI_MESSAGE', 'AGENT_RUNTIME', 'ja', 'JP', 'approval.action', '実行予定：{tool}', null, '2026-11-16 12:00:00', '2026-11-16 12:00:00'),
+       (6716, 'ERROR_CODE', NULL, 'zh', 'CN', 'agent_runtime.42251', '已有待确认的写调用 [{0:toolName}]', null, '2026-11-16 12:00:00', '2026-11-16 12:00:00'),
+       (6717, 'ERROR_CODE', NULL, 'en', 'US', 'agent_runtime.42251', 'A write call is already awaiting confirmation [{0:toolName}]', null, '2026-11-16 12:00:00', '2026-11-16 12:00:00'),
+       (6718, 'ERROR_CODE', NULL, 'ja', 'JP', 'agent_runtime.42251', '確認待ちの書き込み呼び出しがあります [{0:toolName}]', null, '2026-11-16 12:00:00', '2026-11-16 12:00:00');
+
+-- 智能体：契约面板参数表「实体」列
+INSERT INTO `i18n_message` (`id`, `message_usage_code`, `tag`, `language_code`, `region_code`, `message_code`, `message_text`, `extend_field`, `create_time`, `update_time`)
+VALUES (6719, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_CONTRACT_ENTITY', '实体', null, '2026-11-16 12:00:00', '2026-11-16 12:00:00'),
+       (6720, 'UI_MESSAGE', 'AGENT', 'en', 'US', 'AGENT_CONTRACT_ENTITY', 'Entity', null, '2026-11-16 12:00:00', '2026-11-16 12:00:00'),
+       (6721, 'UI_MESSAGE', 'AGENT', 'ja', 'JP', 'AGENT_CONTRACT_ENTITY', 'エンティティ', null, '2026-11-16 12:00:00', '2026-11-16 12:00:00');
+
+-- 智能体运行时：节点处理轮次用尽的说明
+INSERT INTO `i18n_message` (`id`, `message_usage_code`, `tag`, `language_code`, `region_code`, `message_code`, `message_text`, `extend_field`, `create_time`, `update_time`)
+VALUES (6722, 'UI_MESSAGE', 'AGENT_RUNTIME', 'zh', 'CN', 'node.rounds_exhausted', '「{step}」处理轮次已用完，仍未完成，已停止处理。', null, '2026-11-16 12:00:00', '2026-11-16 12:00:00'),
+       (6723, 'UI_MESSAGE', 'AGENT_RUNTIME', 'en', 'US', 'node.rounds_exhausted', '"{step}" used up its processing rounds without finishing. Processing has stopped.', null, '2026-11-16 12:00:00', '2026-11-16 12:00:00'),
+       (6724, 'UI_MESSAGE', 'AGENT_RUNTIME', 'ja', 'JP', 'node.rounds_exhausted', '「{step}」は処理回数の上限に達しても完了しなかったため、処理を停止しました。', null, '2026-11-16 12:00:00', '2026-11-16 12:00:00');
+
+-- 智能体运行时：调用前附加检查拒绝 / 不可用
+INSERT INTO `i18n_message` (`id`, `message_usage_code`, `tag`, `language_code`, `region_code`, `message_code`, `message_text`, `extend_field`, `create_time`, `update_time`)
+VALUES (6725, 'ERROR_CODE', NULL, 'zh', 'CN', 'agent_runtime.42252', '调用被前置条件拦下：{0:code}', null, '2026-11-17 12:00:00', '2026-11-17 12:00:00'),
+       (6726, 'ERROR_CODE', NULL, 'en', 'US', 'agent_runtime.42252', 'Call blocked by a precondition: {0:code}', null, '2026-11-17 12:00:00', '2026-11-17 12:00:00'),
+       (6727, 'ERROR_CODE', NULL, 'ja', 'JP', 'agent_runtime.42252', '前提条件により呼び出しが拒否されました：{0:code}', null, '2026-11-17 12:00:00', '2026-11-17 12:00:00'),
+       (6728, 'ERROR_CODE', NULL, 'zh', 'CN', 'agent_runtime.50012', '调用前检查不可用', null, '2026-11-17 12:00:00', '2026-11-17 12:00:00'),
+       (6729, 'ERROR_CODE', NULL, 'en', 'US', 'agent_runtime.50012', 'Pre-call guard is unavailable', null, '2026-11-17 12:00:00', '2026-11-17 12:00:00'),
+       (6730, 'ERROR_CODE', NULL, 'ja', 'JP', 'agent_runtime.50012', '呼び出し前チェックが利用できません', null, '2026-11-17 12:00:00', '2026-11-17 12:00:00');
+
+
+-- 智能体：执行追踪拦截记录
+INSERT INTO `i18n_message` (`id`, `message_usage_code`, `tag`, `language_code`, `region_code`, `message_code`, `message_text`, `extend_field`, `create_time`, `update_time`)
+VALUES (6731, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_TRACE_TAB_BLOCKS', '拦截', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6732, 'UI_MESSAGE', 'AGENT', 'en', 'US', 'AGENT_TRACE_TAB_BLOCKS', 'Blocks', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6733, 'UI_MESSAGE', 'AGENT', 'ja', 'JP', 'AGENT_TRACE_TAB_BLOCKS', 'ブロック', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6734, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_TRACE_BLOCKED_BY', '拦截器', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6735, 'UI_MESSAGE', 'AGENT', 'en', 'US', 'AGENT_TRACE_BLOCKED_BY', 'Blocked by', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6736, 'UI_MESSAGE', 'AGENT', 'ja', 'JP', 'AGENT_TRACE_BLOCKED_BY', 'インターセプター', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6737, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_TRACE_REASON_CODE', '原因编码', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6738, 'UI_MESSAGE', 'AGENT', 'en', 'US', 'AGENT_TRACE_REASON_CODE', 'Reason code', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6739, 'UI_MESSAGE', 'AGENT', 'ja', 'JP', 'AGENT_TRACE_REASON_CODE', '理由コード', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6740, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_TRACE_BLOCK_MESSAGE', '拒绝说明', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6741, 'UI_MESSAGE', 'AGENT', 'en', 'US', 'AGENT_TRACE_BLOCK_MESSAGE', 'Rejection', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6742, 'UI_MESSAGE', 'AGENT', 'ja', 'JP', 'AGENT_TRACE_BLOCK_MESSAGE', '拒否の説明', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6743, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_TRACE_NEXT_STEP', '下一步', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6744, 'UI_MESSAGE', 'AGENT', 'en', 'US', 'AGENT_TRACE_NEXT_STEP', 'Next step', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6745, 'UI_MESSAGE', 'AGENT', 'ja', 'JP', 'AGENT_TRACE_NEXT_STEP', '次のステップ', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6746, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_TRACE_ARGS', '入参', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6747, 'UI_MESSAGE', 'AGENT', 'en', 'US', 'AGENT_TRACE_ARGS', 'Arguments', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6748, 'UI_MESSAGE', 'AGENT', 'ja', 'JP', 'AGENT_TRACE_ARGS', '引数', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6749, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_TRACE_SKILL', '技能', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6750, 'UI_MESSAGE', 'AGENT', 'en', 'US', 'AGENT_TRACE_SKILL', 'Skill', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6751, 'UI_MESSAGE', 'AGENT', 'ja', 'JP', 'AGENT_TRACE_SKILL', 'スキル', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6752, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_TRACE_SKILL_PIN', '技能标记', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6753, 'UI_MESSAGE', 'AGENT', 'en', 'US', 'AGENT_TRACE_SKILL_PIN', 'Skill pin', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6754, 'UI_MESSAGE', 'AGENT', 'ja', 'JP', 'AGENT_TRACE_SKILL_PIN', 'スキルピン', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6755, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_TRACE_CONTRACT_MODE', '契约模式', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6756, 'UI_MESSAGE', 'AGENT', 'en', 'US', 'AGENT_TRACE_CONTRACT_MODE', 'Contract mode', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6757, 'UI_MESSAGE', 'AGENT', 'ja', 'JP', 'AGENT_TRACE_CONTRACT_MODE', '契約モード', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6758, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_TRACE_CALL_ID', '调用标识', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6759, 'UI_MESSAGE', 'AGENT', 'en', 'US', 'AGENT_TRACE_CALL_ID', 'Call ID', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6760, 'UI_MESSAGE', 'AGENT', 'ja', 'JP', 'AGENT_TRACE_CALL_ID', '呼び出しID', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6761, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_TRACE_TRACE_ID', '追踪号', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6762, 'UI_MESSAGE', 'AGENT', 'en', 'US', 'AGENT_TRACE_TRACE_ID', 'Trace ID', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00'),
+       (6763, 'UI_MESSAGE', 'AGENT', 'ja', 'JP', 'AGENT_TRACE_TRACE_ID', 'トレースID', null, '2026-11-18 17:00:00', '2026-11-18 17:00:00');
+
+-- 智能体：契约的动作语义来源
+INSERT INTO `i18n_message` (`id`, `message_usage_code`, `tag`, `language_code`, `region_code`, `message_code`, `message_text`, `extend_field`, `create_time`, `update_time`)
+VALUES (6764, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_LINT_SOURCE_ONTOLOGY', 'source.ontology 不能为空', null, '2026-11-18 20:50:00', '2026-11-18 20:50:00'),
+       (6765, 'UI_MESSAGE', 'AGENT', 'en', 'US', 'AGENT_LINT_SOURCE_ONTOLOGY', 'source.ontology must not be empty', null, '2026-11-18 20:50:00', '2026-11-18 20:50:00'),
+       (6766, 'UI_MESSAGE', 'AGENT', 'ja', 'JP', 'AGENT_LINT_SOURCE_ONTOLOGY', 'source.ontology を空にできません', null, '2026-11-18 20:50:00', '2026-11-18 20:50:00'),
+       (6767, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_LINT_SOURCE_USAGES', 'source.usages 必须是 工具名 → 用法编码 的映射', null, '2026-11-18 20:50:00', '2026-11-18 20:50:00'),
+       (6768, 'UI_MESSAGE', 'AGENT', 'en', 'US', 'AGENT_LINT_SOURCE_USAGES', 'source.usages must be a map of tool name to usage code', null, '2026-11-18 20:50:00', '2026-11-18 20:50:00'),
+       (6769, 'UI_MESSAGE', 'AGENT', 'ja', 'JP', 'AGENT_LINT_SOURCE_USAGES', 'source.usages はツール名→用法コードのマップである必要があります', null, '2026-11-18 20:50:00', '2026-11-18 20:50:00'),
+       (6770, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_LINT_SOURCE_TOOLS', '已声明 source，契约中的 tools 不会生效', null, '2026-11-18 20:50:00', '2026-11-18 20:50:00'),
+       (6771, 'UI_MESSAGE', 'AGENT', 'en', 'US', 'AGENT_LINT_SOURCE_TOOLS', 'source is declared; tools in the contract will be ignored', null, '2026-11-18 20:50:00', '2026-11-18 20:50:00'),
+       (6772, 'UI_MESSAGE', 'AGENT', 'ja', 'JP', 'AGENT_LINT_SOURCE_TOOLS', 'source が宣言されているため、契約内の tools は無効です', null, '2026-11-18 20:50:00', '2026-11-18 20:50:00'),
+       (6773, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_CONTRACT_SEMANTIC', '动作语义来源', null, '2026-11-18 20:50:00', '2026-11-18 20:50:00'),
+       (6774, 'UI_MESSAGE', 'AGENT', 'en', 'US', 'AGENT_CONTRACT_SEMANTIC', 'Action semantics source', null, '2026-11-18 20:50:00', '2026-11-18 20:50:00'),
+       (6775, 'UI_MESSAGE', 'AGENT', 'ja', 'JP', 'AGENT_CONTRACT_SEMANTIC', '動作意味の出典', null, '2026-11-18 20:50:00', '2026-11-18 20:50:00'),
+       (6776, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_CONTRACT_SEMANTIC_ONTOLOGY', '本体：{ontology}', null, '2026-11-18 20:50:00', '2026-11-18 20:50:00'),
+       (6777, 'UI_MESSAGE', 'AGENT', 'en', 'US', 'AGENT_CONTRACT_SEMANTIC_ONTOLOGY', 'Ontology: {ontology}', null, '2026-11-18 20:50:00', '2026-11-18 20:50:00'),
+       (6778, 'UI_MESSAGE', 'AGENT', 'ja', 'JP', 'AGENT_CONTRACT_SEMANTIC_ONTOLOGY', 'オントロジー：{ontology}', null, '2026-11-18 20:50:00', '2026-11-18 20:50:00'),
+       (6779, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_CONTRACT_SEMANTIC_USAGES', '用法', null, '2026-11-18 20:50:00', '2026-11-18 20:50:00'),
+       (6780, 'UI_MESSAGE', 'AGENT', 'en', 'US', 'AGENT_CONTRACT_SEMANTIC_USAGES', 'Usages', null, '2026-11-18 20:50:00', '2026-11-18 20:50:00'),
+       (6781, 'UI_MESSAGE', 'AGENT', 'ja', 'JP', 'AGENT_CONTRACT_SEMANTIC_USAGES', '用法', null, '2026-11-18 20:50:00', '2026-11-18 20:50:00'),
+       (6782, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_CONTRACT_SEMANTIC_HINT', '动作语义由本体提供', null, '2026-11-18 20:50:00', '2026-11-18 20:50:00'),
+       (6783, 'UI_MESSAGE', 'AGENT', 'en', 'US', 'AGENT_CONTRACT_SEMANTIC_HINT', 'Action semantics are provided by the ontology', null, '2026-11-18 20:50:00', '2026-11-18 20:50:00'),
+       (6784, 'UI_MESSAGE', 'AGENT', 'ja', 'JP', 'AGENT_CONTRACT_SEMANTIC_HINT', '動作意味はオントロジーから提供されます', null, '2026-11-18 20:50:00', '2026-11-18 20:50:00');
+
+INSERT INTO `i18n_message` (`id`, `message_usage_code`, `tag`, `language_code`, `region_code`, `message_code`, `message_text`, `extend_field`, `create_time`, `update_time`)
+VALUES (6785, 'UI_MESSAGE', 'AGENT_RUNTIME', 'zh', 'CN', 'approval.notice', '⚠ 注意：{message}', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00'),
+       (6786, 'UI_MESSAGE', 'AGENT_RUNTIME', 'en', 'US', 'approval.notice', '⚠ Note: {message}', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00'),
+       (6787, 'UI_MESSAGE', 'AGENT_RUNTIME', 'ja', 'JP', 'approval.notice', '⚠ 注意：{message}', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00');
+
+INSERT INTO `i18n_message` (`id`, `message_usage_code`, `tag`, `language_code`, `region_code`, `message_code`, `message_text`, `extend_field`, `create_time`, `update_time`)
+VALUES (6788, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_LINT_SOURCE_TYPE', 'source.type 不能为空', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00'),
+       (6789, 'UI_MESSAGE', 'AGENT', 'en', 'US', 'AGENT_LINT_SOURCE_TYPE', 'source.type must not be empty', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00'),
+       (6790, 'UI_MESSAGE', 'AGENT', 'ja', 'JP', 'AGENT_LINT_SOURCE_TYPE', 'source.type を空にできません', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00'),
+       (6791, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_LINT_SOURCE_CONTRACT', '来源为契约自身时不能配置 ontology、usages', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00'),
+       (6792, 'UI_MESSAGE', 'AGENT', 'en', 'US', 'AGENT_LINT_SOURCE_CONTRACT', 'ontology and usages are not allowed when the source is the contract itself', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00'),
+       (6793, 'UI_MESSAGE', 'AGENT', 'ja', 'JP', 'AGENT_LINT_SOURCE_CONTRACT', 'ソースが契約自身の場合、ontology と usages は設定できません', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00'),
+       (6795, 'UI_MESSAGE', 'AGENT', 'zh', 'CN', 'AGENT_CONTRACT_SEMANTIC_CONTRACT', '契约自身', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00'),
+       (6796, 'UI_MESSAGE', 'AGENT', 'en', 'US', 'AGENT_CONTRACT_SEMANTIC_CONTRACT', 'The contract itself', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00'),
+       (6797, 'UI_MESSAGE', 'AGENT', 'ja', 'JP', 'AGENT_CONTRACT_SEMANTIC_CONTRACT', '契約自身', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00');
+
+-- 智能体运行时：调用前需先补查数据
+INSERT INTO `i18n_message` (`id`, `message_usage_code`, `tag`, `language_code`, `region_code`, `message_code`, `message_text`, `extend_field`, `create_time`, `update_time`)
+VALUES (6798, 'ERROR_CODE', NULL, 'zh', 'CN', 'agent_runtime.42253', '调用前需先补查数据：{0:code}', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00'),
+       (6799, 'ERROR_CODE', NULL, 'en', 'US', 'agent_runtime.42253', 'Data must be looked up before this call: {0:code}', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00'),
+       (6800, 'ERROR_CODE', NULL, 'ja', 'JP', 'agent_runtime.42253', '呼び出し前にデータの再照会が必要です：{0:code}', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00');
+
+-- 系统错误码：数据不符合数据库约束
+INSERT INTO `i18n_message` (`id`, `message_usage_code`, `tag`, `language_code`, `region_code`, `message_code`, `message_text`, `extend_field`, `create_time`, `update_time`)
+VALUES (6801, 'ERROR_CODE', NULL, 'zh', 'CN', 'system.50014', '数据不符合约束，未能保存', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00'),
+       (6802, 'ERROR_CODE', NULL, 'en', 'US', 'system.50014', 'Data violates a constraint and was not saved', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00'),
+       (6803, 'ERROR_CODE', NULL, 'ja', 'JP', 'system.50014', 'データが制約に違反しているため保存できませんでした', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00');
