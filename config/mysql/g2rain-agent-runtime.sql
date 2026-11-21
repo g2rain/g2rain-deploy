@@ -196,6 +196,7 @@ CREATE TABLE `task_checkpoint` (
     `node_id` VARCHAR(64) DEFAULT NULL COMMENT                                                          '挂起的节点',
     `checkpoint_id` VARCHAR(64) NOT NULL COMMENT                                                        '检查点业务标识',
     `type` VARCHAR(32) NOT NULL COMMENT                                                                 '检查点类型[FOLLOW_UP, APPROVAL, VERIFY]',
+    `halt_reason` VARCHAR(32) NOT NULL COMMENT                                                          '停顿原因[MISSING_INPUT, AMBIGUOUS, UNRESOLVED, DENIED, APPROVAL, VERIFY]',
     `question` VARCHAR(2000) DEFAULT NULL COMMENT                                                       '追问/确认文案',
     `expected_fields` JSON DEFAULT NULL COMMENT                                                         '追问期望补充的字段',
     `allowed_actions` JSON NOT NULL COMMENT                                                             '恢复动作',

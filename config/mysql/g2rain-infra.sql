@@ -7230,3 +7230,15 @@ INSERT INTO `i18n_message` (`id`, `message_usage_code`, `tag`, `language_code`, 
 VALUES (6801, 'ERROR_CODE', NULL, 'zh', 'CN', 'system.50014', '数据不符合约束，未能保存', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00'),
        (6802, 'ERROR_CODE', NULL, 'en', 'US', 'system.50014', 'Data violates a constraint and was not saved', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00'),
        (6803, 'ERROR_CODE', NULL, 'ja', 'JP', 'system.50014', 'データが制約に違反しているため保存できませんでした', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00');
+
+-- 智能体运行时：调用被拦下，须先由用户决定如何处理
+INSERT INTO `i18n_message` (`id`, `message_usage_code`, `tag`, `language_code`, `region_code`, `message_code`, `message_text`, `extend_field`, `create_time`, `update_time`)
+VALUES (6805, 'ERROR_CODE', NULL, 'zh', 'CN', 'agent_runtime.42254', '调用被拦下，须先由用户决定如何处理 [{0:toolName}]', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00'),
+       (6806, 'ERROR_CODE', NULL, 'en', 'US', 'agent_runtime.42254', 'The call was blocked; the user must decide how to proceed [{0:toolName}]', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00'),
+       (6807, 'ERROR_CODE', NULL, 'ja', 'JP', 'agent_runtime.42254', '呼び出しがブロックされました。対応はユーザーが決める必要があります [{0:toolName}]', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00');
+
+-- 智能体运行时：须先补查数据并重新调用
+INSERT INTO `i18n_message` (`id`, `message_usage_code`, `tag`, `language_code`, `region_code`, `message_code`, `message_text`, `extend_field`, `create_time`, `update_time`)
+VALUES (6808, 'ERROR_CODE', NULL, 'zh', 'CN', 'agent_runtime.42255', '须先补查数据并重新调用 [{0:toolName}]', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00'),
+       (6809, 'ERROR_CODE', NULL, 'en', 'US', 'agent_runtime.42255', 'Look up the required data and call again first [{0:toolName}]', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00'),
+       (6810, 'ERROR_CODE', NULL, 'ja', 'JP', 'agent_runtime.42255', '先にデータを再照会してから再度呼び出してください [{0:toolName}]', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00');
