@@ -7242,3 +7242,30 @@ INSERT INTO `i18n_message` (`id`, `message_usage_code`, `tag`, `language_code`, 
 VALUES (6808, 'ERROR_CODE', NULL, 'zh', 'CN', 'agent_runtime.42255', '须先补查数据并重新调用 [{0:toolName}]', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00'),
        (6809, 'ERROR_CODE', NULL, 'en', 'US', 'agent_runtime.42255', 'Look up the required data and call again first [{0:toolName}]', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00'),
        (6810, 'ERROR_CODE', NULL, 'ja', 'JP', 'agent_runtime.42255', '先にデータを再照会してから再度呼び出してください [{0:toolName}]', null, '2026-11-21 12:00:00', '2026-11-21 12:00:00');
+
+-- 智能体运行时：节点失败错误码与委派链损坏文案
+INSERT INTO `i18n_message` (`id`, `message_usage_code`, `tag`, `language_code`, `region_code`, `message_code`, `message_text`, `extend_field`, `create_time`, `update_time`)
+VALUES (6811, 'ERROR_CODE', NULL, 'zh', 'CN', 'agent_runtime.42256', '处理轮次已用完：{0:detail}', null, '2026-11-22 14:00:00', '2026-11-22 14:00:00'),
+       (6812, 'ERROR_CODE', NULL, 'en', 'US', 'agent_runtime.42256', 'Processing rounds exhausted: {0:detail}', null, '2026-11-22 14:00:00', '2026-11-22 14:00:00'),
+       (6813, 'ERROR_CODE', NULL, 'ja', 'JP', 'agent_runtime.42256', '処理回数の上限に達しました：{0:detail}', null, '2026-11-22 14:00:00', '2026-11-22 14:00:00'),
+       (6814, 'ERROR_CODE', NULL, 'zh', 'CN', 'agent_runtime.42257', '连续多轮没有进展：{0:detail}', null, '2026-11-22 14:00:00', '2026-11-22 14:00:00'),
+       (6815, 'ERROR_CODE', NULL, 'en', 'US', 'agent_runtime.42257', 'No progress over several rounds: {0:detail}', null, '2026-11-22 14:00:00', '2026-11-22 14:00:00'),
+       (6816, 'ERROR_CODE', NULL, 'ja', 'JP', 'agent_runtime.42257', '複数回進展がありません：{0:detail}', null, '2026-11-22 14:00:00', '2026-11-22 14:00:00'),
+       (6817, 'ERROR_CODE', NULL, 'zh', 'CN', 'agent_runtime.42258', '节点声明失败：{0:detail}', null, '2026-11-22 14:00:00', '2026-11-22 14:00:00'),
+       (6818, 'ERROR_CODE', NULL, 'en', 'US', 'agent_runtime.42258', 'Step declared failed: {0:detail}', null, '2026-11-22 14:00:00', '2026-11-22 14:00:00'),
+       (6819, 'ERROR_CODE', NULL, 'ja', 'JP', 'agent_runtime.42258', 'ステップが失敗を宣言しました：{0:detail}', null, '2026-11-22 14:00:00', '2026-11-22 14:00:00'),
+       (6820, 'UI_MESSAGE', 'AGENT_RUNTIME', 'zh', 'CN', 'node.delegate_broken', '委派链损坏：委派的前置节点缺失。', null, '2026-11-22 14:00:00', '2026-11-22 14:00:00'),
+       (6821, 'UI_MESSAGE', 'AGENT_RUNTIME', 'en', 'US', 'node.delegate_broken', 'Delegate chain broken: the delegated predecessor node is missing.', null, '2026-11-22 14:00:00', '2026-11-22 14:00:00'),
+       (6822, 'UI_MESSAGE', 'AGENT_RUNTIME', 'ja', 'JP', 'node.delegate_broken', '委譲チェーンが破損しています：委譲先の先行ノードがありません。', null, '2026-11-22 14:00:00', '2026-11-22 14:00:00');
+
+-- 智能体运行时：技能装载失败
+INSERT INTO `i18n_message` (`id`, `message_usage_code`, `tag`, `language_code`, `region_code`, `message_code`, `message_text`, `extend_field`, `create_time`, `update_time`)
+VALUES (6823, 'ERROR_CODE', NULL, 'zh', 'CN', 'agent_runtime.42259', '技能不可用：{0:skillKey}', null, '2026-11-22 15:00:00', '2026-11-22 15:00:00'),
+       (6824, 'ERROR_CODE', NULL, 'en', 'US', 'agent_runtime.42259', 'Skill unavailable: {0:skillKey}', null, '2026-11-22 15:00:00', '2026-11-22 15:00:00'),
+       (6825, 'ERROR_CODE', NULL, 'ja', 'JP', 'agent_runtime.42259', 'スキルを利用できません：{0:skillKey}', null, '2026-11-22 15:00:00', '2026-11-22 15:00:00'),
+       (6826, 'UI_MESSAGE', 'AGENT_RUNTIME', 'zh', 'CN', 'skills.unavailable', '技能暂时无法加载，请稍后再试。', null, '2026-11-22 15:00:00', '2026-11-22 15:00:00'),
+       (6827, 'UI_MESSAGE', 'AGENT_RUNTIME', 'en', 'US', 'skills.unavailable', 'Skills could not be loaded right now. Please try again later.', null, '2026-11-22 15:00:00', '2026-11-22 15:00:00'),
+       (6828, 'UI_MESSAGE', 'AGENT_RUNTIME', 'ja', 'JP', 'skills.unavailable', 'スキルを読み込めませんでした。しばらくしてから再度お試しください。', null, '2026-11-22 15:00:00', '2026-11-22 15:00:00'),
+       (6829, 'UI_MESSAGE', 'AGENT_RUNTIME', 'zh', 'CN', 'task.skills_unavailable', '当前事项所需的技能暂时无法加载，事项已保留，请稍后再试。', null, '2026-11-22 15:00:00', '2026-11-22 15:00:00'),
+       (6830, 'UI_MESSAGE', 'AGENT_RUNTIME', 'en', 'US', 'task.skills_unavailable', 'The skills this task needs could not be loaded right now. The task has been kept; please try again later.', null, '2026-11-22 15:00:00', '2026-11-22 15:00:00'),
+       (6831, 'UI_MESSAGE', 'AGENT_RUNTIME', 'ja', 'JP', 'task.skills_unavailable', 'この案件に必要なスキルを読み込めませんでした。案件は保持されています。しばらくしてから再度お試しください。', null, '2026-11-22 15:00:00', '2026-11-22 15:00:00');
