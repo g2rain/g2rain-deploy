@@ -7299,3 +7299,18 @@ VALUES (6847, 'UI_MESSAGE', 'CHAT_SHELL', 'zh', 'CN', 'CS_CHAT_ATTACHMENT_EXPAND
        (6850, 'UI_MESSAGE', 'CHAT_SHELL', 'zh', 'CN', 'CS_CHAT_ATTACHMENT_COLLAPSE', '收起', null, '2026-11-24 12:00:00', '2026-11-24 12:00:00'),
        (6851, 'UI_MESSAGE', 'CHAT_SHELL', 'en', 'US', 'CS_CHAT_ATTACHMENT_COLLAPSE', 'Collapse', null, '2026-11-24 12:00:00', '2026-11-24 12:00:00'),
        (6852, 'UI_MESSAGE', 'CHAT_SHELL', 'ja', 'JP', 'CS_CHAT_ATTACHMENT_COLLAPSE', '折りたたむ', null, '2026-11-24 12:00:00', '2026-11-24 12:00:00');
+
+-- 智能体运行时：技能契约格式版本不受支持
+INSERT INTO `i18n_message` (`id`, `message_usage_code`, `tag`, `language_code`, `region_code`, `message_code`, `message_text`, `extend_field`, `create_time`, `update_time`)
+VALUES (6853, 'ERROR_CODE', NULL, 'zh', 'CN', 'agent_runtime.42261', '技能「{0:skillKey}」的执行契约缺少有效的版本号，请按当前格式（{1:current}）补充', null, '2026-11-24 18:00:00', '2026-11-24 18:00:00'),
+       (6854, 'ERROR_CODE', NULL, 'en', 'US', 'agent_runtime.42261', 'The execution contract of skill "{0:skillKey}" is missing a valid version; please add one in the current format ({1:current})', null, '2026-11-24 18:00:00', '2026-11-24 18:00:00'),
+       (6855, 'ERROR_CODE', NULL, 'ja', 'JP', 'agent_runtime.42261', 'スキル「{0:skillKey}」の実行契約に有効なバージョンがありません。現行形式（{1:current}）で補ってください', null, '2026-11-24 18:00:00', '2026-11-24 18:00:00');
+
+-- 智能体运行时：执行契约格式版本已过时 / 高于运行时
+INSERT INTO `i18n_message` (`id`, `message_usage_code`, `tag`, `language_code`, `region_code`, `message_code`, `message_text`, `extend_field`, `create_time`, `update_time`)
+VALUES (6856, 'ERROR_CODE', NULL, 'zh', 'CN', 'agent_runtime.42262', '技能「{0:skillKey}」的执行契约版本 {1:version} 已过时，当前运行时要求 {2:current}，请按新格式升级执行契约', null, '2026-11-24 19:00:00', '2026-11-24 19:00:00'),
+       (6857, 'ERROR_CODE', NULL, 'en', 'US', 'agent_runtime.42262', 'The execution contract version {1:version} of skill "{0:skillKey}" is outdated; the current runtime requires {2:current}. Please upgrade the contract to the new format', null, '2026-11-24 19:00:00', '2026-11-24 19:00:00'),
+       (6858, 'ERROR_CODE', NULL, 'ja', 'JP', 'agent_runtime.42262', 'スキル「{0:skillKey}」の実行契約バージョン {1:version} は古くなっています。現行ランタイムは {2:current} を要求します。新形式へ契約をアップグレードしてください', null, '2026-11-24 19:00:00', '2026-11-24 19:00:00'),
+       (6859, 'ERROR_CODE', NULL, 'zh', 'CN', 'agent_runtime.42263', '技能「{0:skillKey}」的执行契约版本 {1:version} 高于当前运行时支持的 {2:current}，请升级运行时', null, '2026-11-24 19:00:00', '2026-11-24 19:00:00'),
+       (6860, 'ERROR_CODE', NULL, 'en', 'US', 'agent_runtime.42263', 'The execution contract version {1:version} of skill "{0:skillKey}" is higher than {2:current} supported by the current runtime. Please upgrade the runtime', null, '2026-11-24 19:00:00', '2026-11-24 19:00:00'),
+       (6861, 'ERROR_CODE', NULL, 'ja', 'JP', 'agent_runtime.42263', 'スキル「{0:skillKey}」の実行契約バージョン {1:version} は、現行ランタイムがサポートする {2:current} より高いです。ランタイムをアップグレードしてください', null, '2026-11-24 19:00:00', '2026-11-24 19:00:00');

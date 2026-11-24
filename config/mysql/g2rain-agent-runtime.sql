@@ -79,7 +79,7 @@ CREATE TABLE `task_instance` (
     `agent_id` BIGINT DEFAULT NULL COMMENT                                                              '绑定的 Agent 主键',
     `goal_summary` VARCHAR(2000) DEFAULT NULL COMMENT                                                   '任务目标摘要',
     `request` MEDIUMTEXT DEFAULT NULL COMMENT                                                           '开任务时的用户原文',
-    `skill_versions` JSON DEFAULT NULL COMMENT                                                          '开跑时固定的 skill 版本',
+    `spec_pins` JSON DEFAULT NULL COMMENT                                                                '开任务时锁定的动作语义版本标记（技能键 → 版本标记）',
     `shared` JSON DEFAULT NULL COMMENT                                                                  '任务级共享值',
     `prior` JSON DEFAULT NULL COMMENT                                                                   '前情',
     `task_record` JSON DEFAULT NULL COMMENT                                                             '结束时的任务记录',
