@@ -50,6 +50,7 @@ CREATE TABLE `chat_message` (
     `role` VARCHAR(32) NOT NULL COMMENT                                                                 '角色[USER, AGENT]',
     `message_type` VARCHAR(32) NOT NULL DEFAULT 'USER_TEXT' COMMENT                                     '消息类型[USER_TEXT, AGENT_REPLY]',
     `content` MEDIUMTEXT NOT NULL COMMENT                                                               '消息内容',
+    `attachments` JSON DEFAULT NULL COMMENT                                                             '回复附件',
     `trace_id` VARCHAR(64) DEFAULT NULL COMMENT                                                         '本条消息追踪号',
     `created_at_ms` BIGINT NOT NULL COMMENT                                                             '业务发言时间 epoch ms',
     `elapsed_ms` INT DEFAULT NULL COMMENT                                                               '本轮耗时毫秒；仅最终回复',

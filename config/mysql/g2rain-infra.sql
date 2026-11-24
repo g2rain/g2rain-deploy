@@ -7269,3 +7269,33 @@ VALUES (6823, 'ERROR_CODE', NULL, 'zh', 'CN', 'agent_runtime.42259', '技能不�
        (6829, 'UI_MESSAGE', 'AGENT_RUNTIME', 'zh', 'CN', 'task.skills_unavailable', '当前事项所需的技能暂时无法加载，事项已保留，请稍后再试。', null, '2026-11-22 15:00:00', '2026-11-22 15:00:00'),
        (6830, 'UI_MESSAGE', 'AGENT_RUNTIME', 'en', 'US', 'task.skills_unavailable', 'The skills this task needs could not be loaded right now. The task has been kept; please try again later.', null, '2026-11-22 15:00:00', '2026-11-22 15:00:00'),
        (6831, 'UI_MESSAGE', 'AGENT_RUNTIME', 'ja', 'JP', 'task.skills_unavailable', 'この案件に必要なスキルを読み込めませんでした。案件は保持されています。しばらくしてから再度お試しください。', null, '2026-11-22 15:00:00', '2026-11-22 15:00:00');
+
+-- 智能体运行时：指定技能不属于数字员工
+INSERT INTO `i18n_message` (`id`, `message_usage_code`, `tag`, `language_code`, `region_code`, `message_code`, `message_text`, `extend_field`, `create_time`, `update_time`)
+VALUES (6832, 'ERROR_CODE', NULL, 'zh', 'CN', 'agent_runtime.42260', '指定的技能不属于该数字员工：{0:skillKey}', null, '2026-11-23 14:30:00', '2026-11-23 14:30:00'),
+       (6833, 'ERROR_CODE', NULL, 'en', 'US', 'agent_runtime.42260', 'The specified skill does not belong to this digital employee: {0:skillKey}', null, '2026-11-23 14:30:00', '2026-11-23 14:30:00'),
+       (6834, 'ERROR_CODE', NULL, 'ja', 'JP', 'agent_runtime.42260', '指定されたスキルはこのデジタル社員に属していません：{0:skillKey}', null, '2026-11-23 14:30:00', '2026-11-23 14:30:00');
+
+-- 智能体运行时：内置工具步骤标题（output / state / evidence / session）
+INSERT INTO `i18n_message` (`id`, `message_usage_code`, `tag`, `language_code`, `region_code`, `message_code`, `message_text`, `extend_field`, `create_time`, `update_time`)
+VALUES (6835, 'UI_MESSAGE', 'AGENT_RUNTIME', 'zh', 'CN', 'step.output', '记录节点产出', null, '2026-11-23 15:00:00', '2026-11-23 15:00:00'),
+       (6836, 'UI_MESSAGE', 'AGENT_RUNTIME', 'en', 'US', 'step.output', 'Recording node output', null, '2026-11-23 15:00:00', '2026-11-23 15:00:00'),
+       (6837, 'UI_MESSAGE', 'AGENT_RUNTIME', 'ja', 'JP', 'step.output', 'ノードの出力を記録しています', null, '2026-11-23 15:00:00', '2026-11-23 15:00:00'),
+       (6838, 'UI_MESSAGE', 'AGENT_RUNTIME', 'zh', 'CN', 'step.state', '记录任务状态', null, '2026-11-23 15:00:00', '2026-11-23 15:00:00'),
+       (6839, 'UI_MESSAGE', 'AGENT_RUNTIME', 'en', 'US', 'step.state', 'Recording task state', null, '2026-11-23 15:00:00', '2026-11-23 15:00:00'),
+       (6840, 'UI_MESSAGE', 'AGENT_RUNTIME', 'ja', 'JP', 'step.state', 'タスク状態を記録しています', null, '2026-11-23 15:00:00', '2026-11-23 15:00:00'),
+       (6841, 'UI_MESSAGE', 'AGENT_RUNTIME', 'zh', 'CN', 'step.evidence', '查阅已取得的结果', null, '2026-11-23 15:00:00', '2026-11-23 15:00:00'),
+       (6842, 'UI_MESSAGE', 'AGENT_RUNTIME', 'en', 'US', 'step.evidence', 'Reviewing obtained results', null, '2026-11-23 15:00:00', '2026-11-23 15:00:00'),
+       (6843, 'UI_MESSAGE', 'AGENT_RUNTIME', 'ja', 'JP', 'step.evidence', '取得済みの結果を確認しています', null, '2026-11-23 15:00:00', '2026-11-23 15:00:00'),
+       (6844, 'UI_MESSAGE', 'AGENT_RUNTIME', 'zh', 'CN', 'step.session', '读取会话信息', null, '2026-11-23 15:00:00', '2026-11-23 15:00:00'),
+       (6845, 'UI_MESSAGE', 'AGENT_RUNTIME', 'en', 'US', 'step.session', 'Reading session information', null, '2026-11-23 15:00:00', '2026-11-23 15:00:00'),
+       (6846, 'UI_MESSAGE', 'AGENT_RUNTIME', 'ja', 'JP', 'step.session', 'セッション情報を読み取っています', null, '2026-11-23 15:00:00', '2026-11-23 15:00:00');
+
+-- 对话前端：回复附件
+INSERT INTO `i18n_message` (`id`, `message_usage_code`, `tag`, `language_code`, `region_code`, `message_code`, `message_text`, `extend_field`, `create_time`, `update_time`)
+VALUES (6847, 'UI_MESSAGE', 'CHAT_SHELL', 'zh', 'CN', 'CS_CHAT_ATTACHMENT_EXPAND', '展开', null, '2026-11-24 12:00:00', '2026-11-24 12:00:00'),
+       (6848, 'UI_MESSAGE', 'CHAT_SHELL', 'en', 'US', 'CS_CHAT_ATTACHMENT_EXPAND', 'Expand', null, '2026-11-24 12:00:00', '2026-11-24 12:00:00'),
+       (6849, 'UI_MESSAGE', 'CHAT_SHELL', 'ja', 'JP', 'CS_CHAT_ATTACHMENT_EXPAND', '展開', null, '2026-11-24 12:00:00', '2026-11-24 12:00:00'),
+       (6850, 'UI_MESSAGE', 'CHAT_SHELL', 'zh', 'CN', 'CS_CHAT_ATTACHMENT_COLLAPSE', '收起', null, '2026-11-24 12:00:00', '2026-11-24 12:00:00'),
+       (6851, 'UI_MESSAGE', 'CHAT_SHELL', 'en', 'US', 'CS_CHAT_ATTACHMENT_COLLAPSE', 'Collapse', null, '2026-11-24 12:00:00', '2026-11-24 12:00:00'),
+       (6852, 'UI_MESSAGE', 'CHAT_SHELL', 'ja', 'JP', 'CS_CHAT_ATTACHMENT_COLLAPSE', '折りたたむ', null, '2026-11-24 12:00:00', '2026-11-24 12:00:00');
