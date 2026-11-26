@@ -79,7 +79,35 @@ CREATE TABLE `skill_tool_binding` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT=                             'Skill Tool 绑定表';
 
 -- ---------------------------------------------
--- 4. Chat 问题模板 (chat_prompt_template)
+-- 4. Skill 修订 (skill_revision)
+-- ---------------------------------------------
+DROP TABLE IF EXISTS `skill_revision`;
+
+CREATE TABLE `skill_revision` (
+    `id` BIGINT NOT NULL COMMENT                                                                        '主键标识',
+    `organ_id` BIGINT NOT NULL COMMENT                                                                  '机构标识',
+    `skill_id` BIGINT NOT NULL COMMENT                                                                  '技能主键（skill_profile.id）',
+    `revision_no` INT NOT NULL COMMENT                                                                  '修订号；草稿为0，发布时从1递增',
+    `skill_name` VARCHAR(128) NOT NULL COMMENT                                                          '快照：技能名称',
+    `semantic_desc` VARCHAR(1000) DEFAULT NULL COMMENT                                                  '快照：语义描述',
+    `skill_manual` MEDIUMTEXT DEFAULT NULL COMMENT                                                      '快照：操作手册',
+    `skill_contract` JSON DEFAULT NULL COMMENT                                                          '快照：执行契约',
+    `tool_names` JSON DEFAULT NULL COMMENT                                                              '快照：绑定的业务工具名数组',
+    `status` VARCHAR(32) NOT NULL DEFAULT 'DRAFT' COMMENT                                               '状态[DRAFT:草稿, PUBLISHED:当前发布, SUPERSEDED:已被替代, DISCARDED:已丢弃]',
+    `origin` VARCHAR(32) NOT NULL DEFAULT 'MANUAL' COMMENT                                              '来源方式[MANUAL:人工保存, CANDIDATE:候选草稿, ROLLBACK:回滚]',
+    `base_revision_no` INT DEFAULT NULL COMMENT                                                         '草稿基于的已发布修订号',
+    `note` VARCHAR(500) DEFAULT NULL COMMENT                                                            '变更说明',
+    `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT                                      '创建时间',
+    `update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT          '更新时间',
+    `version` INT NOT NULL DEFAULT 0 COMMENT                                                            '记录版本',
+    `delete_flag` TINYINT NOT NULL DEFAULT 0 COMMENT                                                    '逻辑删除标记[0:未删除, 1:已删除]',
+    PRIMARY KEY (`id`),
+    UNIQUE INDEX `uk_revision_no` (`skill_id`, `revision_no`, (IF(`status` <> 'DRAFT' AND `delete_flag` = 0, 0, NULL))),
+    INDEX `idx_skill_status` (`organ_id`, `skill_id`, `status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT=                             'Skill 修订表';
+
+-- ---------------------------------------------
+-- 5. Chat 问题模板 (chat_prompt_template)
 -- ---------------------------------------------
 DROP TABLE IF EXISTS `chat_prompt_template`;
 
@@ -99,7 +127,7 @@ CREATE TABLE `chat_prompt_template` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT=                             'Chat 问题模板';
 
 -- ---------------------------------------------
--- 5. 智能体会话绑定 (agent_session_binding)
+-- 6. 智能体会话绑定 (agent_session_binding)
 -- ---------------------------------------------
 DROP TABLE IF EXISTS `agent_session_binding`;
 
@@ -296,3 +324,37 @@ INSERT INTO `skill_tool_binding`
 VALUES
 (72, 3, 5, 'native_g2rain_cms_get_channel_list', 1, '校验分类是否被栏目使用', 0, 0),
 (73, 3, 6, 'native_g2rain_cms_get_channel_list', 1, '校验页面是否被栏目使用', 0, 0);
+
+-- 存量技能补初版发布修订（revision_no = 1）
+INSERT INTO `skill_revision`
+(`id`, `organ_id`, `skill_id`, `revision_no`, `skill_name`, `semantic_desc`, `skill_manual`, `skill_contract`,
+ `tool_names`, `status`, `origin`, `base_revision_no`, `note`, `version`, `delete_flag`)
+SELECT
+    100000 + s.id,
+    s.organ_id,
+    s.id,
+    1,
+    s.skill_name,
+    s.semantic_desc,
+    s.skill_manual,
+    s.skill_contract,
+    COALESCE((
+        SELECT JSON_ARRAYAGG(b.tool_name)
+        FROM skill_tool_binding b
+        WHERE b.skill_id = s.id
+          AND (b.delete_flag = 0 OR b.delete_flag IS NULL)
+    ), JSON_ARRAY()),
+    'PUBLISHED',
+    'MANUAL',
+    NULL,
+    NULL,
+    0,
+    0
+FROM skill_profile s
+WHERE (s.delete_flag = 0 OR s.delete_flag IS NULL)
+  AND NOT EXISTS (
+      SELECT 1
+      FROM skill_revision r
+      WHERE r.skill_id = s.id
+        AND (r.delete_flag = 0 OR r.delete_flag IS NULL)
+  );
