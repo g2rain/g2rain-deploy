@@ -301,6 +301,7 @@ CREATE TABLE `chat_progress` (
     `node_id` VARCHAR(64) DEFAULT NULL COMMENT                                                          '所属节点',
     `round` INT DEFAULT NULL COMMENT                                                                    'ReAct 轮次',
     `error_code` VARCHAR(64) DEFAULT NULL COMMENT                                                       '失败错误码',
+    `tool_kind` VARCHAR(16) DEFAULT NULL COMMENT                                                        '工具种类[CONTROL, ENV, SESSION, NODE, SEARCH, FETCH, IMPORT, ANALYZE, REPORT, BUSINESS]；仅 TOOL 环节',
     `extra` JSON DEFAULT NULL COMMENT                                                                   '排查信息（token、参数摘要、上游原文）；不下发 chat，供会话追踪查看',
     `started_at_ms` BIGINT NOT NULL COMMENT                                                             '开始时间 epoch ms',
     `elapsed_ms` INT DEFAULT NULL COMMENT                                                               '耗时毫秒',
